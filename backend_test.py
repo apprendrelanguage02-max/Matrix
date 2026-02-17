@@ -32,10 +32,17 @@ class NewsAppAPITester:
         url = f"{self.base_url}/api/{endpoint.lstrip('/')}"
         req_headers = {'Content-Type': 'application/json'}
         
-        # Use token_override if provided, otherwise use default token
-        token_to_use = token_override if token_override is not None else (self.admin_token or self.visitor_token)
-        if token_to_use:
-            req_headers['Authorization'] = f'Bearer {token_to_use}'
+        # Use token_override if provided (including None to explicitly remove token)
+        if token_override is not None:
+            if token_override:  # Non-empty token
+                req_headers['Authorization'] = f'Bearer {token_override}'
+            # If token_override is empty string or None, don't add Authorization header
+        else:
+            # Default behavior - use available token
+            token_to_use = self.admin_token or self.visitor_token
+            if token_to_use:
+                req_headers['Authorization'] = f'Bearer {token_to_use}'
+                
         if headers:
             req_headers.update(headers)
 
