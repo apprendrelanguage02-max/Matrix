@@ -161,35 +161,81 @@ export default function RichEditor({ value, onChange, error }) {
         </div>
       </div>
 
-      {/* Image URL panel */}
+      {/* Image/Video panel */}
       {showImgPanel && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 border-b border-[#FF6600]/30" data-testid="inline-image-panel">
-          <Image className="w-4 h-4 text-[#FF6600] flex-shrink-0" />
-          <input
-            type="url"
-            value={imgUrl}
-            onChange={(e) => setImgUrl(e.target.value)}
-            data-testid="inline-image-url-input"
-            placeholder="https://exemple.com/photo.jpg"
-            className="flex-1 bg-white border border-zinc-300 px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF6600]"
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), insertImage())}
-            autoFocus
-          />
-          <button
-            type="button"
-            onClick={insertImage}
-            data-testid="confirm-inline-image-btn"
-            className="bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 hover:bg-[#CC5200] transition-colors whitespace-nowrap"
-          >
-            Insérer
-          </button>
-          <button
-            type="button"
-            onClick={() => { setShowImgPanel(false); setImgUrl(""); }}
-            className="text-zinc-400 hover:text-black transition-colors p-1"
-          >
-            ✕
-          </button>
+        <div className="bg-orange-50 border-b border-[#FF6600]/30" data-testid="inline-image-panel">
+          {/* Tabs */}
+          <div className="flex border-b border-[#FF6600]/20">
+            <button
+              type="button"
+              onClick={() => setImgTab("url")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors ${imgTab === "url" ? "bg-[#FF6600] text-white" : "text-zinc-500 hover:text-[#FF6600]"}`}
+            >
+              <Image className="w-3.5 h-3.5" /> URL
+            </button>
+            <button
+              type="button"
+              onClick={() => setImgTab("upload")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors ${imgTab === "upload" ? "bg-[#FF6600] text-white" : "text-zinc-500 hover:text-[#FF6600]"}`}
+            >
+              <Upload className="w-3.5 h-3.5" /> Upload
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowImgPanel(false); setImgUrl(""); setUploadError(""); }}
+              className="ml-auto px-3 text-zinc-400 hover:text-black transition-colors"
+            >✕</button>
+          </div>
+
+          {/* URL tab */}
+          {imgTab === "url" && (
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Image className="w-4 h-4 text-[#FF6600] flex-shrink-0" />
+              <input
+                type="url"
+                value={imgUrl}
+                onChange={(e) => setImgUrl(e.target.value)}
+                data-testid="inline-image-url-input"
+                placeholder="https://exemple.com/photo.jpg"
+                className="flex-1 bg-white border border-zinc-300 px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF6600]"
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), insertImage())}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={insertImage}
+                data-testid="confirm-inline-image-btn"
+                className="bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 hover:bg-[#CC5200] transition-colors whitespace-nowrap"
+              >
+                Insérer
+              </button>
+            </div>
+          )}
+
+          {/* Upload tab */}
+          {imgTab === "upload" && (
+            <div className="px-3 py-3">
+              <p className="text-xs text-zinc-500 font-['Manrope'] mb-2">
+                Images : JPG, PNG, WEBP (max 5 Mo) · Vidéos : MP4, WebM (max 20 Mo)
+              </p>
+              <div className="flex items-center gap-3">
+                <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 text-xs font-bold uppercase tracking-wider font-['Manrope'] rounded transition-colors ${uploading ? "bg-zinc-300 text-zinc-500 cursor-not-allowed" : "bg-[#FF6600] text-white hover:bg-[#CC5200]"}`}>
+                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {uploading ? "Envoi…" : "Choisir un fichier"}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={handleFileUpload}
+                    data-testid="file-upload-input"
+                  />
+                </label>
+                {uploadError && <p className="text-xs text-red-500 font-['Manrope']">{uploadError}</p>}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
