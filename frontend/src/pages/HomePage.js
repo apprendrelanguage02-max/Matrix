@@ -64,16 +64,23 @@ export default function HomePage() {
       {/* Hero */}
       <section className="bg-black py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-4">
-            <div className="w-1.5 h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
-            <div>
-              <p className="font-['Manrope'] text-[#FF6600] text-xs font-bold uppercase tracking-widest mb-2">
-                {total > 0 ? `${total} article${total > 1 ? "s" : ""} publiés` : "Actualités"}
-              </p>
-              <h1 className="font-['Oswald'] text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
-                Les dernières<br />
-                <span className="text-[#FF6600]">nouvelles</span>
-              </h1>
+          <div className="flex items-center gap-6">
+            <img
+              src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
+              alt="Matrix News"
+              className="w-24 h-24 md:w-32 md:h-32 object-contain flex-shrink-0"
+            />
+            <div className="flex items-start gap-4">
+              <div className="w-1.5 h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
+              <div>
+                <p className="font-['Manrope'] text-[#FF6600] text-xs font-bold uppercase tracking-widest mb-2">
+                  {total > 0 ? `${total} article${total > 1 ? "s" : ""} publiés` : "Actualités"}
+                </p>
+                <h1 className="font-['Oswald'] text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
+                  Les dernières<br />
+                  <span className="text-[#FF6600]">nouvelles</span>
+                </h1>
+              </div>
             </div>
           </div>
         </div>
