@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 
 class NewsAppTester:
-    def __init__(self, base_url="https://headline-press.preview.emergentagent.com"):
+    def __init__(self, base_url="https://media-upload-hub-6.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
@@ -547,7 +547,7 @@ class NewsAppTester:
 
 def main():
     # Setup
-    tester = NewsAppTester("https://headline-press.preview.emergentagent.com")
+    tester = NewsAppTester("https://media-upload-hub-6.preview.emergentagent.com")
     
     print("🚀 Starting Matrix News App Backend Tests")
     print(f"Testing against: {tester.base_url}")
