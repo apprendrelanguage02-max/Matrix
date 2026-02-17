@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Loader2, Calendar, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Calendar, FileText, Eye } from "lucide-react";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
