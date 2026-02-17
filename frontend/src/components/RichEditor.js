@@ -147,14 +147,14 @@ export default function RichEditor({ value, onChange, error }) {
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); handleImgBtnClick(); }}
-          title="Insérer une image"
+          title="Insérer une image ou vidéo"
           data-testid="insert-image-btn"
           className={`flex items-center gap-1.5 px-3 h-8 text-xs font-bold font-['Manrope'] uppercase tracking-wider rounded transition-colors duration-150 ${
             showImgPanel ? "bg-[#FF6600] text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-[#FF6600] border border-zinc-300"
           }`}
         >
           <Image className="w-3.5 h-3.5" />
-          Image
+          Média
         </button>
         <div className="ml-auto">
           <ToolbarBtn icon={Trash2} title="Effacer la mise en forme" onClick={() => exec("removeFormat")} />
