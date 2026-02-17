@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "sonner";
@@ -8,10 +8,18 @@ import { Loader2 } from "lucide-react";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState("login"); // "login" | "register"
   const [form, setForm] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Ouvrir directement l'onglet inscription si ?tab=register
+  useEffect(() => {
+    if (searchParams.get("tab") === "register") {
+      setTab("register");
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
