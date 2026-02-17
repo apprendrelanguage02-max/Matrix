@@ -56,6 +56,26 @@ export default function SettingsPage() {
   const handleProfileChange = (e) => setProfile({ ...profile, [e.target.name]: e.target.value });
   const handlePwdChange = (e) => setPasswords({ ...passwords, [e.target.name]: e.target.value });
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setProfile((p) => ({ ...p, avatar_url: res.data.url }));
+      toast.success("Photo uploadée ! N'oubliez pas de sauvegarder.");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erreur lors de l'upload de la photo.");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!profile.username.trim()) return toast.error("Le nom d'utilisateur est requis.");
