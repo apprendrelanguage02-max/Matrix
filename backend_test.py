@@ -339,6 +339,212 @@ class NewsAppTester:
             return True
         return False
 
+    def test_profile_update(self):
+        """Test profile update endpoint"""
+        success, response = self.run_test(
+            "Update User Profile",
+            "PUT",
+            "/auth/profile",
+            200,
+            data={
+                "username": "admin_updated",
+                "phone": "+33 6 12 34 56 78",
+                "country": "France",
+                "address": "123 rue de la Paix, Paris",
+                "bio": "Administrateur de test"
+            }
+        )
+        if success:
+            # Verify profile was updated
+            success2, user_data = self.run_test(
+                "Get Updated Profile",
+                "GET", 
+                "/auth/me",
+                200
+            )
+            if success2:
+                if (user_data.get('username') == 'admin_updated' and 
+                    user_data.get('phone') == '+33 6 12 34 56 78'):
+                    print("   ✅ Profile update successful and verified")
+                    return True
+                else:
+                    print(f"   ❌ Profile not updated correctly: {user_data}")
+                    self.failed_tests.append("Profile update: Values not saved correctly")
+            return success2
+        return False
+
+    def test_password_change(self):
+        """Test password change endpoint"""
+        # First test with wrong current password
+        success, response = self.run_test(
+            "Change Password (Wrong Current)",
+            "PUT",
+            "/auth/password", 
+            400,  # Should fail with wrong current password
+            data={
+                "current_password": "wrongpassword",
+                "new_password": "newpassword123"
+            }
+        )
+        if success:
+            print("   ✅ Correctly rejected wrong current password")
+        
+        # Test with correct current password
+        success2, response2 = self.run_test(
+            "Change Password (Correct)",
+            "PUT", 
+            "/auth/password",
+            200,
+            data={
+                "current_password": "admin123", 
+                "new_password": "admin123new"
+            }
+        )
+        
+        if success2:
+            # Test login with new password
+            old_token = self.token
+            self.token = None
+            
+            success3, response3 = self.run_test(
+                "Login with New Password",
+                "POST",
+                "/auth/login", 
+                200,
+                data={"email": "admin@newsapp.fr", "password": "admin123new"}
+            )
+            
+            if success3:
+                print("   ✅ Password change and new login successful")
+                self.token = response3.get('token')
+                
+                # Change back to original password for other tests
+                self.run_test(
+                    "Reset Password to Original",
+                    "PUT",
+                    "/auth/password",
+                    200, 
+                    data={
+                        "current_password": "admin123new",
+                        "new_password": "admin123"
+                    }
+                )
+                return True
+            else:
+                self.token = old_token
+                return False
+        return False
+
+    def test_saved_articles_functionality(self):
+        """Test saved articles endpoints"""
+        # First create an article to save
+        success, response = self.run_test(
+            "Create Article for Saving Test",
+            "POST",
+            "/articles", 
+            200,
+            data={
+                "title": "Article to Save", 
+                "content": "This article will be saved and unsaved for testing",
+                "category": "Actualité"
+            }
+        )
+        
+        if not success or 'id' not in response:
+            print("   ❌ Failed to create test article")
+            return False
+            
+        article_id = response['id']
+        print(f"   📄 Created test article with ID: {article_id}")
+        
+        # Test saving the article
+        success2, response2 = self.run_test(
+            "Save Article",
+            "POST", 
+            f"/saved-articles/{article_id}",
+            200
+        )
+        if not success2:
+            return False
+            
+        # Check save status
+        success3, response3 = self.run_test(
+            "Get Save Status", 
+            "GET",
+            f"/saved-articles/{article_id}/status",
+            200
+        )
+        if success3 and response3.get('is_saved'):
+            print("   ✅ Article save status correctly returned true")
+        else:
+            print("   ❌ Save status not working")
+            self.failed_tests.append("Saved articles: Status endpoint not working")
+            return False
+            
+        # Get saved articles list
+        success4, response4 = self.run_test(
+            "Get Saved Articles List",
+            "GET",
+            "/saved-articles", 
+            200
+        )
+        if success4:
+            saved_articles = response4
+            found_article = any(s.get('article_id') == article_id for s in saved_articles)
+            if found_article:
+                print(f"   ✅ Article found in saved list ({len(saved_articles)} total saved)")
+            else:
+                print(f"   ❌ Article not found in saved list")
+                self.failed_tests.append("Saved articles: Article not in saved list")
+                return False
+        else:
+            return False
+            
+        # Test unsaving the article
+        success5, response5 = self.run_test(
+            "Unsave Article",
+            "DELETE",
+            f"/saved-articles/{article_id}",
+            200
+        )
+        if success5:
+            # Verify it's no longer saved
+            success6, response6 = self.run_test(
+                "Verify Article Unsaved",
+                "GET", 
+                f"/saved-articles/{article_id}/status",
+                200
+            )
+            if success6 and not response6.get('is_saved'):
+                print("   ✅ Article successfully unsaved")
+                return True
+            else:
+                print("   ❌ Article still marked as saved after unsave")
+                self.failed_tests.append("Saved articles: Unsave not working")
+                
+        return False
+
+    def test_saved_articles_protection(self):
+        """Test that saved articles routes require authentication"""
+        # Temporarily remove token
+        original_token = self.token
+        self.token = None
+        
+        success, response = self.run_test(
+            "Get Saved Articles Without Auth",
+            "GET",
+            "/saved-articles",
+            401  # Should be unauthorized
+        )
+        
+        # Restore token
+        self.token = original_token
+        
+        if success:
+            print("   ✅ Saved articles route correctly requires authentication")
+            return True
+        return False
+
 def main():
     # Setup
     tester = NewsAppTester("https://headline-press.preview.emergentagent.com")
