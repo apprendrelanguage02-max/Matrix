@@ -49,47 +49,12 @@ body {
 }
 .dropdown-item:hover::after { transform: scaleY(1); }
 
-/* ── Quill Editor ─────────────────────────────── */
-.rich-editor-wrapper .ql-toolbar {
-    border: 1px solid #d4d4d8 !important;
-    border-bottom: none !important;
-    background: #fafafa;
-    font-family: 'Manrope', sans-serif;
-}
-.rich-editor-wrapper.ring-1 .ql-toolbar,
-.rich-editor-wrapper.ring-1 .ql-container {
-    border-color: #f87171 !important;
-}
-.rich-editor-wrapper .ql-container {
-    border: 1px solid #d4d4d8 !important;
-    font-family: 'Manrope', sans-serif;
-    font-size: 16px;
-    min-height: 320px;
-}
-.rich-editor-wrapper .ql-editor {
-    min-height: 320px;
-    line-height: 1.75;
-    color: #111;
-    padding: 16px;
-}
-.rich-editor-wrapper .ql-editor:focus {
-    outline: none;
-}
-.rich-editor-wrapper .ql-container.ql-snow:focus-within {
-    border-color: #FF6600 !important;
-    box-shadow: 0 0 0 1px #FF6600;
-}
-.rich-editor-wrapper .ql-toolbar button:hover,
-.rich-editor-wrapper .ql-toolbar button.ql-active {
-    color: #FF6600 !important;
-}
-.rich-editor-wrapper .ql-toolbar button:hover .ql-stroke,
-.rich-editor-wrapper .ql-toolbar button.ql-active .ql-stroke {
-    stroke: #FF6600 !important;
-}
-.rich-editor-wrapper .ql-toolbar button:hover .ql-fill,
-.rich-editor-wrapper .ql-toolbar button.ql-active .ql-fill {
-    fill: #FF6600 !important;
+/* ── Rich Editor contentEditable placeholder ─ */
+[contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #a1a1aa;
+    pointer-events: none;
+    font-style: italic;
 }
 
 /* ── Article Content (Quill HTML output) ─────── */
