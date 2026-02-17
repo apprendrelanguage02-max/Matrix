@@ -82,9 +82,21 @@ class NewsAppAPITester:
 
         except requests.exceptions.RequestException as e:
             print(f"❌ Failed - Network Error: {str(e)}")
+            if not allow_errors:
+                self.failed_tests.append({
+                    "test": name,
+                    "endpoint": endpoint,
+                    "error": f"Network Error: {str(e)}"
+                })
             return False, {}
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
+            if not allow_errors:
+                self.failed_tests.append({
+                    "test": name,
+                    "endpoint": endpoint,
+                    "error": str(e)
+                })
             return False, {}
 
     def test_root_endpoint(self):
