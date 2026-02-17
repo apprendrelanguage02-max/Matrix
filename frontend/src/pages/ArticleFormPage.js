@@ -40,7 +40,10 @@ export default function ArticleFormPage() {
   const validate = () => {
     const e = {};
     if (!form.title.trim()) e.title = "Le titre est requis.";
+    if (form.title.trim().length < 3) e.title = "Le titre doit contenir au moins 3 caractères.";
     if (!form.content.trim()) e.content = "Le contenu est requis.";
+    if (form.content.trim().length < 10) e.content = "Le contenu doit contenir au moins 10 caractères.";
+    if (!form.category) e.category = "La catégorie est obligatoire.";
     return e;
   };
 
