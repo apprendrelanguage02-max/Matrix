@@ -395,6 +395,11 @@ async def require_author(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Accès réservé aux auteurs")
     return current_user
 
+async def require_agent(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ("agent", "auteur"):
+        raise HTTPException(status_code=403, detail="Accès réservé aux agents immobiliers")
+    return current_user
+
 # ─── Auth Routes ───────────────────────────────────────────────────────────────
 
 @api_router.post("/auth/register", response_model=TokenResponse)
