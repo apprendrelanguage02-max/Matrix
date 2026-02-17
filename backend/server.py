@@ -416,14 +416,14 @@ async def register(data: UserRegister):
         "username": sanitize(data.username),
         "email": data.email,
         "hashed_password": hashed,
-        "role": "visiteur",
+        "role": data.role,
         "created_at": created_at
     }
     await db.users.insert_one(user_doc)
     token = create_token(user_id)
     return TokenResponse(
         token=token,
-        user=UserOut(id=user_id, username=user_doc["username"], email=data.email, role="visiteur", created_at=created_at)
+        user=UserOut(id=user_id, username=user_doc["username"], email=data.email, role=data.role, created_at=created_at)
     )
 
 @api_router.post("/auth/login", response_model=TokenResponse)
