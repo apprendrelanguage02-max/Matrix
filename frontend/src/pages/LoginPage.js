@@ -46,7 +46,7 @@ export default function LoginPage() {
         <Link to="/" className="flex items-center gap-2 mb-12 group">
           <Newspaper className="w-7 h-7 text-[#FF6600]" />
           <span className="font-['Oswald'] text-2xl font-bold tracking-widest uppercase text-black group-hover:text-[#FF6600] transition-colors duration-200">
-            NewsApp
+            Matrix News
           </span>
         </Link>
 
