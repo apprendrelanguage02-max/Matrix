@@ -53,8 +53,48 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ─── Sanitisation XSS ─────────────────────────────────────────────────────────
+
+# Tags et attributs HTML autorisés (contenu Quill)
+ALLOWED_TAGS = [
+    "p", "br", "strong", "em", "u", "s",
+    "h2", "h3", "h4",
+    "ul", "ol", "li",
+    "blockquote", "pre", "code",
+    "img", "a",
+    "span", "div",
+]
+ALLOWED_ATTRS = {
+    "img": ["src", "alt", "title", "loading", "width", "height"],
+    "a":   ["href", "title", "target"],
+    "*":   ["class"],
+}
+ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
+
+def sanitize_html(content: str) -> str:
+    """Sanitise le HTML Quill contre XSS, valide les URL d'images."""
+    if not content:
+        return content
+    cleaned = bleach.clean(
+        content,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRS,
+        protocols=ALLOWED_PROTOCOLS,
+        strip=True,
+    )
+    # Valider les src des img : uniquement http/https
+    def validate_img_src(m):
+        tag = m.group(0)
+        src_match = re.search(r'src=["\']([^"\']*)["\']', tag)
+        if src_match:
+            src = src_match.group(1)
+            if not re.match(r'^https?://', src):
+                return ""  # Supprimer img avec src invalide
+        return tag
+    cleaned = re.sub(r'<img[^>]*>', validate_img_src, cleaned)
+    return cleaned
+
 def sanitize(text: str) -> str:
-    """Échappe les caractères HTML dangereux."""
+    """Échappe les caractères HTML dangereux pour les champs texte."""
     if not text:
         return text
     return html.escape(text.strip())
