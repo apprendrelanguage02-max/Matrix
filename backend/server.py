@@ -116,7 +116,7 @@ async def register(data: UserRegister):
     token = create_token(user_id)
     return TokenResponse(
         token=token,
-        user=UserOut(id=user_id, username=data.username, email=data.email)
+        user=UserOut(id=user_id, username=data.username, email=data.email, role="visiteur", created_at=created_at)
     )
 
 @api_router.post("/auth/login", response_model=TokenResponse)
@@ -131,7 +131,23 @@ async def login(data: UserLogin):
     token = create_token(user["id"])
     return TokenResponse(
         token=token,
-        user=UserOut(id=user["id"], username=user["username"], email=user["email"])
+        user=UserOut(
+            id=user["id"],
+            username=user["username"],
+            email=user["email"],
+            role=user.get("role", "visiteur"),
+            created_at=user.get("created_at", "")
+        )
+    )
+
+@api_router.get("/auth/me", response_model=UserOut)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return UserOut(
+        id=current_user["id"],
+        username=current_user["username"],
+        email=current_user["email"],
+        role=current_user.get("role", "visiteur"),
+        created_at=current_user.get("created_at", "")
     )
 
 # ─── Public Article Routes ─────────────────────────────────────────────────────
