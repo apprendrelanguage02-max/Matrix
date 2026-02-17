@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, Eye } from "lucide-react";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
@@ -37,6 +37,10 @@ export default function ArticleCard({ article }) {
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {formatDate(article.published_at)}
+          </span>
+          <span className="flex items-center gap-1 text-[#FF6600]" data-testid={`views-${article.id}`}>
+            <Eye className="w-3 h-3" />
+            {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
           </span>
         </div>
       </Link>
