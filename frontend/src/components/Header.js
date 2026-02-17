@@ -71,6 +71,13 @@ function ProfileDropdown({ user, onClose }) {
               <div className="h-px bg-zinc-800 mx-3 my-1" />
             </>
           )}
+          {(user?.role === "agent" || user?.role === "auteur") && (
+            <>
+              <DropdownItem icon={PenSquare} label="Mes annonces" onClick={() => go("/mes-annonces")} testid="dropdown-my-properties" />
+              <DropdownItem icon={Plus} label="Publier une annonce" onClick={() => go("/immobilier/publier")} testid="dropdown-new-property" />
+              <div className="h-px bg-zinc-800 mx-3 my-1" />
+            </>
+          )}
           <DropdownItem icon={Bookmark} label="Sauvegardes" onClick={() => go("/sauvegardes")} testid="dropdown-saved" />
           <DropdownItem icon={Settings} label="Paramètres" onClick={() => go("/parametres")} testid="dropdown-settings" />
           <div className="h-px bg-zinc-800 mx-3 my-1" />
