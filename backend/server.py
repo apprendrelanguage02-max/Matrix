@@ -14,6 +14,8 @@ import html
 import re
 import bleach
 import shutil
+import random
+import string
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import List, Optional
