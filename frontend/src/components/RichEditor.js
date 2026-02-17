@@ -1,8 +1,9 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import {
   Bold, Italic, Underline, List, ListOrdered,
-  Quote, Image, Heading2, Heading3, Trash2
+  Quote, Image, Heading2, Heading3, Trash2, Upload, Loader2, Film
 } from "lucide-react";
+import api from "../lib/api";
 
 function ToolbarBtn({ onClick, title, active, icon: Icon }) {
   return (
