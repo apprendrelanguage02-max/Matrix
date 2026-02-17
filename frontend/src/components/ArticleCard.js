@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, Eye, ArrowRight, Tag } from "lucide-react";
-import { stripImageTags } from "../lib/contentRenderer";
+import { stripToPlainText } from "../lib/contentRenderer";
 import { getCategoryColor, slugify } from "../lib/categories";
 
 function formatDate(isoString) {
