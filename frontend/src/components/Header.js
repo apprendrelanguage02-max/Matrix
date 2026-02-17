@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { PenSquare, Newspaper, Search, X, LogOut, Plus, LayoutDashboard, Bookmark, Settings, ChevronDown } from "lucide-react";
+import { PenSquare, Search, X, LogOut, Plus, LayoutDashboard, Bookmark, Settings, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { CATEGORIES, slugify } from "../lib/categories";
 import { toast } from "sonner";
