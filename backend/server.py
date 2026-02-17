@@ -150,13 +150,6 @@ class PasswordChange(BaseModel):
     current_password: str = Field(min_length=1, max_length=100)
     new_password: str = Field(min_length=6, max_length=100)
 
-class SavedArticleOut(BaseModel):
-    id: str
-    user_id: str
-    article_id: str
-    saved_at: str
-    article: Optional[ArticleOut] = None
-
 class TokenResponse(BaseModel):
     token: str
     user: UserOut
