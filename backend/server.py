@@ -198,6 +198,13 @@ class PaginatedArticles(BaseModel):
     pages: int
     limit: int
 
+class SavedArticleOut(BaseModel):
+    id: str
+    user_id: str
+    article_id: str
+    saved_at: str
+    article: Optional[ArticleOut] = None
+
 # ─── JWT Helpers ───────────────────────────────────────────────────────────────
 
 def create_token(user_id: str) -> str:
