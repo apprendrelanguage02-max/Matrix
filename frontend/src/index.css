@@ -13,15 +13,145 @@ body {
     color: #000000;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* ── Profile Dropdown Animation ───────────────── */
+@keyframes dropdownIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+
+.profile-dropdown {
+    animation: dropdownIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: top right;
+}
+
+.dropdown-item {
+    position: relative;
+    overflow: hidden;
+}
+.dropdown-item::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background-color: #FF6600;
+    transform: scaleY(0);
+    transition: transform 0.15s ease;
+    transform-origin: top;
+}
+.dropdown-item:hover::after { transform: scaleY(1); }
+
+/* ── Quill Editor ─────────────────────────────── */
+.rich-editor-wrapper .ql-toolbar {
+    border: 1px solid #d4d4d8 !important;
+    border-bottom: none !important;
+    background: #fafafa;
+    font-family: 'Manrope', sans-serif;
+}
+.rich-editor-wrapper.ring-1 .ql-toolbar,
+.rich-editor-wrapper.ring-1 .ql-container {
+    border-color: #f87171 !important;
+}
+.rich-editor-wrapper .ql-container {
+    border: 1px solid #d4d4d8 !important;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    min-height: 320px;
+}
+.rich-editor-wrapper .ql-editor {
+    min-height: 320px;
+    line-height: 1.75;
+    color: #111;
+    padding: 16px;
+}
+.rich-editor-wrapper .ql-editor:focus {
+    outline: none;
+}
+.rich-editor-wrapper .ql-container.ql-snow:focus-within {
+    border-color: #FF6600 !important;
+    box-shadow: 0 0 0 1px #FF6600;
+}
+.rich-editor-wrapper .ql-toolbar button:hover,
+.rich-editor-wrapper .ql-toolbar button.ql-active {
+    color: #FF6600 !important;
+}
+.rich-editor-wrapper .ql-toolbar button:hover .ql-stroke,
+.rich-editor-wrapper .ql-toolbar button.ql-active .ql-stroke {
+    stroke: #FF6600 !important;
+}
+.rich-editor-wrapper .ql-toolbar button:hover .ql-fill,
+.rich-editor-wrapper .ql-toolbar button.ql-active .ql-fill {
+    fill: #FF6600 !important;
+}
+
+/* ── Article Content (Quill HTML output) ─────── */
+.article-content {
+    font-family: 'Manrope', sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: #27272a;
+}
+.article-content h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    color: #000;
+    margin: 2rem 0 1rem;
+}
+.article-content h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #111;
+    margin: 1.5rem 0 0.75rem;
+}
+.article-content p { margin: 0 0 1.25rem; }
+.article-content strong { font-weight: 700; color: #000; }
+.article-content em { font-style: italic; }
+.article-content u { text-decoration: underline; text-decoration-color: #FF6600; }
+.article-content ul,
+.article-content ol { padding-left: 1.5rem; margin: 0 0 1.25rem; }
+.article-content li { margin-bottom: 0.4rem; }
+.article-content blockquote {
+    border-left: 3px solid #FF6600;
+    padding: 0.75rem 1.25rem;
+    margin: 1.5rem 0;
+    background: #fafafa;
+    font-style: italic;
+    color: #52525b;
+}
+.article-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1.75rem auto;
+    display: block;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+.article-content a {
+    color: #FF6600;
+    text-decoration: underline;
+}
+.article-content a:hover { color: #CC5200; }
+.article-content pre {
+    background: #18181b;
+    color: #e4e4e7;
+    padding: 1rem 1.25rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    margin: 1.25rem 0;
 }
 
 @layer base {
