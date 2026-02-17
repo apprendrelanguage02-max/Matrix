@@ -98,7 +98,129 @@
 
 
 
-user_problem_statement: "Application Matrix News - 1) Menu hamburger (3 barres) quand pas connecté, dropdown avec Connexion + Créer un compte. 2) Upload photo de profil depuis l'appareil dans SettingsPage."
+user_problem_statement: "Plateforme hybride Matrix News + Marketplace Immobilier GIMO Guinée. Nouvelle section indépendante Immobilier avec annonces (achat/vente/location), système de paiement simulé (Orange Money, Mobile Money, Paycard, Carte bancaire), carte Leaflet. Nouveau rôle agent immobilier."
+
+backend:
+  - task: "Endpoints CRUD /api/properties"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Testé via curl: POST/GET/PUT/DELETE properties OK. Agent role register OK."
+
+  - task: "Endpoints /api/payments"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "POST payment génère référence GIMO-XXXXX. GET /payments/my et /payments (admin). PUT status."
+
+frontend:
+  - task: "Page liste immobilier /immobilier"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/immobilier/ImmobilierPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Screenshot confirme rendu correct. Hero, filtres type, grille PropertyCard."
+
+  - task: "Page détail propriété /immobilier/:id"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/immobilier/PropertyDetailPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Galerie images, carte Leaflet (défaut Conakry si pas GPS), contact vendeur, bouton Réserver."
+
+  - task: "Formulaire publication /immobilier/publier"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/immobilier/PropertyFormPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+
+  - task: "Modal paiement simulé"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/immobilier/PaymentModal.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+
+  - task: "Carte Leaflet PropertyMap"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/immobilier/PropertyMap.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+
+  - task: "Nav IMMOBILIER dans Header"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/Header.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+
+  - task: "Inscription rôle agent dans LoginPage"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/LoginPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+
+  - task: "Dashboard agent /mes-annonces"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/immobilier/AgentDashboardPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+
+  - task: "Admin paiements /admin/paiements"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/immobilier/PaymentsAdminPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 3
+  run_ui: true
+
+test_plan:
+  current_focus: "Tester section immobilier complète"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Section immobilier complète implémentée. Screenshot confirme page /immobilier fonctionne avec hero, filtres et carte d'annonce. Tester: 1) Navigation /immobilier depuis homepage, 2) Clic sur annonce -> détail avec carte Leaflet, 3) Inscription comme agent, 4) Publier une annonce, 5) Réservation avec modal paiement (nécessite connexion). Credentials: admin@example.com/adminpassword (auteur), agent@gimo.gn/agentpass (agent). L'annonce test ID est dans la DB."
 
 backend:
   - task: "Endpoint POST /api/upload pour images/vidéos"
