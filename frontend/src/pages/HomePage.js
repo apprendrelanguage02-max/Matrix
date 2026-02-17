@@ -1,44 +1,76 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import Header from "../components/Header";
 import ArticleCard from "../components/ArticleCard";
 import api from "../lib/api";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 10;
 
 export default function HomePage() {
   const [articles, setArticles] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = parseInt(searchParams.get("page") || "1", 10);
 
-  useEffect(() => {
-    api.get("/articles")
-      .then((r) => setArticles(r.data))
+  const fetchArticles = useCallback((pageNum, q) => {
+    setLoading(true);
+    setError(null);
+    const params = { page: pageNum, limit: PAGE_SIZE };
+    if (q && q.trim()) params.search = q.trim();
+    api.get("/articles", { params })
+      .then((r) => {
+        setArticles(r.data.articles);
+        setTotal(r.data.total);
+        setPages(r.data.pages);
+      })
       .catch(() => setError("Impossible de charger les articles."))
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = search.trim()
-    ? articles.filter(
-        (a) =>
-          a.title.toLowerCase().includes(search.toLowerCase()) ||
-          a.content.toLowerCase().includes(search.toLowerCase())
-      )
-    : articles;
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchParams(search.trim() ? { search: search, page: "1" } : {});
+      fetchArticles(1, search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]); // eslint-disable-line
+
+  // Fetch on page change (without search change)
+  useEffect(() => {
+    fetchArticles(page, search);
+  }, [page]); // eslint-disable-line
+
+  const goToPage = (p) => {
+    const params = {};
+    if (search.trim()) params.search = search;
+    params.page = String(p);
+    setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const featuredArticle = !search.trim() && page === 1 ? articles[0] : null;
+  const gridArticles = featuredArticle ? articles.slice(1) : articles;
 
   return (
     <div className="min-h-screen bg-white font-['Manrope']">
       <Header onSearch={setSearch} searchValue={search} />
 
       {/* Hero */}
-      <section className="bg-black py-16 md:py-24">
+      <section className="bg-black py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-start gap-4">
-            <div className="w-1.5 h-20 bg-[#FF6600] flex-shrink-0 mt-1" />
+            <div className="w-1.5 h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
             <div>
-              <p className="font-['Manrope'] text-[#FF6600] text-sm font-bold uppercase tracking-widest mb-2">
-                Actualités
+              <p className="font-['Manrope'] text-[#FF6600] text-xs font-bold uppercase tracking-widest mb-2">
+                {total > 0 ? `${total} article${total > 1 ? "s" : ""} publiés` : "Actualités"}
               </p>
-              <h1 className="font-['Oswald'] text-5xl md:text-7xl font-bold uppercase tracking-tighter text-white leading-none">
+              <h1 className="font-['Oswald'] text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
                 Les dernières<br />
                 <span className="text-[#FF6600]">nouvelles</span>
               </h1>
@@ -47,94 +79,124 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Orange accent bar */}
       <div className="h-1.5 bg-[#FF6600]" />
 
-      {/* Articles */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Main content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        {/* Search info */}
+        {search.trim() && !loading && (
+          <div className="flex items-center gap-2 mb-8 pb-4 border-b border-zinc-200" data-testid="search-results-info">
+            <Search className="w-4 h-4 text-[#FF6600]" />
+            <span className="font-['Manrope'] text-sm text-zinc-500">
+              <span className="font-bold text-black">{total}</span> résultat{total !== 1 ? "s" : ""} pour «{" "}
+              <span className="text-[#FF6600]">{search}</span> »
+            </span>
+          </div>
+        )}
+
+        {/* Loader */}
         {loading && (
           <div className="flex justify-center py-24" data-testid="loading-spinner">
             <Loader2 className="w-8 h-8 animate-spin text-[#FF6600]" />
           </div>
         )}
-        {error && (
-          <p className="text-center text-red-600 py-24 font-['Manrope']" data-testid="error-message">
-            {error}
-          </p>
+
+        {/* Error */}
+        {error && !loading && (
+          <p className="text-center text-red-600 py-24" data-testid="error-message">{error}</p>
         )}
 
-        {!loading && !error && (
-          <>
-            {/* Search result info */}
-            {search.trim() && (
-              <div className="flex items-center gap-2 mb-8 pb-4 border-b border-zinc-200" data-testid="search-results-info">
-                <Search className="w-4 h-4 text-[#FF6600]" />
-                <span className="font-['Manrope'] text-sm text-zinc-500">
-                  <span className="font-bold text-black">{filtered.length}</span> résultat{filtered.length !== 1 ? "s" : ""} pour «{" "}
-                  <span className="text-[#FF6600]">{search}</span> »
-                </span>
+        {/* Empty */}
+        {!loading && !error && articles.length === 0 && (
+          <div className="text-center py-24" data-testid="empty-state">
+            <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">
+              {search.trim() ? "Aucun résultat" : "Aucun article publié"}
+            </p>
+            <p className="font-['Manrope'] text-zinc-500 mt-2 text-sm">
+              {search.trim() ? "Essayez avec d'autres mots-clés." : "Revenez bientôt pour les dernières actualités."}
+            </p>
+          </div>
+        )}
+
+        {/* Articles */}
+        {!loading && !error && articles.length > 0 && (
+          <div data-testid="articles-list">
+            {/* Featured */}
+            {featuredArticle && (
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="h-0.5 w-8 bg-[#FF6600]" />
+                  <span className="font-['Manrope'] text-xs font-bold uppercase tracking-widest text-[#FF6600]">À la une</span>
+                </div>
+                <ArticleCard article={featuredArticle} featured />
               </div>
             )}
 
-            {filtered.length === 0 && (
-              <div className="text-center py-24" data-testid="empty-state">
-                <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">
-                  {search.trim() ? "Aucun résultat" : "Aucun article publié"}
-                </p>
-                <p className="font-['Manrope'] text-zinc-500 mt-2">
-                  {search.trim()
-                    ? "Essayez avec d'autres mots-clés."
-                    : "Revenez bientôt pour les dernières actualités."}
-                </p>
-              </div>
-            )}
-
-            {filtered.length > 0 && (
-              <div data-testid="articles-list" className="space-y-10">
-                {/* Featured first article (only when no search) */}
-                {!search.trim() && filtered[0] && (
-                  <div className="mb-12">
-                    <div className="flex items-center gap-3 mb-6">
-                      <span className="h-0.5 w-8 bg-[#FF6600]" />
-                      <span className="font-['Manrope'] text-xs font-bold uppercase tracking-widest text-[#FF6600]">
-                        À la une
-                      </span>
-                    </div>
-                    <ArticleCard article={filtered[0]} />
+            {/* Grid */}
+            {gridArticles.length > 0 && (
+              <div>
+                {featuredArticle && (
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="h-0.5 w-8 bg-zinc-300" />
+                    <span className="font-['Manrope'] text-xs font-bold uppercase tracking-widest text-zinc-400">Toutes les nouvelles</span>
                   </div>
                 )}
-
-                {/* Rest */}
-                {(search.trim() ? filtered : filtered.slice(1)).length > 0 && (
-                  <div>
-                    {!search.trim() && (
-                      <div className="flex items-center gap-3 mb-8">
-                        <span className="h-0.5 w-8 bg-zinc-300" />
-                        <span className="font-['Manrope'] text-xs font-bold uppercase tracking-widest text-zinc-400">
-                          Toutes les nouvelles
-                        </span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      {(search.trim() ? filtered : filtered.slice(1)).map((a) => (
-                        <ArticleCard key={a.id} article={a} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {gridArticles.map((a) => (
+                    <ArticleCard key={a.id} article={a} />
+                  ))}
+                </div>
               </div>
             )}
-          </>
+
+            {/* Pagination */}
+            {pages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-zinc-200" data-testid="pagination">
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                  data-testid="prev-page"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold font-['Manrope'] uppercase tracking-wider border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Précédent
+                </button>
+
+                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => goToPage(p)}
+                    data-testid={`page-${p}`}
+                    className={`w-10 h-10 text-sm font-bold font-['Manrope'] border transition-all ${
+                      p === page
+                        ? "bg-[#FF6600] border-[#FF6600] text-white"
+                        : "border-zinc-300 hover:border-black hover:bg-black hover:text-white"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page >= pages}
+                  data-testid="next-page"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold font-['Manrope'] uppercase tracking-wider border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Suivant
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </main>
 
-      {/* Footer */}
       <footer className="bg-black text-zinc-400 py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-['Oswald'] text-white font-bold tracking-widest uppercase">Matrix News</span>
-          <p className="font-['Manrope'] text-xs">
-            &copy; {new Date().getFullYear()} — Tous droits réservés
-          </p>
+          <p className="font-['Manrope'] text-xs">&copy; {new Date().getFullYear()} — Tous droits réservés</p>
         </div>
       </footer>
     </div>
