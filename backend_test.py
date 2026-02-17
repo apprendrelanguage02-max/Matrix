@@ -596,6 +596,22 @@ def main():
     # Test 10: Protected routes
     print("\n🔒 Testing Route Protection")
     tester.test_protected_routes_without_auth()
+    
+    # Test 11: Profile update functionality  
+    print("\n👤 Testing Profile Update")
+    tester.test_profile_update()
+    
+    # Test 12: Password change functionality
+    print("\n🔑 Testing Password Change")
+    tester.test_password_change()
+    
+    # Test 13: Saved articles functionality
+    print("\n📚 Testing Saved Articles") 
+    tester.test_saved_articles_functionality()
+    
+    # Test 14: Saved articles protection
+    print("\n🔒 Testing Saved Articles Protection")
+    tester.test_saved_articles_protection()
 
     # Print results
     print("\n" + "=" * 60)
