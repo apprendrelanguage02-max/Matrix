@@ -88,9 +88,45 @@ export default function RichEditor({ value, onChange, error }) {
     setShowImgPanel(false);
   };
 
+  const insertMedia = (url, type) => {
+    editorRef.current?.focus();
+    restoreRange();
+    let html;
+    if (type === "video") {
+      html = `<p><video src="${url}" controls style="max-width:100%;border-radius:8px;margin:12px auto;display:block;"></video></p>`;
+    } else {
+      html = `<p><img src="${url}" alt="Image uploadée" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;margin:12px auto;display:block;" /></p>`;
+    }
+    document.execCommand("insertHTML", false, html);
+    notifyChange();
+    setShowImgPanel(false);
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      insertMedia(res.data.url, res.data.type);
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Erreur lors de l'upload.";
+      setUploadError(msg);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleImgBtnClick = () => {
     saveRange();
     setShowImgPanel((v) => !v);
+    setUploadError("");
   };
 
   return (
