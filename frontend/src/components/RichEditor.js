@@ -27,7 +27,11 @@ function ToolbarSep() {
 export default function RichEditor({ value, onChange, error }) {
   const editorRef = useRef(null);
   const [showImgPanel, setShowImgPanel] = useState(false);
+  const [imgTab, setImgTab] = useState("url"); // "url" | "upload"
   const [imgUrl, setImgUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef(null);
   const savedRange = useRef(null);
 
   // Initialize content
