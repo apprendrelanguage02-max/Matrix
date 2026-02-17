@@ -65,9 +65,9 @@ export default function ProfilePage() {
           {/* Header banner */}
           <div className="h-24 bg-black relative">
             <div className="absolute -bottom-12 left-8">
-              {/* Avatar grand */}
+              {/* Avatar grand — cercle */}
               <div
-                className="w-24 h-24 flex items-center justify-center font-['Oswald'] text-3xl font-bold border-4 border-white"
+                className="w-24 h-24 rounded-full flex items-center justify-center font-['Oswald'] text-3xl font-bold border-4 border-white"
                 style={{ backgroundColor: color.bg, color: color.text }}
                 data-testid="profile-avatar-large"
               >
