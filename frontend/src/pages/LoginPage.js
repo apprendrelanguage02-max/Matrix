@@ -63,7 +63,11 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mb-10 group">
-          <Newspaper className="w-7 h-7 text-[#FF6600]" />
+          <img
+            src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
+            alt="Matrix News Logo"
+            className="w-9 h-9 object-contain"
+          />
           <span className="font-['Oswald'] text-2xl font-bold tracking-widest uppercase text-black group-hover:text-[#FF6600] transition-colors duration-200">
             Matrix News
           </span>
