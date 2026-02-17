@@ -355,8 +355,8 @@ class NewsAppAPITester:
         return not success  # We expect this to fail, so return True if it fails properly
 
 def main():
-    print("🚀 Testing NewsApp Backend API")
-    print("=" * 50)
+    print("🚀 Testing NewsApp Backend API with Authentication")
+    print("=" * 60)
     
     # Initialize tester
     tester = NewsAppAPITester()
@@ -366,24 +366,55 @@ def main():
         print("❌ API root endpoint failed, stopping tests")
         return 1
 
+    # === NEW AUTHENTICATION TESTS ===
+    print("\n🔐 Testing Authentication Features...")
+    
+    # Test visitor registration
+    if not tester.test_visitor_registration():
+        print("❌ Visitor registration failed")
+        return 1
+        
+    # Test admin login
+    if not tester.test_admin_login():
+        print("❌ Admin login failed")
+        return 1
+        
+    # Test visitor login (after registration)
+    if not tester.test_visitor_login():
+        print("❌ Visitor login failed")
+        return 1
+    
+    # Test /auth/me endpoint
+    if not tester.test_auth_me_endpoint():
+        print("❌ Auth profile endpoint failed")
+        return 1
+    
+    # Test role-based access
+    if not tester.test_role_based_access():
+        print("❌ Role-based access test failed")
+        return 1
+        
+    print("✅ All authentication tests passed!")
+
+    # === EXISTING ARTICLE TESTS ===
+    print("\n📰 Testing Article Operations...")
+
     # Test public articles (before login)
     public_success, public_articles = tester.test_get_public_articles()
     if not public_success:
         print("❌ Public articles endpoint failed")
         return 1
 
-    # Test login with admin credentials
-    if not tester.test_login("admin@newsapp.fr", "admin123"):
-        print("❌ Admin login failed, stopping tests")
-        return 1
-
-    # Test my articles (after login)
+    # Use admin token for article operations (backward compatibility)
+    original_token = tester.admin_token
+    
+    # Test my articles (with admin)
     my_success, my_articles = tester.test_get_my_articles()
     if not my_success:
         print("❌ My articles endpoint failed")
         return 1
 
-    # Test article creation
+    # Test article creation (admin only)
     test_title = f"Article de Test {datetime.now().strftime('%H:%M:%S')}"
     test_content = "Ceci est un contenu de test pour vérifier la création d'articles."
     test_image = "https://via.placeholder.com/600x300/FF6600/FFFFFF?text=Test+Image"
@@ -432,11 +463,16 @@ def main():
         tester.tests_run += 1
 
     # Print final results
-    print("\n" + "=" * 50)
-    print(f"📊 Backend Test Results:")
+    print("\n" + "=" * 60)
+    print(f"📊 Complete Backend Test Results:")
     print(f"   Tests run: {tester.tests_run}")
     print(f"   Tests passed: {tester.tests_passed}")
     print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    if tester.failed_tests:
+        print(f"\n❌ Failed Tests ({len(tester.failed_tests)}):")
+        for fail in tester.failed_tests:
+            print(f"  • {fail['test']}: {fail.get('error', f'Status {fail.get(\"actual\", \"N/A\")} vs {fail.get(\"expected\", \"N/A\")}')}")
     
     success_rate = tester.tests_passed / tester.tests_run
     if success_rate >= 0.9:
