@@ -142,32 +142,49 @@ export default function SettingsPage() {
             Informations personnelles
           </h2>
 
-          {/* Avatar preview */}
+          {/* Avatar upload */}
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-zinc-200 flex items-center justify-center bg-zinc-100 flex-shrink-0">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover"
-                  onError={(e) => { e.target.style.display="none"; }} />
-              ) : (
-                <span className="font-['Oswald'] text-xl font-bold text-zinc-400">
-                  {profile.username.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-1.5">
-                <ImageIcon className="w-3 h-3" />
-                Photo de profil (URL)
+            {/* Avatar preview avec bouton caméra */}
+            <div className="relative flex-shrink-0">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-zinc-200 flex items-center justify-center bg-zinc-100">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display="none"; }} />
+                ) : (
+                  <span className="font-['Oswald'] text-xl font-bold text-zinc-400">
+                    {profile.username.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              {/* Bouton caméra superposé */}
+              <label
+                htmlFor="avatar-upload-input"
+                className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#FF6600] hover:bg-[#CC5200] rounded-full flex items-center justify-center cursor-pointer shadow-md transition-colors"
+                title="Changer la photo"
+              >
+                {uploadingAvatar
+                  ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                  : <Camera className="w-3.5 h-3.5 text-white" />
+                }
               </label>
               <input
-                type="url"
-                name="avatar_url"
-                value={profile.avatar_url}
-                onChange={handleProfileChange}
-                data-testid="settings-avatar_url"
-                placeholder="https://exemple.com/photo.jpg"
-                className="w-full border border-zinc-300 px-3 py-2.5 text-sm font-['Manrope'] text-black placeholder:text-zinc-300 focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] transition-colors"
+                id="avatar-upload-input"
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={uploadingAvatar}
+                onChange={handleAvatarUpload}
+                data-testid="avatar-upload-input"
               />
+            </div>
+
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1">Photo de profil</p>
+              <p className="text-sm text-zinc-400 font-['Manrope']">
+                {uploadingAvatar ? "Upload en cours…" : "Cliquez sur l'icône caméra pour choisir une photo depuis votre appareil."}
+              </p>
+              <p className="text-xs text-zinc-300 mt-1">JPG, PNG ou WEBP · max 5 Mo</p>
             </div>
           </div>
 
