@@ -50,6 +50,8 @@ export default function SettingsPage() {
   const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
 
   const handleProfileChange = (e) => setProfile({ ...profile, [e.target.name]: e.target.value });
   const handlePwdChange = (e) => setPasswords({ ...passwords, [e.target.name]: e.target.value });
