@@ -27,6 +27,7 @@ export default function ArticleFormPage() {
           title: r.data.title || "",
           content: r.data.content || "",
           image_url: r.data.image_url || "",
+          category: r.data.category || "",
         });
       })
       .catch(() => {
