@@ -109,6 +109,21 @@ export default function ArticleDetailPage() {
                 <Eye className="w-3 h-3" />
                 {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
               </span>
+              {token && (
+                <button
+                  onClick={toggleSave}
+                  disabled={saveLoading}
+                  data-testid="detail-save-btn"
+                  className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-all duration-200 border ${
+                    isSaved
+                      ? "bg-[#FF6600] border-[#FF6600] text-white"
+                      : "border-zinc-300 text-zinc-600 hover:border-[#FF6600] hover:text-[#FF6600]"
+                  }`}
+                >
+                  <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-white" : ""}`} />
+                  {isSaved ? "Sauvegardé" : "Sauvegarder"}
+                </button>
+              )}
             </div>
 
             {/* Title */}
