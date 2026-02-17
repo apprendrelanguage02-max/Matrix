@@ -103,12 +103,12 @@ export default function ArticleDetailPage() {
               <div className="h-0.5 w-12 bg-[#FF6600]" />
             </div>
 
-            {/* Content */}
+            {/* Content — renders [img:url] inline */}
             <div
-              className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed whitespace-pre-wrap"
+              className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed"
               data-testid="article-content"
             >
-              {article.content}
+              {renderContent(article.content)}
             </div>
           </article>
         )}
