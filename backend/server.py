@@ -273,7 +273,6 @@ async def register(data: UserRegister):
 @limiter.limit("10/minute")
 async def login(request: Request, data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    # Constant-time comparison even if user not found
     dummy_hash = "$2b$12$dummy_hash_for_timing_attack_prevention_only"
     stored_hash = user["hashed_password"] if user else dummy_hash
     valid = bcrypt.checkpw(data.password.encode(), stored_hash.encode())
@@ -281,26 +280,99 @@ async def login(request: Request, data: UserLogin):
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
     token = create_token(user["id"])
-    return TokenResponse(
-        token=token,
-        user=UserOut(
-            id=user["id"],
-            username=user["username"],
-            email=user["email"],
-            role=user.get("role", "visiteur"),
-            created_at=user.get("created_at", "")
-        )
-    )
+    return TokenResponse(token=token, user=user_to_out(user))
 
 @api_router.get("/auth/me", response_model=UserOut)
 async def get_me(current_user: dict = Depends(get_current_user)):
-    return UserOut(
-        id=current_user["id"],
-        username=current_user["username"],
-        email=current_user["email"],
-        role=current_user.get("role", "visiteur"),
-        created_at=current_user.get("created_at", "")
+    return user_to_out(current_user)
+
+@api_router.put("/auth/profile", response_model=UserOut)
+async def update_profile(data: UserProfileUpdate, current_user: dict = Depends(get_current_user)):
+    updates = {}
+    if data.username is not None:
+        # Check username uniqueness
+        existing = await db.users.find_one({"username": sanitize(data.username), "id": {"$ne": current_user["id"]}}, {"_id": 0})
+        if existing:
+            raise HTTPException(status_code=400, detail="Ce nom d'utilisateur est déjà pris")
+        updates["username"] = sanitize(data.username)
+    if data.email is not None:
+        existing = await db.users.find_one({"email": data.email, "id": {"$ne": current_user["id"]}}, {"_id": 0})
+        if existing:
+            raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+        updates["email"] = data.email
+    if data.phone is not None:
+        updates["phone"] = sanitize(data.phone)
+    if data.country is not None:
+        updates["country"] = sanitize(data.country)
+    if data.address is not None:
+        updates["address"] = sanitize(data.address)
+    if data.avatar_url is not None:
+        updates["avatar_url"] = sanitize_url(data.avatar_url)
+    if data.bio is not None:
+        updates["bio"] = sanitize(data.bio)
+
+    if updates:
+        await db.users.update_one({"id": current_user["id"]}, {"$set": updates})
+
+    updated = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    return user_to_out(updated)
+
+@api_router.put("/auth/password")
+async def change_password(data: PasswordChange, current_user: dict = Depends(get_current_user)):
+    if not bcrypt.checkpw(data.current_password.encode(), current_user["hashed_password"].encode()):
+        raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
+    new_hash = bcrypt.hashpw(data.new_password.encode(), bcrypt.gensalt(rounds=12)).decode()
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"hashed_password": new_hash}})
+    return {"message": "Mot de passe mis à jour avec succès"}
+
+# ─── Saved Articles Routes ─────────────────────────────────────────────────────
+
+@api_router.get("/saved-articles", response_model=List[SavedArticleOut])
+async def get_saved_articles(current_user: dict = Depends(get_current_user)):
+    saved = await db.saved_articles.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("saved_at", -1).to_list(200)
+
+    result = []
+    for s in saved:
+        art = await db.articles.find_one({"id": s["article_id"]}, {"_id": 0})
+        result.append(SavedArticleOut(**s, article=art))
+    return result
+
+@api_router.get("/saved-articles/{article_id}/status")
+async def get_save_status(article_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.saved_articles.find_one(
+        {"user_id": current_user["id"], "article_id": article_id}, {"_id": 0}
     )
+    return {"is_saved": existing is not None}
+
+@api_router.post("/saved-articles/{article_id}")
+async def save_article(article_id: str, current_user: dict = Depends(get_current_user)):
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+    existing = await db.saved_articles.find_one(
+        {"user_id": current_user["id"], "article_id": article_id}, {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Article déjà sauvegardé")
+    saved_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "article_id": article_id,
+        "saved_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saved_articles.insert_one(saved_doc)
+    return {"message": "Article sauvegardé", "is_saved": True}
+
+@api_router.delete("/saved-articles/{article_id}")
+async def unsave_article(article_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.saved_articles.delete_one(
+        {"user_id": current_user["id"], "article_id": article_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Sauvegarde introuvable")
+    return {"message": "Sauvegarde supprimée", "is_saved": False}
 
 # ─── Public Routes ─────────────────────────────────────────────────────────────
 
