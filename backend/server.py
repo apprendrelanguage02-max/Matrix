@@ -555,6 +555,9 @@ async def upload_media(file: UploadFile = File(...), current_user: dict = Depend
 
 app.include_router(api_router)
 
+# ─── Servir les fichiers uploadés ─────────────────────────────────────────────
+app.mount("/media", StaticFiles(directory=str(UPLOAD_DIR)), name="media")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
