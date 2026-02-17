@@ -102,12 +102,14 @@ async def register(data: UserRegister):
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     user_id = str(uuid.uuid4())
+    created_at = datetime.now(timezone.utc).isoformat()
     user_doc = {
         "id": user_id,
         "username": data.username,
         "email": data.email,
         "hashed_password": hashed,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "role": "visiteur",
+        "created_at": created_at
     }
     await db.users.insert_one(user_doc)
 
