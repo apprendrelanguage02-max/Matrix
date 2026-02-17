@@ -351,7 +351,7 @@ class NewsAppAPITester:
             "GET",
             "/my-articles",
             401,  # Should return Unauthorized
-            token_override=None,  # No token
+            token_override="",  # Empty string to force no token
             allow_errors=True
         )
         return success  # We expect 401, so success means test passed
