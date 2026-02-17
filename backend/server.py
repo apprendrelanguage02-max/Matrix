@@ -46,6 +46,8 @@ class UserOut(BaseModel):
     id: str
     username: str
     email: str
+    role: str = "visiteur"
+    created_at: str = ""
 
 class TokenResponse(BaseModel):
     token: str
