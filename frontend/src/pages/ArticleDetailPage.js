@@ -15,9 +15,12 @@ function formatDate(isoString) {
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
+  const { token } = useAuth();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
     api.get(`/articles/${id}`)
@@ -26,10 +29,33 @@ export default function ArticleDetailPage() {
         api.post(`/articles/${id}/view`)
           .then((res) => setArticle((prev) => prev ? { ...prev, views: res.data.views } : prev))
           .catch(() => {});
+        if (token) {
+          api.get(`/saved-articles/${id}/status`).then((res) => setIsSaved(res.data.is_saved)).catch(() => {});
+        }
       })
       .catch(() => setError("Article introuvable."))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, token]);
+
+  const toggleSave = async () => {
+    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    setSaveLoading(true);
+    try {
+      if (isSaved) {
+        await api.delete(`/saved-articles/${id}`);
+        setIsSaved(false);
+        toast.success("Sauvegarde retirée.");
+      } else {
+        await api.post(`/saved-articles/${id}`);
+        setIsSaved(true);
+        toast.success("Article sauvegardé !");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erreur.");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white font-['Manrope']">
