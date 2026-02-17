@@ -131,6 +131,31 @@ class UserOut(BaseModel):
     email: str
     role: str = "visiteur"
     created_at: str = ""
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    address: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+
+class UserProfileUpdate(BaseModel):
+    username: Optional[str] = Field(default=None, min_length=2, max_length=50)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(default=None, max_length=30)
+    country: Optional[str] = Field(default=None, max_length=100)
+    address: Optional[str] = Field(default=None, max_length=300)
+    avatar_url: Optional[str] = Field(default=None, max_length=2000)
+    bio: Optional[str] = Field(default=None, max_length=500)
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=1, max_length=100)
+    new_password: str = Field(min_length=6, max_length=100)
+
+class SavedArticleOut(BaseModel):
+    id: str
+    user_id: str
+    article_id: str
+    saved_at: str
+    article: Optional[ArticleOut] = None
 
 class TokenResponse(BaseModel):
     token: str
