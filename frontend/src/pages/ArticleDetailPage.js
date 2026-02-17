@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
-import { Loader2, ArrowLeft, Calendar, User } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
@@ -16,8 +16,15 @@ export default function ArticleDetailPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Fetch article then increment view count
     api.get(`/articles/${id}`)
-      .then((r) => setArticle(r.data))
+      .then((r) => {
+        setArticle(r.data);
+        // Increment views (fire-and-forget)
+        api.post(`/articles/${id}/view`)
+          .then((res) => setArticle((prev) => prev ? { ...prev, views: res.data.views } : prev))
+          .catch(() => {});
+      })
       .catch(() => setError("Article introuvable."))
       .finally(() => setLoading(false));
   }, [id]);
