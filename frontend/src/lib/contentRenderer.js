@@ -1,8 +1,26 @@
 /**
- * Parse article content and render inline images.
- * Syntax: [img:https://url-de-limage.jpg]
- * Returns an array of React elements (text blocks + img tags).
+ * Smart content renderer:
+ * - If content contains HTML tags → renders as sanitized HTML
+ * - Otherwise → renders legacy [img:url] format (backwards compat)
  */
+
+export function isHtmlContent(content) {
+  return content && /<[a-z][\s\S]*>/i.test(content);
+}
+
+/**
+ * Strip all HTML tags and [img:...] tokens for plain text excerpts
+ */
+export function stripToPlainText(content) {
+  if (!content) return "";
+  return content
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\[img:[^\]]+\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Legacy: keep for old [img:url] articles
 export function renderContent(content) {
   if (!content) return null;
   const parts = content.split(/(\[img:[^\]]+\])/g);
@@ -14,23 +32,17 @@ export function renderContent(content) {
           <img
             src={match[1]}
             alt="Image insérée"
-            className="max-w-full w-full object-cover"
+            loading="lazy"
+            className="max-w-full w-full object-cover rounded-lg"
             onError={(e) => { e.target.style.display = "none"; }}
           />
         </span>
       );
     }
-    // Regular text — preserve line breaks
-    return part ? (
-      <span key={i} style={{ whiteSpace: "pre-wrap" }}>{part}</span>
-    ) : null;
+    return part ? <span key={i} style={{ whiteSpace: "pre-wrap" }}>{part}</span> : null;
   });
 }
 
-/**
- * Strip [img:...] tags to get plain text for previews
- */
 export function stripImageTags(content) {
-  if (!content) return "";
-  return content.replace(/\[img:[^\]]+\]/g, "").trim();
+  return stripToPlainText(content);
 }
