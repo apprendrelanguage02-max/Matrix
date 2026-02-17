@@ -132,7 +132,11 @@ export default function Header({ onSearch, searchValue }) {
         <div className="flex items-center gap-4 h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" data-testid="header-logo">
-            <Newspaper className="w-6 h-6 text-[#FF6600]" />
+            <img
+              src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
+              alt="Matrix News Logo"
+              className="w-9 h-9 object-contain rounded-sm"
+            />
             <span className="font-['Oswald'] text-xl font-bold tracking-widest uppercase text-white group-hover:text-[#FF6600] transition-colors duration-200 whitespace-nowrap">
               Matrix News
             </span>
