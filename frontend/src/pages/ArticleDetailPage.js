@@ -62,7 +62,7 @@ export default function ArticleDetailPage() {
         {article && (
           <article data-testid="article-detail">
             {/* Meta */}
-            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-[#FF6600] mb-4">
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-[#FF6600] mb-4 flex-wrap">
               <span className="flex items-center gap-1">
                 <User className="w-3 h-3" />
                 {article.author_username}
@@ -71,6 +71,11 @@ export default function ArticleDetailPage() {
               <span className="flex items-center gap-1 text-zinc-400">
                 <Calendar className="w-3 h-3" />
                 {formatDate(article.published_at)}
+              </span>
+              <span className="text-zinc-300">|</span>
+              <span className="flex items-center gap-1 text-[#FF6600]" data-testid="article-views">
+                <Eye className="w-3 h-3" />
+                {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
               </span>
             </div>
 
