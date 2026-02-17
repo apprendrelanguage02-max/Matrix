@@ -339,20 +339,15 @@ class NewsAppAPITester:
 
     def test_unauthorized_access(self):
         """Test that protected endpoints require authentication"""
-        # Temporarily remove token
-        original_token = self.token
-        self.token = None
-        
         success, response = self.run_test(
             "Unauthorized Access to My Articles",
             "GET",
             "/my-articles",
-            401  # Should return Unauthorized
+            401,  # Should return Unauthorized
+            token_override=None,  # No token
+            allow_errors=True
         )
-        
-        # Restore token
-        self.token = original_token
-        return not success  # We expect this to fail, so return True if it fails properly
+        return success  # We expect 401, so success means test passed
 
 def main():
     print("🚀 Testing NewsApp Backend API with Authentication")
