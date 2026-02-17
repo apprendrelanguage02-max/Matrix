@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, User, Eye } from "lucide-react";
+import { stripImageTags } from "../lib/contentRenderer";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
