@@ -1,25 +1,32 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { LogOut, PenSquare, Newspaper, Search, X } from "lucide-react";
+import { PenSquare, Newspaper, Search, X } from "lucide-react";
 import { useState } from "react";
 
+function getInitials(username) {
+  if (!username) return "?";
+  return username.slice(0, 2).toUpperCase();
+}
+
+function getAvatarColor(username) {
+  const colors = [
+    { bg: "#FF6600", text: "#fff" },
+    { bg: "#e5e5e5", text: "#1a1a1a" },
+    { bg: "#0ea5e9", text: "#fff" },
+    { bg: "#8b5cf6", text: "#fff" },
+    { bg: "#16a34a", text: "#fff" },
+    { bg: "#dc2626", text: "#fff" },
+  ];
+  if (!username) return colors[0];
+  const idx = username.charCodeAt(0) % colors.length;
+  return colors[idx];
+}
+
 export default function Header({ onSearch, searchValue }) {
-  const { token, user, logout } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const [focused, setFocused] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-  const handleSearchChange = (e) => {
-    if (onSearch) onSearch(e.target.value);
-  };
-
-  const clearSearch = () => {
-    if (onSearch) onSearch("");
-  };
+  const color = getAvatarColor(user?.username);
 
   return (
     <header className="bg-black text-white" data-testid="main-header">
@@ -34,13 +41,13 @@ export default function Header({ onSearch, searchValue }) {
           </Link>
 
           {/* Search bar */}
-          <div className={`flex-1 max-w-xl relative transition-all duration-200 ${focused ? "opacity-100" : "opacity-80"}`}>
+          <div className={`flex-1 max-w-xl relative transition-opacity duration-200 ${focused ? "opacity-100" : "opacity-75"}`}>
             <div className={`flex items-center border ${focused ? "border-[#FF6600]" : "border-zinc-700"} bg-zinc-900 transition-colors duration-200`}>
               <Search className="w-4 h-4 text-zinc-500 ml-3 flex-shrink-0" />
               <input
                 type="text"
                 value={searchValue || ""}
-                onChange={handleSearchChange}
+                onChange={(e) => onSearch && onSearch(e.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
                 data-testid="search-input"
@@ -49,7 +56,7 @@ export default function Header({ onSearch, searchValue }) {
               />
               {searchValue && (
                 <button
-                  onClick={clearSearch}
+                  onClick={() => onSearch && onSearch("")}
                   data-testid="clear-search"
                   className="p-2 text-zinc-500 hover:text-white transition-colors"
                 >
@@ -60,27 +67,28 @@ export default function Header({ onSearch, searchValue }) {
           </div>
 
           {/* Nav */}
-          <nav className="flex items-center gap-4 flex-shrink-0">
-            {token ? (
+          <nav className="flex items-center gap-3 flex-shrink-0">
+            {token && user ? (
               <>
-                <span className="text-zinc-400 text-sm font-['Manrope'] hidden sm:block">
-                  {user?.username}
-                </span>
-                <Link
-                  to="/admin"
-                  data-testid="admin-dashboard-link"
-                  className="flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200"
-                >
-                  <PenSquare className="w-4 h-4" />
-                  <span className="hidden sm:block">Dashboard</span>
-                </Link>
+                {user.role === "auteur" && (
+                  <Link
+                    to="/admin"
+                    data-testid="admin-dashboard-link"
+                    className="hidden sm:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200"
+                  >
+                    <PenSquare className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                )}
+                {/* Avatar cliquable */}
                 <button
-                  onClick={handleLogout}
-                  data-testid="logout-button"
-                  className="flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200"
+                  onClick={() => navigate("/profil")}
+                  data-testid="profile-avatar-btn"
+                  title={`Profil de ${user.username}`}
+                  className="w-9 h-9 flex-shrink-0 flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 ring-transparent hover:ring-[#FF6600] transition-all duration-200"
+                  style={{ backgroundColor: color.bg, color: color.text }}
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:block">Déconnexion</span>
+                  {getInitials(user.username)}
                 </button>
               </>
             ) : (
