@@ -98,7 +98,7 @@
 
 
 
-user_problem_statement: "Application Matrix News - Remplacer l'icône par une image personnalisée (montagne/casque spartiate) dans le Header et la section Hero, et ajouter l'upload direct de fichiers (images/vidéos) dans l'éditeur."
+user_problem_statement: "Application Matrix News - 1) Menu hamburger (3 barres) quand pas connecté, dropdown avec Connexion + Créer un compte. 2) Upload photo de profil depuis l'appareil dans SettingsPage."
 
 backend:
   - task: "Endpoint POST /api/upload pour images/vidéos"
@@ -111,10 +111,22 @@ backend:
     status_history:
       - working: true
         agent: "main"
-        comment: "Endpoint créé avec validation type MIME et taille. Testé avec curl - retourne URL publique correcte."
+        comment: "Testé et validé dans itération 5. 100% passing."
 
 frontend:
-  - task: "Icône personnalisée dans Header"
+  - task: "Icône personnalisée partout"
+    implemented: true
+    working: true
+    file: "frontend/src/components/Header.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validé dans itération 5."
+
+  - task: "Menu hamburger visiteur non connecté"
     implemented: true
     working: "NA"
     file: "frontend/src/components/Header.js"
@@ -124,21 +136,9 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Remplacement de l'icône Newspaper par l'image PNG fournie par l'utilisateur. Screenshot initial montre l'icône bien placée."
+        comment: "Quand token=null, affiche 3 barres animées (hamburger-menu-btn). Click ouvre dropdown (guest-dropdown) avec guest-login-link (/connexion) et guest-register-link (/connexion?tab=register). Hamburger se transforme en X quand ouvert."
 
-  - task: "Icône personnalisée dans Hero (HomePage)"
-    implemented: true
-    working: "NA"
-    file: "frontend/src/pages/HomePage.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Icône ajoutée à côté du titre Les dernières nouvelles. Screenshot confirme affichage."
-
-  - task: "Icône personnalisée dans LoginPage"
+  - task: "Onglet register depuis ?tab=register"
     implemented: true
     working: "NA"
     file: "frontend/src/pages/LoginPage.js"
@@ -148,32 +148,44 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Remplacement de l'icône Newspaper par l'image PNG dans la page de connexion."
+        comment: "useEffect qui lit searchParams et setTab register si ?tab=register présent dans URL."
 
-  - task: "Upload fichier dans RichEditor (onglet Upload)"
+  - task: "Upload photo profil depuis appareil (SettingsPage)"
     implemented: true
     working: "NA"
-    file: "frontend/src/components/RichEditor.js"
+    file: "frontend/src/pages/SettingsPage.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Ajout onglet URL/Upload dans le panel média. Upload via api.post('/upload') avec FormData."
+        comment: "Champ URL supprimé. Bouton caméra sur avatar. Click ouvre file picker natif (avatar-upload-input). Upload via /api/upload. URL retournée mise dans profile.avatar_url."
+
+  - task: "Upload fichier dans RichEditor"
+    implemented: true
+    working: true
+    file: "frontend/src/components/RichEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validé dans itération 5."
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: true
 
 test_plan:
-  current_focus: "Valider l'icône et l'upload de fichiers"
+  current_focus: "Tester hamburger menu et upload photo profil"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Implémentation complète : icône personnalisée (PNG) intégrée dans Header, HomePage hero et LoginPage. Endpoint /api/upload créé et testé via curl. RichEditor mis à jour avec onglet Upload. Tester : 1) Icône visible sur homepage et login, 2) Upload image dans éditeur article, 3) Valider les erreurs de validation (type invalide, fichier trop grand). Credentials: admin@example.com / adminpassword (rôle auteur)."
+    message: "Nouvelles fonctionnalités: 1) Hamburger 3 barres (data-testid=hamburger-menu-btn) remplace bouton Connexion quand non connecté. Dropdown (guest-dropdown) avec guest-login-link et guest-register-link. Les barres deviennent un X quand ouvert. 2) SettingsPage: champ URL supprimé, bouton Camera sur avatar (avatar-upload-input) déclenche upload via POST /api/upload. IMPORTANT: backend via localhost:8001. Credentials: admin@example.com / adminpassword (auteur)."
