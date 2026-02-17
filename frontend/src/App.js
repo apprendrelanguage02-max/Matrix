@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ArticleFormPage from "./pages/ArticleFormPage";
 import ProfilePage from "./pages/ProfilePage";
+import CategoryPage from "./pages/CategoryPage";
 import "./App.css";
 
 function PrivateRoute({ children }) {
@@ -28,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/article/:id" element={<ArticleDetailPage />} />
+          <Route path="/categorie/:slug" element={<CategoryPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/profil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/admin" element={<AuthorRoute><DashboardPage /></AuthorRoute>} />
