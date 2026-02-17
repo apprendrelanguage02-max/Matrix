@@ -3,7 +3,8 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, ImageIcon, Plus, X } from "lucide-react";
+import { Loader2, ArrowLeft, ImageIcon, Plus, X, ChevronDown } from "lucide-react";
+import { CATEGORIES } from "../lib/categories";
 
 export default function ArticleFormPage() {
   const { id } = useParams();
@@ -11,7 +12,7 @@ export default function ArticleFormPage() {
   const isEdit = Boolean(id);
   const textareaRef = useRef(null);
 
-  const [form, setForm] = useState({ title: "", content: "", image_url: "" });
+  const [form, setForm] = useState({ title: "", content: "", image_url: "", category: "" });
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEdit);
   const [errors, setErrors] = useState({});
