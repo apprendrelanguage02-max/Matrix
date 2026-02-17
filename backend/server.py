@@ -322,7 +322,7 @@ async def create_article(data: ArticleCreate, current_user: dict = Depends(requi
     article_doc = {
         "id": article_id,
         "title": sanitize(data.title),
-        "content": data.content.strip(),  # contenu peut avoir du HTML via img tags
+        "content": sanitize_html(data.content),  # HTML Quill sanitisé
         "image_url": sanitize_url(data.image_url),
         "category": data.category,
         "published_at": datetime.now(timezone.utc).isoformat(),
