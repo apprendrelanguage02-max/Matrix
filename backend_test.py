@@ -371,15 +371,23 @@ def main():
     print("\n✅ Testing Valid Article Creation")
     article_id = tester.test_create_valid_article()
 
-    # Test 6: Pagination
+    # Test 6: Rich text article creation
+    print("\n📝 Testing Rich Text Editor Content")
+    rich_article_id = tester.test_rich_text_article_creation()
+
+    # Test 7: HTML Sanitization (XSS Protection)
+    print("\n🛡️  Testing HTML Sanitization")
+    tester.test_html_sanitization_xss()
+
+    # Test 8: Pagination
     print("\n📄 Testing Pagination")
     tester.test_get_articles_with_pagination()
 
-    # Test 7: Category filtering 
+    # Test 9: Category filtering 
     print("\n🏷️  Testing Category Filtering")
     tester.test_get_articles_by_category()
 
-    # Test 8: Protected routes
+    # Test 10: Protected routes
     print("\n🔒 Testing Route Protection")
     tester.test_protected_routes_without_auth()
 
