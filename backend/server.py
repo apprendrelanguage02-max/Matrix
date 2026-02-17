@@ -69,6 +69,7 @@ class ArticleOut(BaseModel):
     published_at: str
     author_id: str
     author_username: str
+    views: int = 0
 
 # ─── JWT Helpers ───────────────────────────────────────────────────────────────
 
