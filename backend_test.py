@@ -99,6 +99,130 @@ class NewsAppAPITester:
                 })
             return False, {}
 
+    def test_visitor_registration(self):
+        """Test visitor account registration"""
+        success, response = self.run_test(
+            "Visitor Registration",
+            "POST",
+            "/auth/register",
+            200,
+            data=self.visitor_credentials
+        )
+        if success and isinstance(response, dict) and 'token' in response:
+            self.visitor_token = response['token']
+            self.visitor_user = response['user']
+            print(f"   ✓ Visitor registered: {self.visitor_user.get('username', 'Unknown')}")
+            print(f"   ✓ Role: {self.visitor_user.get('role', 'N/A')}")
+            return True
+        return False
+
+    def test_admin_login(self):
+        """Test admin login"""
+        success, response = self.run_test(
+            "Admin Login",
+            "POST",
+            "/auth/login",
+            200,
+            data=self.admin_credentials
+        )
+        if success and isinstance(response, dict) and 'token' in response:
+            self.admin_token = response['token']
+            self.admin_user = response['user']
+            print(f"   ✓ Admin logged in: {self.admin_user.get('username', 'Unknown')}")
+            print(f"   ✓ Role: {self.admin_user.get('role', 'N/A')}")
+            return True
+        return False
+
+    def test_visitor_login(self):
+        """Test visitor login after registration"""
+        login_data = {
+            "email": self.visitor_credentials["email"],
+            "password": self.visitor_credentials["password"]
+        }
+        success, response = self.run_test(
+            "Visitor Login",
+            "POST",
+            "/auth/login",
+            200,
+            data=login_data
+        )
+        if success and isinstance(response, dict) and 'token' in response:
+            self.visitor_token = response['token']
+            self.visitor_user = response['user']
+            print(f"   ✓ Visitor can login after registration")
+            return True
+        return False
+
+    def test_auth_me_endpoint(self):
+        """Test /auth/me endpoint for both users"""
+        results = []
+        
+        # Test with visitor token
+        if self.visitor_token:
+            success, response = self.run_test(
+                "Get Visitor Profile (/auth/me)",
+                "GET",
+                "/auth/me",
+                200,
+                token_override=self.visitor_token
+            )
+            if success:
+                print(f"   ✓ Visitor profile retrieved")
+                print(f"     Username: {response.get('username', 'N/A')}")
+                print(f"     Role: {response.get('role', 'N/A')}")
+                print(f"     Email: {response.get('email', 'N/A')}")
+                results.append(response.get('role') == 'visiteur')
+            else:
+                results.append(False)
+        
+        # Test with admin token  
+        if self.admin_token:
+            success, response = self.run_test(
+                "Get Admin Profile (/auth/me)",
+                "GET",
+                "/auth/me",
+                200,
+                token_override=self.admin_token
+            )
+            if success:
+                print(f"   ✓ Admin profile retrieved")
+                print(f"     Username: {response.get('username', 'N/A')}")
+                print(f"     Role: {response.get('role', 'N/A')}")
+                print(f"     Email: {response.get('email', 'N/A')}")
+                results.append(response.get('role') == 'auteur')
+            else:
+                results.append(False)
+        
+        return all(results) if results else False
+
+    def test_role_based_access(self):
+        """Test that role-based access works correctly"""
+        results = []
+        
+        # Test visitor access to protected endpoints
+        if self.visitor_token:
+            success, response = self.run_test(
+                "Visitor Access to My Articles",
+                "GET",
+                "/my-articles",
+                200,
+                token_override=self.visitor_token
+            )
+            results.append(success)
+        
+        # Test admin access to protected endpoints
+        if self.admin_token:
+            success, response = self.run_test(
+                "Admin Access to My Articles", 
+                "GET",
+                "/my-articles",
+                200,
+                token_override=self.admin_token
+            )
+            results.append(success)
+        
+        return all(results) if results else False
+
     def test_root_endpoint(self):
         """Test API root endpoint"""
         success, response = self.run_test(
