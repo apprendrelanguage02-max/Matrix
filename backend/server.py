@@ -211,6 +211,20 @@ def create_token(user_id: str) -> str:
     payload = {"sub": user_id}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+def user_to_out(user: dict) -> UserOut:
+    return UserOut(
+        id=user["id"],
+        username=user["username"],
+        email=user["email"],
+        role=user.get("role", "visiteur"),
+        created_at=user.get("created_at", ""),
+        phone=user.get("phone"),
+        country=user.get("country"),
+        address=user.get("address"),
+        avatar_url=user.get("avatar_url"),
+        bio=user.get("bio"),
+    )
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
