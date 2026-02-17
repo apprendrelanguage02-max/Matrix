@@ -27,12 +27,15 @@ class NewsAppAPITester:
             "password": "admin123"
         }
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None, token_override=None, allow_errors=False):
         """Run a single API test"""
         url = f"{self.base_url}/api/{endpoint.lstrip('/')}"
         req_headers = {'Content-Type': 'application/json'}
-        if self.token:
-            req_headers['Authorization'] = f'Bearer {self.token}'
+        
+        # Use token_override if provided, otherwise use default token
+        token_to_use = token_override if token_override is not None else (self.admin_token or self.visitor_token)
+        if token_to_use:
+            req_headers['Authorization'] = f'Bearer {token_to_use}'
         if headers:
             req_headers.update(headers)
 
