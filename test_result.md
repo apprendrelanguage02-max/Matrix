@@ -98,6 +98,82 @@
 
 
 
-#====================================================================================================
-# Testing Data - Main Agent and testing sub agent both should log testing data below this section
-#====================================================================================================
+user_problem_statement: "Application Matrix News - Remplacer l'icône par une image personnalisée (montagne/casque spartiate) dans le Header et la section Hero, et ajouter l'upload direct de fichiers (images/vidéos) dans l'éditeur."
+
+backend:
+  - task: "Endpoint POST /api/upload pour images/vidéos"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Endpoint créé avec validation type MIME et taille. Testé avec curl - retourne URL publique correcte."
+
+frontend:
+  - task: "Icône personnalisée dans Header"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/Header.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Remplacement de l'icône Newspaper par l'image PNG fournie par l'utilisateur. Screenshot initial montre l'icône bien placée."
+
+  - task: "Icône personnalisée dans Hero (HomePage)"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/HomePage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Icône ajoutée à côté du titre Les dernières nouvelles. Screenshot confirme affichage."
+
+  - task: "Icône personnalisée dans LoginPage"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/LoginPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Remplacement de l'icône Newspaper par l'image PNG dans la page de connexion."
+
+  - task: "Upload fichier dans RichEditor (onglet Upload)"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/RichEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Ajout onglet URL/Upload dans le panel média. Upload via api.post('/upload') avec FormData."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus: "Valider l'icône et l'upload de fichiers"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Implémentation complète : icône personnalisée (PNG) intégrée dans Header, HomePage hero et LoginPage. Endpoint /api/upload créé et testé via curl. RichEditor mis à jour avec onglet Upload. Tester : 1) Icône visible sur homepage et login, 2) Upload image dans éditeur article, 3) Valider les erreurs de validation (type invalide, fichier trop grand). Credentials: admin@example.com / adminpassword (rôle auteur)."
