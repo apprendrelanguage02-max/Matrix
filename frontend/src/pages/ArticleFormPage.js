@@ -162,6 +162,35 @@ export default function ArticleFormPage() {
               )}
             </div>
 
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
+                Catégorie <span className="text-[#FF6600]">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  data-testid="category-select"
+                  className={`w-full appearance-none border px-4 py-3 text-base font-['Manrope'] text-black bg-white focus:outline-none focus:ring-1 transition-colors cursor-pointer ${
+                    errors.category
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-400"
+                      : "border-zinc-300 focus:border-[#FF6600] focus:ring-[#FF6600]"
+                  }`}
+                >
+                  <option value="">— Sélectionner une catégorie —</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+              </div>
+              {errors.category && (
+                <p className="text-red-600 text-xs mt-1" data-testid="category-error">{errors.category}</p>
+              )}
+            </div>
+
             {/* Cover image URL */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-1.5">
