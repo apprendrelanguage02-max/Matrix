@@ -62,8 +62,19 @@ class NewsAppAPITester:
                 except:
                     return success, response.text
             else:
-                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                error_msg = f"Expected {expected_status}, got {response.status_code}"
+                print(f"❌ Failed - {error_msg}")
                 print(f"   Response: {response.text[:200]}")
+                
+                if not allow_errors:
+                    self.failed_tests.append({
+                        "test": name,
+                        "endpoint": endpoint,
+                        "expected": expected_status,
+                        "actual": response.status_code,
+                        "response": response.text[:200]
+                    })
+                
                 try:
                     return False, response.json()
                 except:
