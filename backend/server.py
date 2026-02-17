@@ -36,7 +36,13 @@ CATEGORIES = ["Actualité", "Politique", "Sport", "Technologie", "Économie"]
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Trop de tentatives. Réessayez dans une minute."}
+    )
 
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
