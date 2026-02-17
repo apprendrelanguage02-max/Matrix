@@ -197,9 +197,51 @@ export default function Header({ onSearch, searchValue }) {
                 </div>
               </>
             ) : (
-              <Link to="/connexion" data-testid="login-link" className="bg-[#FF6600] text-white text-sm font-bold font-['Manrope'] uppercase tracking-wider px-5 py-2 hover:bg-[#CC5200] transition-colors duration-200 whitespace-nowrap rounded-full">
-                Connexion
-              </Link>
+              /* ── Hamburger menu pour visiteurs non connectés ── */
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen((v) => !v)}
+                  data-testid="hamburger-menu-btn"
+                  aria-label="Menu"
+                  className={`flex flex-col justify-center items-center w-9 h-9 gap-[5px] group transition-all duration-200 rounded-md p-1.5 ${dropdownOpen ? "bg-[#FF6600]" : "hover:bg-zinc-800"}`}
+                >
+                  <span className={`block w-5 h-0.5 transition-all duration-200 ${dropdownOpen ? "bg-white rotate-45 translate-y-[6.5px]" : "bg-white"}`} />
+                  <span className={`block w-5 h-0.5 transition-all duration-200 ${dropdownOpen ? "bg-white opacity-0" : "bg-white"}`} />
+                  <span className={`block w-5 h-0.5 transition-all duration-200 ${dropdownOpen ? "bg-white -rotate-45 -translate-y-[6.5px]" : "bg-white"}`} />
+                </button>
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-52 z-50" data-testid="guest-dropdown">
+                    <div className="absolute right-3 -top-[7px] w-3 h-3 bg-black border-l border-t border-[#FF6600] rotate-45 z-10" />
+                    <div className="relative bg-black border border-[#FF6600] rounded-xl overflow-hidden shadow-2xl shadow-black/60">
+                      <div className="px-4 py-3 border-b border-zinc-800">
+                        <p className="font-['Oswald'] text-xs font-bold uppercase tracking-widest text-zinc-500">
+                          Bienvenue sur Matrix News
+                        </p>
+                      </div>
+                      <div className="py-1.5">
+                        <Link
+                          to="/connexion"
+                          onClick={() => setDropdownOpen(false)}
+                          data-testid="guest-login-link"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-['Manrope'] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors duration-150 group"
+                        >
+                          <LogIn className="w-4 h-4 text-zinc-500 group-hover:text-[#FF6600] transition-colors" />
+                          Connexion
+                        </Link>
+                        <Link
+                          to="/connexion?tab=register"
+                          onClick={() => setDropdownOpen(false)}
+                          data-testid="guest-register-link"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-['Manrope'] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors duration-150 group"
+                        >
+                          <UserPlus className="w-4 h-4 text-zinc-500 group-hover:text-[#FF6600] transition-colors" />
+                          Créer un compte
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </nav>
         </div>
