@@ -172,6 +172,19 @@ export default function Header({ onSearch, searchValue }) {
             </div>
           </div>
 
+          {/* Immobilier nav link */}
+          <Link
+            to="/immobilier"
+            data-testid="immobilier-nav-link"
+            className={`hidden sm:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider whitespace-nowrap transition-colors duration-200 px-3 py-1.5 border ${
+              location.pathname.startsWith("/immobilier") || location.pathname.startsWith("/mes-annonces")
+                ? "border-[#FF6600] text-[#FF6600]"
+                : "border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500"
+            }`}
+          >
+            🏘 Immobilier
+          </Link>
+
           {/* Nav */}
           <nav className="flex items-center gap-3 ml-auto flex-shrink-0">
             {token && user ? (
