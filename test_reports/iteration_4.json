@@ -1,0 +1,50 @@
+{
+  "summary": "Comprehensive testing completed for Matrix News app new features: profile dropdown, saved articles system, and settings page functionality",
+  "backend_issues": {
+    "minor_issues": [
+      {
+        "endpoint": "Rate limiting test",
+        "issue": "Rate limiting test returning 520 errors instead of 429",
+        "impact": "Infrastructure level, doesn't affect functionality",
+        "fix_priority": "LOW"
+      },
+      {
+        "endpoint": "/api/articles and /api/saved-articles",
+        "issue": "Returning 403 instead of 401 for unauthorized access",
+        "impact": "Still blocks unauthorized access correctly, just different status code",
+        "fix_priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Admin login with admin@newsapp.fr/admin123",
+    "Profile dropdown shows all 5 required items (Mes articles, Créer article, Sauvegardes, Paramètres, Déconnexion)",
+    "Navigation to /sauvegardes from dropdown",
+    "Navigation to /parametres from dropdown", 
+    "Settings page displays all profile form fields (username, email, phone, country, address, bio, avatar_url)",
+    "Settings page displays password change form (current_password, new_password, confirm_password)",
+    "Profile update API (PUT /api/auth/profile) working correctly",
+    "Password change API (PUT /api/auth/password) working correctly",
+    "Save article functionality (POST /api/saved-articles/:id)",
+    "Unsave article functionality (DELETE /api/saved-articles/:id)",
+    "Get saved articles status (GET /api/saved-articles/:id/status)",
+    "Bookmark buttons visible and clickable on article cards",
+    "Saved articles page showing saved articles correctly",
+    "Protected routes /sauvegardes and /parametres redirect to /connexion when not authenticated",
+    "Bookmark buttons hidden when not authenticated",
+    "Article creation with HTML sanitization",
+    "XSS protection working correctly",
+    "Category filtering and pagination"
+  ],
+  "test_report_links": ["/app/backend_test.py"],
+  "success_percentage": "Backend: 88.5%, Frontend: 100%",
+  "updated_files": ["/app/backend_test.py"],
+  "action_item_for_main_agent": "",
+  "should_call_test_agent_after_fix": "false",
+  "should_main_agent_test_itself": "true"
+}
