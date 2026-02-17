@@ -26,6 +26,18 @@ import re
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# ─── Upload directories ────────────────────────────────────────────────────────
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_IMAGES_DIR = UPLOAD_DIR / "images"
+UPLOAD_VIDEOS_DIR = UPLOAD_DIR / "videos"
+UPLOAD_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/webm"}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024   # 5 MB
+MAX_VIDEO_SIZE = 20 * 1024 * 1024  # 20 MB
+
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
