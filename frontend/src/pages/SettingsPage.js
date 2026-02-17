@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, User, Mail, Phone, Globe, MapPin, FileText, ImageIcon, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowLeft, User, Mail, Phone, Globe, MapPin, FileText, Camera, Lock, Eye, EyeOff } from "lucide-react";
 
 function InputField({ label, name, value, onChange, type = "text", placeholder, icon: Icon, hint }) {
   return (
