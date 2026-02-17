@@ -29,7 +29,7 @@ export default function LoginPage() {
   const switchTab = (t) => {
     setTab(t);
     setError(null);
-    setForm({ username: "", email: "", password: "", confirmPassword: "" });
+    setForm({ username: "", email: "", password: "", confirmPassword: "", role: "visiteur" });
   };
 
   const handleSubmit = async (e) => {
@@ -50,12 +50,16 @@ export default function LoginPage() {
       const endpoint = tab === "login" ? "/auth/login" : "/auth/register";
       const payload = tab === "login"
         ? { email: form.email, password: form.password }
-        : { username: form.username, email: form.email, password: form.password };
+        : { username: form.username, email: form.email, password: form.password, role: form.role || "visiteur" };
 
       const res = await api.post(endpoint, payload);
       login(res.data.token, res.data.user);
       toast.success(tab === "login" ? "Connexion réussie !" : "Compte créé avec succès !");
-      navigate("/profil");
+      if ((form.role === "agent") && tab === "register") {
+        navigate("/immobilier");
+      } else {
+        navigate("/profil");
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Une erreur est survenue.");
     } finally {
