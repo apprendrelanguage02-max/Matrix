@@ -350,11 +350,11 @@ class NewsAppAPITester:
             "Unauthorized Access to My Articles",
             "GET",
             "/my-articles",
-            401,  # Should return Unauthorized
+            403,  # Should return Forbidden (FastAPI returns 403 for missing auth)
             token_override="",  # Empty string to force no token
             allow_errors=True
         )
-        return success  # We expect 401, so success means test passed
+        return success  # We expect 403, so success means test passed
 
 def main():
     print("🚀 Testing NewsApp Backend API with Authentication")
