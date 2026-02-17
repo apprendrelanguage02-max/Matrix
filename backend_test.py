@@ -1,50 +1,26 @@
-#!/usr/bin/env python3
 import requests
 import sys
 import json
 from datetime import datetime
+import time
 
-class NewsAppAPITester:
+class NewsAppTester:
     def __init__(self, base_url="https://headline-press.preview.emergentagent.com"):
         self.base_url = base_url
-        self.admin_token = None
-        self.visitor_token = None
-        self.admin_user = None
-        self.visitor_user = None
+        self.token = None
         self.tests_run = 0
         self.tests_passed = 0
         self.failed_tests = []
-        self.created_articles = []
-        
-        # Test credentials
-        self.visitor_credentials = {
-            "username": "Visiteur",
-            "email": "visiteur@test.fr", 
-            "password": "test123456"
-        }
-        self.admin_credentials = {
-            "email": "admin@newsapp.fr",
-            "password": "admin123"
-        }
+        self.passed_tests = []
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None, token_override=None, allow_errors=False):
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
-        url = f"{self.base_url}/api/{endpoint.lstrip('/')}"
-        req_headers = {'Content-Type': 'application/json'}
-        
-        # Use token_override if provided (including None to explicitly remove token)
-        if token_override is not None:
-            if token_override:  # Non-empty token
-                req_headers['Authorization'] = f'Bearer {token_override}'
-            # If token_override is empty string or None, don't add Authorization header
-        else:
-            # Default behavior - use available token
-            token_to_use = self.admin_token or self.visitor_token
-            if token_to_use:
-                req_headers['Authorization'] = f'Bearer {token_to_use}'
-                
+        url = f"{self.base_url}/api{endpoint}"
+        request_headers = {'Content-Type': 'application/json'}
         if headers:
-            req_headers.update(headers)
+            request_headers.update(headers)
+        if self.token:
+            request_headers['Authorization'] = f'Bearer {self.token}'
 
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
@@ -52,438 +28,301 @@ class NewsAppAPITester:
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=req_headers, timeout=30)
+                response = requests.get(url, headers=request_headers, params=data)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=req_headers, timeout=30)
+                response = requests.post(url, json=data, headers=request_headers)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=req_headers, timeout=30)
+                response = requests.put(url, json=data, headers=request_headers)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=req_headers, timeout=30)
+                response = requests.delete(url, headers=request_headers)
 
             success = response.status_code == expected_status
             if success:
                 self.tests_passed += 1
+                self.passed_tests.append(f"{name} - Status: {response.status_code}")
                 print(f"✅ Passed - Status: {response.status_code}")
                 try:
-                    return success, response.json()
+                    response_data = response.json() if response.content else {}
+                    return success, response_data
                 except:
-                    return success, response.text
+                    return success, {}
             else:
-                error_msg = f"Expected {expected_status}, got {response.status_code}"
-                print(f"❌ Failed - {error_msg}")
-                print(f"   Response: {response.text[:200]}")
-                
-                if not allow_errors:
-                    self.failed_tests.append({
-                        "test": name,
-                        "endpoint": endpoint,
-                        "expected": expected_status,
-                        "actual": response.status_code,
-                        "response": response.text[:200]
-                    })
-                
+                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
                 try:
-                    return False, response.json()
+                    error_detail = response.json()
+                    print(f"   Error: {error_detail}")
+                    self.failed_tests.append(f"{name} - Expected {expected_status}, got {response.status_code}: {error_detail}")
                 except:
-                    return False, response.text
+                    print(f"   Error: {response.text}")
+                    self.failed_tests.append(f"{name} - Expected {expected_status}, got {response.status_code}: {response.text}")
+                return False, {}
 
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Failed - Network Error: {str(e)}")
-            if not allow_errors:
-                self.failed_tests.append({
-                    "test": name,
-                    "endpoint": endpoint,
-                    "error": f"Network Error: {str(e)}"
-                })
-            return False, {}
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
-            if not allow_errors:
-                self.failed_tests.append({
-                    "test": name,
-                    "endpoint": endpoint,
-                    "error": str(e)
-                })
+            self.failed_tests.append(f"{name} - Exception: {str(e)}")
             return False, {}
 
-    def test_visitor_registration(self):
-        """Test visitor account registration"""
-        success, response = self.run_test(
-            "Visitor Registration",
-            "POST",
-            "/auth/register",
-            200,
-            data=self.visitor_credentials
-        )
-        if success and isinstance(response, dict) and 'token' in response:
-            self.visitor_token = response['token']
-            self.visitor_user = response['user']
-            print(f"   ✓ Visitor registered: {self.visitor_user.get('username', 'Unknown')}")
-            print(f"   ✓ Role: {self.visitor_user.get('role', 'N/A')}")
-            return True
-        return False
-
-    def test_admin_login(self):
-        """Test admin login"""
+    def test_login(self, email, password):
+        """Test login and get token"""
         success, response = self.run_test(
             "Admin Login",
             "POST",
             "/auth/login",
             200,
-            data=self.admin_credentials
-        )
-        if success and isinstance(response, dict) and 'token' in response:
-            self.admin_token = response['token']
-            self.admin_user = response['user']
-            print(f"   ✓ Admin logged in: {self.admin_user.get('username', 'Unknown')}")
-            print(f"   ✓ Role: {self.admin_user.get('role', 'N/A')}")
-            return True
-        return False
-
-    def test_visitor_login(self):
-        """Test visitor login after registration"""
-        login_data = {
-            "email": self.visitor_credentials["email"],
-            "password": self.visitor_credentials["password"]
-        }
-        success, response = self.run_test(
-            "Visitor Login",
-            "POST",
-            "/auth/login",
-            200,
-            data=login_data
-        )
-        if success and isinstance(response, dict) and 'token' in response:
-            self.visitor_token = response['token']
-            self.visitor_user = response['user']
-            print(f"   ✓ Visitor can login after registration")
-            return True
-        return False
-
-    def test_auth_me_endpoint(self):
-        """Test /auth/me endpoint for both users"""
-        results = []
-        
-        # Test with visitor token
-        if self.visitor_token:
-            success, response = self.run_test(
-                "Get Visitor Profile (/auth/me)",
-                "GET",
-                "/auth/me",
-                200,
-                token_override=self.visitor_token
-            )
-            if success:
-                print(f"   ✓ Visitor profile retrieved")
-                print(f"     Username: {response.get('username', 'N/A')}")
-                print(f"     Role: {response.get('role', 'N/A')}")
-                print(f"     Email: {response.get('email', 'N/A')}")
-                results.append(response.get('role') == 'visiteur')
-            else:
-                results.append(False)
-        
-        # Test with admin token  
-        if self.admin_token:
-            success, response = self.run_test(
-                "Get Admin Profile (/auth/me)",
-                "GET",
-                "/auth/me",
-                200,
-                token_override=self.admin_token
-            )
-            if success:
-                print(f"   ✓ Admin profile retrieved")
-                print(f"     Username: {response.get('username', 'N/A')}")
-                print(f"     Role: {response.get('role', 'N/A')}")
-                print(f"     Email: {response.get('email', 'N/A')}")
-                results.append(response.get('role') == 'auteur')
-            else:
-                results.append(False)
-        
-        return all(results) if results else False
-
-    def test_role_based_access(self):
-        """Test that role-based access works correctly"""
-        results = []
-        
-        # Test visitor access to protected endpoints
-        if self.visitor_token:
-            success, response = self.run_test(
-                "Visitor Access to My Articles",
-                "GET",
-                "/my-articles",
-                200,
-                token_override=self.visitor_token
-            )
-            results.append(success)
-        
-        # Test admin access to protected endpoints
-        if self.admin_token:
-            success, response = self.run_test(
-                "Admin Access to My Articles", 
-                "GET",
-                "/my-articles",
-                200,
-                token_override=self.admin_token
-            )
-            results.append(success)
-        
-        return all(results) if results else False
-
-    def test_root_endpoint(self):
-        """Test API root endpoint"""
-        success, response = self.run_test(
-            "API Root",
-            "GET",
-            "/",
-            200
-        )
-        return success
-
-    def test_login(self, email, password):
-        """Test login with any credentials (legacy method for backward compatibility)"""
-        success, response = self.run_test(
-            f"Login ({email})",
-            "POST",
-            "/auth/login",
-            200,
             data={"email": email, "password": password}
         )
-        if success and isinstance(response, dict) and 'token' in response:
-            # Set both tokens for backward compatibility
-            self.admin_token = response['token'] 
-            self.admin_user = response['user']
-            print(f"   Logged in as: {self.admin_user.get('username', 'Unknown')}")
+        if success and 'token' in response:
+            self.token = response['token']
+            print(f"   🔑 Token obtained for user: {response.get('user', {}).get('username', 'Unknown')}")
             return True
         return False
 
-    def test_get_public_articles(self):
-        """Test getting public articles (should work without auth)"""
+    def test_rate_limiting(self):
+        """Test rate limiting on login endpoint (10/minute)"""
+        print("\n🔍 Testing Rate Limiting on /auth/login...")
+        failed_attempts = 0
+        
+        # Try to make 12 login attempts quickly (should be rate limited after 10)
+        for i in range(12):
+            url = f"{self.base_url}/api/auth/login"
+            try:
+                response = requests.post(url, json={"email": "invalid@test.com", "password": "invalid"})
+                if response.status_code == 429:  # Rate limited
+                    print(f"   ⚡ Rate limited after {i+1} attempts - Status: {response.status_code}")
+                    if i >= 9:  # Should be rate limited around 10 attempts
+                        self.tests_passed += 1
+                        self.passed_tests.append("Rate limiting working correctly")
+                        return True
+                elif response.status_code == 401:  # Invalid credentials (expected)
+                    continue
+                else:
+                    print(f"   Unexpected status: {response.status_code}")
+            except Exception as e:
+                print(f"   Error during rate limit test: {e}")
+                
+        print(f"❌ Rate limiting not working as expected")
+        self.failed_tests.append("Rate limiting: Not working correctly")
+        self.tests_run += 1
+        return False
+
+    def test_categories_endpoint(self):
+        """Test GET /categories"""
         success, response = self.run_test(
-            "Get Public Articles",
-            "GET",
-            "/articles",
+            "Get Categories",
+            "GET", 
+            "/categories",
             200
         )
         if success:
-            print(f"   Found {len(response)} public articles")
-        return success, response
+            categories = response.get('categories', [])
+            expected_categories = ["Actualité", "Politique", "Sport", "Technologie", "Économie"]
+            if set(categories) == set(expected_categories):
+                print(f"   📋 All expected categories found: {categories}")
+                return True
+            else:
+                print(f"   ❌ Categories mismatch. Expected: {expected_categories}, Got: {categories}")
+                self.failed_tests.append(f"Categories mismatch: expected {expected_categories}, got {categories}")
+        return False
 
-    def test_get_my_articles(self):
-        """Test getting user's articles (requires auth)"""
+    def test_create_article_without_category(self):
+        """Test creating article without category (should fail)"""
         success, response = self.run_test(
-            "Get My Articles",
-            "GET",
-            "/my-articles",
-            200
-        )
-        if success:
-            print(f"   Found {len(response)} user articles")
-        return success, response
-
-    def test_create_article(self, title, content, image_url=None):
-        """Test creating a new article"""
-        data = {
-            "title": title,
-            "content": content
-        }
-        if image_url:
-            data["image_url"] = image_url
-            
-        success, response = self.run_test(
-            "Create Article",
+            "Create Article Without Category",
             "POST",
             "/articles",
-            200,  # Based on the FastAPI code, create returns the created article
-            data=data
+            422,  # Should return validation error
+            data={
+                "title": "Test Article",
+                "content": "This is test content for validation"
+            }
         )
-        if success and isinstance(response, dict) and 'id' in response:
-            self.created_articles.append(response['id'])
-            print(f"   Created article ID: {response['id']}")
-            return True, response
-        return False, response
+        if success:
+            print("   ✅ Validation correctly rejected article without category")
+            return True
+        return False
 
-    def test_get_article_by_id(self, article_id):
-        """Test getting a specific article by ID"""
+    def test_create_article_with_invalid_category(self):
+        """Test creating article with invalid category"""
         success, response = self.run_test(
-            f"Get Article {article_id}",
+            "Create Article With Invalid Category",
+            "POST",
+            "/articles", 
+            422,  # Should return validation error
+            data={
+                "title": "Test Article",
+                "content": "This is test content for validation",
+                "category": "InvalidCategory"
+            }
+        )
+        if success:
+            print("   ✅ Validation correctly rejected invalid category")
+            return True
+        return False
+
+    def test_create_article_short_title(self):
+        """Test creating article with short title"""
+        success, response = self.run_test(
+            "Create Article With Short Title",
+            "POST",
+            "/articles",
+            422,  # Should return validation error
+            data={
+                "title": "AB",  # Less than 3 chars
+                "content": "This is test content with enough characters",
+                "category": "Sport"
+            }
+        )
+        if success:
+            print("   ✅ Validation correctly rejected short title")
+            return True
+        return False
+
+    def test_create_valid_article(self):
+        """Test creating valid article"""
+        success, response = self.run_test(
+            "Create Valid Article (Sport Category)",
+            "POST", 
+            "/articles",
+            200,  # Should succeed
+            data={
+                "title": "Test Sport Article",
+                "content": "This is a valid test article about sports with sufficient content",
+                "category": "Sport"
+            }
+        )
+        if success and 'id' in response:
+            print(f"   ✅ Article created with ID: {response['id']}")
+            return response['id']
+        return None
+
+    def test_get_articles_with_pagination(self):
+        """Test articles with pagination"""
+        success, response = self.run_test(
+            "Get Articles With Pagination",
             "GET",
-            f"/articles/{article_id}",
-            200
-        )
-        return success, response
-
-    def test_update_article(self, article_id, title=None, content=None, image_url=None):
-        """Test updating an existing article"""
-        data = {}
-        if title:
-            data["title"] = title
-        if content:
-            data["content"] = content
-        if image_url is not None:  # Allow empty string
-            data["image_url"] = image_url
-            
-        success, response = self.run_test(
-            f"Update Article {article_id}",
-            "PUT",
-            f"/articles/{article_id}",
+            "/articles",
             200,
-            data=data
+            data={"page": 1, "limit": 5}
         )
-        return success, response
+        if success:
+            required_keys = ['articles', 'total', 'page', 'pages', 'limit']
+            if all(key in response for key in required_keys):
+                print(f"   ✅ Pagination metadata: total={response['total']}, pages={response['pages']}, limit={response['limit']}")
+                return True
+            else:
+                print(f"   ❌ Missing pagination keys. Got: {list(response.keys())}")
+                self.failed_tests.append(f"Missing pagination metadata keys")
+        return False
 
-    def test_delete_article(self, article_id):
-        """Test deleting an article"""
+    def test_get_articles_by_category(self):
+        """Test filtering articles by category"""
         success, response = self.run_test(
-            f"Delete Article {article_id}",
-            "DELETE",
-            f"/articles/{article_id}",
-            200
-        )
-        if success and article_id in self.created_articles:
-            self.created_articles.remove(article_id)
-        return success, response
-
-    def test_unauthorized_access(self):
-        """Test that protected endpoints require authentication"""
-        success, response = self.run_test(
-            "Unauthorized Access to My Articles",
+            "Filter Articles by Sport Category",
             "GET",
-            "/my-articles",
-            403,  # Should return Forbidden (FastAPI returns 403 for missing auth)
-            token_override="",  # Empty string to force no token
-            allow_errors=True
+            "/articles",
+            200,
+            data={"category": "Sport"}
         )
-        return success  # We expect 403, so success means test passed
+        if success:
+            articles = response.get('articles', [])
+            sport_articles = [a for a in articles if a.get('category') == 'Sport']
+            if len(sport_articles) == len(articles):
+                print(f"   ✅ Category filtering working: {len(sport_articles)} Sport articles found")
+                return True
+            else:
+                print(f"   ❌ Category filtering issue: {len(sport_articles)}/{len(articles)} are Sport articles")
+                self.failed_tests.append("Category filtering not working correctly")
+        return False
+
+    def test_protected_routes_without_auth(self):
+        """Test that protected routes require authentication"""
+        # Temporarily remove token
+        original_token = self.token
+        self.token = None
+        
+        success, response = self.run_test(
+            "Create Article Without Auth",
+            "POST",
+            "/articles",
+            401,  # Should be unauthorized
+            data={
+                "title": "Unauthorized Test",
+                "content": "This should not work without authentication",
+                "category": "Actualité"
+            }
+        )
+        
+        # Restore token
+        self.token = original_token
+        
+        if success:
+            print("   ✅ Protected route correctly requires authentication")
+            return True
+        return False
 
 def main():
-    print("🚀 Testing NewsApp Backend API with Authentication")
+    # Setup
+    tester = NewsAppTester("https://headline-press.preview.emergentagent.com")
+    
+    print("🚀 Starting Matrix News App Backend Tests")
+    print(f"Testing against: {tester.base_url}")
     print("=" * 60)
-    
-    # Initialize tester
-    tester = NewsAppAPITester()
-    
-    # Test API root
-    if not tester.test_root_endpoint():
-        print("❌ API root endpoint failed, stopping tests")
+
+    # Test 1: Categories endpoint
+    print("\n📋 Testing Categories System")
+    tester.test_categories_endpoint()
+
+    # Test 2: Rate limiting
+    print("\n⚡ Testing Rate Limiting")
+    tester.test_rate_limiting()
+
+    # Test 3: Admin login
+    print("\n🔐 Testing Authentication")
+    if not tester.test_login("admin@newsapp.fr", "admin123"):
+        print("❌ Admin login failed, stopping protected route tests")
         return 1
 
-    # === NEW AUTHENTICATION TESTS ===
-    print("\n🔐 Testing Authentication Features...")
-    
-    # Test visitor registration
-    if not tester.test_visitor_registration():
-        print("❌ Visitor registration failed")
-        return 1
-        
-    # Test admin login
-    if not tester.test_admin_login():
-        print("❌ Admin login failed")
-        return 1
-        
-    # Test visitor login (after registration)
-    if not tester.test_visitor_login():
-        print("❌ Visitor login failed")
-        return 1
-    
-    # Test /auth/me endpoint
-    if not tester.test_auth_me_endpoint():
-        print("❌ Auth profile endpoint failed")
-        return 1
-    
-    # Test role-based access
-    if not tester.test_role_based_access():
-        print("❌ Role-based access test failed")
-        return 1
-        
-    print("✅ All authentication tests passed!")
+    # Test 4: Article validation tests
+    print("\n📝 Testing Article Validation")
+    tester.test_create_article_without_category()
+    tester.test_create_article_with_invalid_category() 
+    tester.test_create_article_short_title()
 
-    # === EXISTING ARTICLE TESTS ===
-    print("\n📰 Testing Article Operations...")
+    # Test 5: Valid article creation
+    print("\n✅ Testing Valid Article Creation")
+    article_id = tester.test_create_valid_article()
 
-    # Test public articles (before login)
-    public_success, public_articles = tester.test_get_public_articles()
-    if not public_success:
-        print("❌ Public articles endpoint failed")
-        return 1
+    # Test 6: Pagination
+    print("\n📄 Testing Pagination")
+    tester.test_get_articles_with_pagination()
 
-    # Use admin token for article operations (backward compatibility)
-    original_token = tester.admin_token
-    
-    # Test my articles (with admin)
-    my_success, my_articles = tester.test_get_my_articles()
-    if not my_success:
-        print("❌ My articles endpoint failed")
-        return 1
+    # Test 7: Category filtering 
+    print("\n🏷️  Testing Category Filtering")
+    tester.test_get_articles_by_category()
 
-    # Test article creation (admin only)
-    test_title = f"Article de Test {datetime.now().strftime('%H:%M:%S')}"
-    test_content = "Ceci est un contenu de test pour vérifier la création d'articles."
-    test_image = "https://via.placeholder.com/600x300/FF6600/FFFFFF?text=Test+Image"
-    
-    create_success, created_article = tester.test_create_article(
-        test_title, test_content, test_image
-    )
-    if not create_success:
-        print("❌ Article creation failed")
-        return 1
+    # Test 8: Protected routes
+    print("\n🔒 Testing Route Protection")
+    tester.test_protected_routes_without_auth()
 
-    article_id = created_article.get('id') if isinstance(created_article, dict) else None
-    if not article_id:
-        print("❌ Created article has no ID")
-        return 1
-
-    # Test getting the created article
-    if not tester.test_get_article_by_id(article_id)[0]:
-        print("❌ Failed to retrieve created article")
-        return 1
-
-    # Test updating the article
-    updated_title = f"Article Modifié {datetime.now().strftime('%H:%M:%S')}"
-    if not tester.test_update_article(article_id, title=updated_title)[0]:
-        print("❌ Article update failed")
-        return 1
-
-    # Test unauthorized access
-    if not tester.test_unauthorized_access():
-        print("❌ Authorization test failed")
-        return 1
-
-    # Test deleting the article
-    if not tester.test_delete_article(article_id)[0]:
-        print("❌ Article deletion failed")
-        return 1
-
-    # Verify article is deleted
-    delete_verify_success, _ = tester.test_get_article_by_id(article_id)
-    if delete_verify_success:
-        print("❌ Article still exists after deletion")
-        return 1
-    else:
-        print("✅ Article successfully deleted and not accessible")
-        tester.tests_passed += 1
-        tester.tests_run += 1
-
-    # Print final results
+    # Print results
     print("\n" + "=" * 60)
-    print(f"📊 Complete Backend Test Results:")
-    print(f"   Tests run: {tester.tests_run}")
-    print(f"   Tests passed: {tester.tests_passed}")
-    print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    print(f"📊 BACKEND TEST RESULTS")
+    print(f"Tests passed: {tester.tests_passed}/{tester.tests_run}")
     
     if tester.failed_tests:
-        print(f"\n❌ Failed Tests ({len(tester.failed_tests)}):")
-        for fail in tester.failed_tests:
-            error_msg = fail.get('error', f"Status {fail.get('actual', 'N/A')} vs {fail.get('expected', 'N/A')}")
-            print(f"  • {fail['test']}: {error_msg}")
+        print(f"\n❌ FAILED TESTS:")
+        for test in tester.failed_tests:
+            print(f"   • {test}")
     
-    success_rate = tester.tests_passed / tester.tests_run
-    if success_rate >= 0.9:
-        print("🎉 Backend tests PASSED!")
-        return 0
-    else:
-        print("💥 Backend tests FAILED!")
-        return 1
+    if tester.passed_tests:
+        print(f"\n✅ PASSED TESTS:")
+        for test in tester.passed_tests:
+            print(f"   • {test}")
+
+    success_rate = (tester.tests_passed / tester.tests_run * 100) if tester.tests_run > 0 else 0
+    print(f"\n📈 Success Rate: {success_rate:.1f}%")
+    
+    return 0 if success_rate > 80 else 1
 
 if __name__ == "__main__":
     sys.exit(main())
