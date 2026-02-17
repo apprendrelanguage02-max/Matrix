@@ -86,7 +86,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user:
             raise HTTPException(status_code=401, detail="Utilisateur introuvable")
         return user
-    except jwt.InvalidTokenError:
+    except (jwt.InvalidTokenError, Exception):
         raise HTTPException(status_code=401, detail="Token invalide ou expiré")
 
 # ─── Auth Routes ───────────────────────────────────────────────────────────────
