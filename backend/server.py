@@ -1,15 +1,17 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
-
+import bcrypt
+import jwt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,54 +21,192 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
+JWT_SECRET = os.environ.get('JWT_SECRET', 'newsapp_secret_key_change_in_prod')
+JWT_ALGORITHM = 'HS256'
+
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+security = HTTPBearer()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# ─── Pydantic Models ───────────────────────────────────────────────────────────
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class UserRegister(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
 
-# Add your routes to the router instead of directly to app
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserOut(BaseModel):
+    id: str
+    username: str
+    email: str
+
+class TokenResponse(BaseModel):
+    token: str
+    user: UserOut
+
+class ArticleCreate(BaseModel):
+    title: str
+    content: str
+    image_url: Optional[str] = None
+
+class ArticleUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    image_url: Optional[str] = None
+
+class ArticleOut(BaseModel):
+    id: str
+    title: str
+    content: str
+    image_url: Optional[str] = None
+    published_at: str
+    author_id: str
+    author_username: str
+
+# ─── JWT Helpers ───────────────────────────────────────────────────────────────
+
+def create_token(user_id: str) -> str:
+    payload = {"sub": user_id}
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Token invalide")
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+        return user
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token invalide ou expiré")
+
+# ─── Auth Routes ───────────────────────────────────────────────────────────────
+
+@api_router.post("/auth/register", response_model=TokenResponse)
+async def register(data: UserRegister):
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+
+    hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
+    user_id = str(uuid.uuid4())
+    user_doc = {
+        "id": user_id,
+        "username": data.username,
+        "email": data.email,
+        "hashed_password": hashed,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_doc)
+
+    token = create_token(user_id)
+    return TokenResponse(
+        token=token,
+        user=UserOut(id=user_id, username=data.username, email=data.email)
+    )
+
+@api_router.post("/auth/login", response_model=TokenResponse)
+async def login(data: UserLogin):
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+
+    if not bcrypt.checkpw(data.password.encode(), user["hashed_password"].encode()):
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+
+    token = create_token(user["id"])
+    return TokenResponse(
+        token=token,
+        user=UserOut(id=user["id"], username=user["username"], email=user["email"])
+    )
+
+# ─── Public Article Routes ─────────────────────────────────────────────────────
+
+@api_router.get("/articles", response_model=List[ArticleOut])
+async def get_articles():
+    articles = await db.articles.find({}, {"_id": 0}).sort("published_at", -1).to_list(100)
+    return articles
+
+@api_router.get("/articles/{article_id}", response_model=ArticleOut)
+async def get_article(article_id: str):
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+    return article
+
+# ─── Protected Article Routes ──────────────────────────────────────────────────
+
+@api_router.get("/my-articles", response_model=List[ArticleOut])
+async def get_my_articles(current_user: dict = Depends(get_current_user)):
+    articles = await db.articles.find(
+        {"author_id": current_user["id"]}, {"_id": 0}
+    ).sort("published_at", -1).to_list(100)
+    return articles
+
+@api_router.post("/articles", response_model=ArticleOut)
+async def create_article(data: ArticleCreate, current_user: dict = Depends(get_current_user)):
+    article_id = str(uuid.uuid4())
+    article_doc = {
+        "id": article_id,
+        "title": data.title.strip(),
+        "content": data.content.strip(),
+        "image_url": data.image_url.strip() if data.image_url else None,
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "author_id": current_user["id"],
+        "author_username": current_user["username"]
+    }
+    await db.articles.insert_one(article_doc)
+    return article_doc
+
+@api_router.put("/articles/{article_id}", response_model=ArticleOut)
+async def update_article(
+    article_id: str,
+    data: ArticleUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+    if article["author_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Non autorisé")
+
+    updates = {}
+    if data.title is not None:
+        updates["title"] = data.title.strip()
+    if data.content is not None:
+        updates["content"] = data.content.strip()
+    if data.image_url is not None:
+        updates["image_url"] = data.image_url.strip() if data.image_url else None
+
+    if updates:
+        await db.articles.update_one({"id": article_id}, {"$set": updates})
+
+    updated = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/articles/{article_id}")
+async def delete_article(article_id: str, current_user: dict = Depends(get_current_user)):
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+    if article["author_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Non autorisé")
+    await db.articles.delete_one({"id": article_id})
+    return {"message": "Article supprimé"}
+
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "NewsApp API v1"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
-
-# Include the router in the main app
 app.include_router(api_router)
 
 app.add_middleware(
@@ -76,13 +216,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
