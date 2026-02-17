@@ -234,18 +234,19 @@ class NewsAppAPITester:
         return success
 
     def test_login(self, email, password):
-        """Test login with admin credentials"""
+        """Test login with any credentials (legacy method for backward compatibility)"""
         success, response = self.run_test(
-            "Admin Login",
+            f"Login ({email})",
             "POST",
             "/auth/login",
             200,
             data={"email": email, "password": password}
         )
         if success and isinstance(response, dict) and 'token' in response:
-            self.token = response['token']
-            self.user = response['user']
-            print(f"   Logged in as: {self.user.get('username', 'Unknown')}")
+            # Set both tokens for backward compatibility
+            self.admin_token = response['token'] 
+            self.admin_user = response['user']
+            print(f"   Logged in as: {self.admin_user.get('username', 'Unknown')}")
             return True
         return False
 
