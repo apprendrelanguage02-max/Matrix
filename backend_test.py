@@ -7,11 +7,25 @@ from datetime import datetime
 class NewsAppAPITester:
     def __init__(self, base_url="https://headline-press.preview.emergentagent.com"):
         self.base_url = base_url
-        self.token = None
-        self.user = None
+        self.admin_token = None
+        self.visitor_token = None
+        self.admin_user = None
+        self.visitor_user = None
         self.tests_run = 0
         self.tests_passed = 0
+        self.failed_tests = []
         self.created_articles = []
+        
+        # Test credentials
+        self.visitor_credentials = {
+            "username": "Visiteur",
+            "email": "visiteur@test.fr", 
+            "password": "test123456"
+        }
+        self.admin_credentials = {
+            "email": "admin@newsapp.fr",
+            "password": "admin123"
+        }
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
