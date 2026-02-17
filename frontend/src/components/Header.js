@@ -11,11 +11,11 @@ function getInitials(username) {
 function getAvatarColor(username) {
   const colors = [
     { bg: "#FF6600", text: "#fff" },
-    { bg: "#e5e5e5", text: "#1a1a1a" },
     { bg: "#0ea5e9", text: "#fff" },
     { bg: "#8b5cf6", text: "#fff" },
     { bg: "#16a34a", text: "#fff" },
     { bg: "#dc2626", text: "#fff" },
+    { bg: "#f59e0b", text: "#fff" },
   ];
   if (!username) return colors[0];
   const idx = username.charCodeAt(0) % colors.length;
@@ -32,7 +32,8 @@ export default function Header({ onSearch, searchValue }) {
     <header className="bg-black text-white" data-testid="main-header">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 h-16">
-          {/* Logo */}
+
+          {/* Logo — far left */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" data-testid="header-logo">
             <Newspaper className="w-6 h-6 text-[#FF6600]" />
             <span className="font-['Oswald'] text-xl font-bold tracking-widest uppercase text-white group-hover:text-[#FF6600] transition-colors duration-200 whitespace-nowrap">
@@ -40,10 +41,10 @@ export default function Header({ onSearch, searchValue }) {
             </span>
           </Link>
 
-          {/* Search bar */}
-          <div className={`flex-1 max-w-xl relative transition-opacity duration-200 ${focused ? "opacity-100" : "opacity-75"}`}>
-            <div className={`flex items-center border ${focused ? "border-[#FF6600]" : "border-zinc-700"} bg-zinc-900 transition-colors duration-200`}>
-              <Search className="w-4 h-4 text-zinc-500 ml-3 flex-shrink-0" />
+          {/* Search bar — pill shape, grows to fill space */}
+          <div className="flex-1 max-w-xl">
+            <div className={`flex items-center border ${focused ? "border-[#FF6600]" : "border-zinc-700"} bg-zinc-900 rounded-full transition-colors duration-200`}>
+              <Search className="w-4 h-4 text-zinc-500 ml-4 flex-shrink-0" />
               <input
                 type="text"
                 value={searchValue || ""}
@@ -52,13 +53,13 @@ export default function Header({ onSearch, searchValue }) {
                 onBlur={() => setFocused(false)}
                 data-testid="search-input"
                 placeholder="Rechercher un article..."
-                className="flex-1 bg-transparent text-white text-sm font-['Manrope'] placeholder:text-zinc-500 px-3 py-2.5 focus:outline-none"
+                className="flex-1 bg-transparent text-white text-sm font-['Manrope'] placeholder:text-zinc-500 px-3 py-2 focus:outline-none"
               />
               {searchValue && (
                 <button
                   onClick={() => onSearch && onSearch("")}
                   data-testid="clear-search"
-                  className="p-2 text-zinc-500 hover:text-white transition-colors"
+                  className="p-2 mr-1 text-zinc-500 hover:text-white transition-colors rounded-full"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -66,8 +67,8 @@ export default function Header({ onSearch, searchValue }) {
             </div>
           </div>
 
-          {/* Nav */}
-          <nav className="flex items-center gap-3 flex-shrink-0">
+          {/* Nav — push to far right */}
+          <nav className="flex items-center gap-3 ml-auto flex-shrink-0">
             {token && user ? (
               <>
                 {user.role === "auteur" && (
@@ -80,12 +81,13 @@ export default function Header({ onSearch, searchValue }) {
                     Dashboard
                   </Link>
                 )}
-                {/* Avatar cliquable */}
+
+                {/* Avatar — cercle, coin haut droit */}
                 <button
                   onClick={() => navigate("/profil")}
                   data-testid="profile-avatar-btn"
                   title={`Profil de ${user.username}`}
-                  className="w-9 h-9 flex-shrink-0 flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 ring-transparent hover:ring-[#FF6600] transition-all duration-200"
+                  className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 ring-transparent hover:ring-[#FF6600] transition-all duration-200 select-none"
                   style={{ backgroundColor: color.bg, color: color.text }}
                 >
                   {getInitials(user.username)}
@@ -95,7 +97,7 @@ export default function Header({ onSearch, searchValue }) {
               <Link
                 to="/connexion"
                 data-testid="login-link"
-                className="bg-[#FF6600] text-white text-sm font-bold font-['Manrope'] uppercase tracking-wider px-5 py-2 hover:bg-[#CC5200] transition-colors duration-200 whitespace-nowrap"
+                className="bg-[#FF6600] text-white text-sm font-bold font-['Manrope'] uppercase tracking-wider px-5 py-2 hover:bg-[#CC5200] transition-colors duration-200 whitespace-nowrap rounded-full"
               >
                 Connexion
               </Link>
