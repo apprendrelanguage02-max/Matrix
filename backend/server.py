@@ -129,6 +129,7 @@ class UserRegister(BaseModel):
     username: str = Field(min_length=2, max_length=50)
     email: EmailStr
     password: str = Field(min_length=6, max_length=100)
+    role: str = "visiteur"
 
     @field_validator('username')
     @classmethod
@@ -136,6 +137,13 @@ class UserRegister(BaseModel):
         if not re.match(r'^[\w\- ]+$', v):
             raise ValueError('Nom d\'utilisateur invalide')
         return v.strip()
+
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v):
+        if v not in ("visiteur", "agent"):
+            raise ValueError('Rôle invalide. Choisissez visiteur ou agent.')
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
