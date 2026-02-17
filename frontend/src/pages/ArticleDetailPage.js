@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 import { isHtmlContent, renderContent } from "../lib/contentRenderer";
 import { getCategoryColor, slugify } from "../lib/categories";
-import { Loader2, ArrowLeft, Calendar, User, Eye, Tag } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, User, Eye, Tag, Bookmark } from "lucide-react";
+import { toast } from "sonner";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
