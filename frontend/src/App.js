@@ -6,11 +6,19 @@ import ArticleDetailPage from "./pages/ArticleDetailPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ArticleFormPage from "./pages/ArticleFormPage";
+import ProfilePage from "./pages/ProfilePage";
 import "./App.css";
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
   return token ? children : <Navigate to="/connexion" replace />;
+}
+
+function AuthorRoute({ children }) {
+  const { token, user } = useAuth();
+  if (!token) return <Navigate to="/connexion" replace />;
+  if (user?.role !== "auteur") return <Navigate to="/profil" replace />;
+  return children;
 }
 
 function App() {
@@ -21,9 +29,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/article/:id" element={<ArticleDetailPage />} />
           <Route path="/connexion" element={<LoginPage />} />
-          <Route path="/admin" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-          <Route path="/admin/nouvelle" element={<PrivateRoute><ArticleFormPage /></PrivateRoute>} />
-          <Route path="/admin/modifier/:id" element={<PrivateRoute><ArticleFormPage /></PrivateRoute>} />
+          <Route path="/profil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+          <Route path="/admin" element={<AuthorRoute><DashboardPage /></AuthorRoute>} />
+          <Route path="/admin/nouvelle" element={<AuthorRoute><ArticleFormPage /></AuthorRoute>} />
+          <Route path="/admin/modifier/:id" element={<AuthorRoute><ArticleFormPage /></AuthorRoute>} />
         </Routes>
         <Toaster position="top-right" />
       </BrowserRouter>
