@@ -1,0 +1,145 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "E1 - The Anti-AI Designer",
+      "tone": "Editorial, Urgent, Minimalist, Swiss-Style",
+      "core_philosophy": "Content is King. Typography is the Interface. Orange is the Alert."
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Oswald, sans-serif",
+        "body": "Manrope, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "import_url": "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Oswald:wght@400;500;700&display=swap",
+      "scale": {
+        "h1": "text-6xl md:text-8xl font-bold tracking-tighter uppercase leading-none",
+        "h2": "text-4xl md:text-5xl font-bold tracking-tight uppercase",
+        "h3": "text-2xl md:text-3xl font-semibold tracking-normal",
+        "body_lg": "text-lg md:text-xl leading-relaxed font-normal",
+        "body_base": "text-base leading-relaxed text-zinc-800",
+        "caption": "text-sm font-medium tracking-wide uppercase text-zinc-500"
+      },
+      "rules": "Headings must be UPPERCASE and condensed (Oswald). Body text must be highly readable (Manrope). No generic Inter."
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "DEFAULT": "#FF6600",
+          "hover": "#CC5200",
+          "foreground": "#FFFFFF"
+        },
+        "background": {
+          "DEFAULT": "#FFFFFF",
+          "secondary": "#F5F5F5",
+          "tertiary": "#E5E5E5"
+        },
+        "foreground": {
+          "DEFAULT": "#000000",
+          "muted": "#52525B",
+          "inverse": "#FFFFFF"
+        },
+        "border": {
+          "DEFAULT": "#E4E4E7",
+          "strong": "#000000"
+        },
+        "error": "#DC2626",
+        "success": "#16A34A"
+      },
+      "usage": {
+        "primary_action": "bg-[#FF6600] text-white hover:bg-[#CC5200]",
+        "secondary_action": "bg-black text-white hover:bg-zinc-800",
+        "outline_action": "border-2 border-black text-black hover:bg-black hover:text-white",
+        "surface": "bg-white",
+        "surface_contrast": "bg-zinc-50"
+      }
+    },
+    "layout": {
+      "spacing": {
+        "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+        "section_gap": "py-24 md:py-32",
+        "element_gap": "gap-8"
+      },
+      "grid_strategies": {
+        "news_feed": "grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12",
+        "dashboard": "grid grid-cols-1 md:grid-cols-4 gap-6",
+        "detail_page": "max-w-3xl mx-auto"
+      },
+      "borders": {
+        "style": "border-b border-black/10",
+        "card": "border border-zinc-200 hover:border-black transition-colors duration-300"
+      }
+    },
+    "components": {
+      "buttons": {
+        "base": "inline-flex items-center justify-center whitespace-nowrap text-sm font-bold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-11 px-8",
+        "primary": "bg-[#FF6600] text-white hover:bg-[#E55B00] rounded-none uppercase tracking-wider",
+        "secondary": "bg-black text-white hover:bg-zinc-800 rounded-none uppercase tracking-wider",
+        "ghost": "hover:bg-zinc-100 hover:text-zinc-900 rounded-none"
+      },
+      "inputs": {
+        "base": "flex h-12 w-full rounded-none border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF6600] disabled:cursor-not-allowed disabled:opacity-50"
+      },
+      "cards": {
+        "news_item": "group flex flex-col gap-4 border-b border-black/10 pb-8 hover:opacity-80 transition-opacity cursor-pointer",
+        "dashboard_stat": "p-6 bg-white border border-zinc-200"
+      }
+    },
+    "motion": {
+      "transitions": "transition-all duration-300 ease-out",
+      "hover_effects": "hover:-translate-y-1",
+      "page_load": "animate-in fade-in slide-in-from-bottom-4 duration-700"
+    },
+    "assets": {
+      "images": {
+        "placeholders": [
+          "https://images.unsplash.com/photo-1633286382418-4181cb81a6d0?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1571176242081-bf093bb3a10d?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1765371513492-264506c3ad09?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1666618207644-4de0226a3f85?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1765410853255-f0ea8c2f8ea9?auto=format&fit=crop&w=800&q=80"
+        ],
+        "logo_placeholder": "https://placehold.co/200x50/000000/FFFFFF?text=NEWS+APP",
+        "user_avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+      },
+      "icons": "lucide-react"
+    }
+  },
+  "implementation_steps": [
+    {
+      "step": 1,
+      "description": "Configure Tailwind colors and fonts",
+      "file": "tailwind.config.js"
+    },
+    {
+      "step": 2,
+      "description": "Update global CSS with base styles and font imports",
+      "file": "src/index.css"
+    },
+    {
+      "step": 3,
+      "description": "Create reusable UI components (Button, Input, Card) using the design system rules",
+      "path": "src/components/ui"
+    },
+    {
+      "step": 4,
+      "description": "Build layout wrappers (PublicLayout, AdminLayout)",
+      "path": "src/layouts"
+    },
+    {
+      "step": 5,
+      "description": "Implement pages (Home, Detail, Login, Dashboard)",
+      "path": "src/pages"
+    }
+  ],
+  "universal_guidelines": [
+    "Do NOT use gradients. Stick to flat, bold colors.",
+    "Use uppercase Oswald for all headings.",
+    "Ensure high contrast (Black on White).",
+    "Buttons must be square (rounded-none) for that 'brutalist/news' feel.",
+    "Use generous whitespace (py-24) between sections.",
+    "All interactive elements must have a distinct hover state (color change or underline).",
+    "Images should have sharp edges (no border-radius) or very minimal (rounded-sm).",
+    "Use 'lucide-react' for icons: generic newspaper/edit/user icons."
+  ]
+}
