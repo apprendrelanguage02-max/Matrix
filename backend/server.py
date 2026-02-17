@@ -229,6 +229,134 @@ class SavedArticleOut(BaseModel):
     saved_at: str
     article: Optional[ArticleOut] = None
 
+# ─── Property Models ───────────────────────────────────────────────────────────
+PROPERTY_TYPES = ["achat", "vente", "location"]
+PROPERTY_STATUSES = ["disponible", "reserve", "vendu"]
+
+class PropertyCreate(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    type: str
+    price: float = Field(gt=0)
+    currency: str = "GNF"
+    description: str = Field(min_length=10, max_length=20000)
+    city: str = Field(min_length=2, max_length=100)
+    neighborhood: str = ""
+    address: str = ""
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    seller_name: str = Field(min_length=2, max_length=100)
+    seller_phone: str = Field(min_length=8, max_length=25)
+    seller_email: str = ""
+    seller_whatsapp: str = ""
+    images: List[str] = []
+    video_url: str = ""
+
+    @field_validator('type')
+    @classmethod
+    def validate_type(cls, v):
+        if v not in PROPERTY_TYPES:
+            raise ValueError(f'Type invalide. Valeurs: {PROPERTY_TYPES}')
+        return v
+
+class PropertyUpdate(BaseModel):
+    title: Optional[str] = None
+    type: Optional[str] = None
+    price: Optional[float] = None
+    currency: Optional[str] = None
+    description: Optional[str] = None
+    city: Optional[str] = None
+    neighborhood: Optional[str] = None
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    seller_name: Optional[str] = None
+    seller_phone: Optional[str] = None
+    seller_email: Optional[str] = None
+    seller_whatsapp: Optional[str] = None
+    images: Optional[List[str]] = None
+    video_url: Optional[str] = None
+    status: Optional[str] = None
+
+    @field_validator('type')
+    @classmethod
+    def validate_type(cls, v):
+        if v is not None and v not in PROPERTY_TYPES:
+            raise ValueError('Type invalide')
+        return v
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        if v is not None and v not in PROPERTY_STATUSES:
+            raise ValueError('Statut invalide')
+        return v
+
+class PropertyOut(BaseModel):
+    id: str
+    title: str
+    type: str
+    price: float
+    currency: str
+    description: str
+    city: str
+    neighborhood: str
+    address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    seller_name: str
+    seller_phone: str
+    seller_email: str
+    seller_whatsapp: str
+    images: List[str]
+    video_url: str
+    status: str
+    author_id: str
+    author_username: str = ""
+    created_at: str
+    views: int
+
+class PaginatedProperties(BaseModel):
+    properties: List[PropertyOut]
+    total: int
+    pages: int
+
+# ─── Payment Models ────────────────────────────────────────────────────────────
+PAYMENT_METHODS = ["orange_money", "mobile_money", "paycard", "carte_bancaire"]
+PAYMENT_STATUSES = ["en_attente", "confirme", "annule"]
+
+def generate_reference() -> str:
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+    chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    return f"GIMO-{ts}-{chars}"
+
+class PaymentCreate(BaseModel):
+    property_id: str
+    amount: float = Field(gt=0)
+    currency: str = "GNF"
+    method: str
+    phone: str = ""
+
+    @field_validator('method')
+    @classmethod
+    def validate_method(cls, v):
+        if v not in PAYMENT_METHODS:
+            raise ValueError(f'Méthode invalide: {PAYMENT_METHODS}')
+        return v
+
+class PaymentOut(BaseModel):
+    id: str
+    reference: str
+    property_id: str
+    property_title: str
+    user_id: str
+    user_email: str
+    amount: float
+    currency: str
+    method: str
+    status: str
+    phone: str
+    created_at: str
+
 # ─── JWT Helpers ───────────────────────────────────────────────────────────────
 
 def create_token(user_id: str) -> str:
