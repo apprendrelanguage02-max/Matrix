@@ -1,7 +1,11 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Eye, ArrowRight, Tag } from "lucide-react";
+import { Calendar, Eye, ArrowRight, Tag, Bookmark } from "lucide-react";
 import { stripToPlainText } from "../lib/contentRenderer";
 import { getCategoryColor, slugify } from "../lib/categories";
+import { useAuth } from "../context/AuthContext";
+import api from "../lib/api";
+import { toast } from "sonner";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
@@ -9,14 +13,63 @@ function formatDate(isoString) {
 }
 
 export default function ArticleCard({ article, featured = false }) {
+  const { token } = useAuth();
   const catColor = getCategoryColor(article.category);
   const excerpt = stripToPlainText(article.content);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savingLoading, setSavingLoading] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get(`/saved-articles/${article.id}/status`)
+      .then((r) => setIsSaved(r.data.is_saved))
+      .catch(() => {});
+  }, [article.id, token]);
+
+  const toggleSave = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    setSavingLoading(true);
+    try {
+      if (isSaved) {
+        await api.delete(`/saved-articles/${article.id}`);
+        setIsSaved(false);
+        toast.success("Sauvegarde retirée.");
+      } else {
+        await api.post(`/saved-articles/${article.id}`);
+        setIsSaved(true);
+        toast.success("Article sauvegardé !");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erreur.");
+    } finally {
+      setSavingLoading(false);
+    }
+  };
 
   return (
     <article
       data-testid={`article-card-${article.id}`}
-      className={`group bg-white border border-zinc-200 hover:border-zinc-400 hover:shadow-md transition-all duration-300 flex flex-col ${featured ? "md:flex-row" : ""}`}
+      className={`group bg-white border border-zinc-200 hover:border-zinc-400 hover:shadow-md transition-all duration-300 flex flex-col relative ${featured ? "md:flex-row" : ""}`}
     >
+      {/* Bookmark button */}
+      {token && (
+        <button
+          onClick={toggleSave}
+          disabled={savingLoading}
+          data-testid={`save-btn-${article.id}`}
+          title={isSaved ? "Retirer des sauvegardes" : "Sauvegarder"}
+          className={`absolute top-3 right-3 z-10 p-1.5 rounded-full transition-all duration-200 ${
+            isSaved
+              ? "bg-[#FF6600] text-white shadow-md"
+              : "bg-black/60 text-white hover:bg-[#FF6600]"
+          }`}
+        >
+          <Bookmark className={`w-3.5 h-3.5 transition-all ${isSaved ? "fill-white" : ""}`} />
+        </button>
+      )}
+
       {/* Image */}
       {article.image_url && (
         <div className={`overflow-hidden flex-shrink-0 ${featured ? "md:w-2/5 h-56 md:h-auto" : "h-48"}`}>
@@ -32,7 +85,6 @@ export default function ArticleCard({ article, featured = false }) {
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-5 md:p-6">
-        {/* Category badge + date row */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <Link
             to={`/categorie/${slugify(article.category)}`}
@@ -49,19 +101,16 @@ export default function ArticleCard({ article, featured = false }) {
           </span>
         </div>
 
-        {/* Title */}
         <Link to={`/article/${article.id}`}>
           <h2 className={`font-['Oswald'] font-bold uppercase tracking-tight text-black group-hover:text-[#FF6600] transition-colors duration-200 leading-tight mb-3 ${featured ? "text-2xl md:text-3xl" : "text-xl"}`}>
             {article.title}
           </h2>
         </Link>
 
-        {/* Excerpt */}
         <p className="font-['Manrope'] text-zinc-500 text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
           {excerpt}
         </p>
 
-        {/* Footer: views + lire plus */}
         <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-100">
           <span className="flex items-center gap-1 text-[11px] font-['Manrope'] font-semibold uppercase tracking-wider text-[#FF6600]" data-testid={`views-${article.id}`}>
             <Eye className="w-3 h-3" />
