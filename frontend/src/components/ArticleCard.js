@@ -10,7 +10,7 @@ function formatDate(isoString) {
 
 export default function ArticleCard({ article, featured = false }) {
   const catColor = getCategoryColor(article.category);
-  const excerpt = stripImageTags(article.content);
+  const excerpt = stripToPlainText(article.content);
 
   return (
     <article
