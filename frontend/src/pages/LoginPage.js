@@ -197,6 +197,40 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* Role selection - register only */}
+              {tab === "register" && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
+                    Je m'inscris en tant que
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: "role", value: "visiteur" } })}
+                      className={`py-3 px-4 border-2 text-sm font-bold font-['Manrope'] transition-all ${
+                        (form.role || "visiteur") === "visiteur"
+                          ? "border-[#FF6600] bg-orange-50 text-[#FF6600]"
+                          : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
+                      }`}
+                    >
+                      👤 Visiteur
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: "role", value: "agent" } })}
+                      data-testid="role-agent-btn"
+                      className={`py-3 px-4 border-2 text-sm font-bold font-['Manrope'] transition-all ${
+                        form.role === "agent"
+                          ? "border-blue-600 bg-blue-50 text-blue-600"
+                          : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
+                      }`}
+                    >
+                      🏘 Agent immobilier
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
