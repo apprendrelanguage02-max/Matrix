@@ -162,10 +162,23 @@ async def create_article(data: ArticleCreate, current_user: dict = Depends(get_c
         "image_url": data.image_url.strip() if data.image_url else None,
         "published_at": datetime.now(timezone.utc).isoformat(),
         "author_id": current_user["id"],
-        "author_username": current_user["username"]
+        "author_username": current_user["username"],
+        "views": 0
     }
     await db.articles.insert_one(article_doc)
     return article_doc
+
+@api_router.post("/articles/{article_id}/view")
+async def increment_view(article_id: str):
+    result = await db.articles.find_one_and_update(
+        {"id": article_id},
+        {"$inc": {"views": 1}},
+        return_document=True,
+        projection={"_id": 0}
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+    return {"views": result.get("views", 1)}
 
 @api_router.put("/articles/{article_id}", response_model=ArticleOut)
 async def update_article(
