@@ -86,6 +86,7 @@ export default function ArticleFormPage() {
         title: form.title.trim(),
         content: form.content.trim(),
         image_url: form.image_url.trim() || null,
+        category: form.category,
       };
       if (isEdit) {
         await api.put(`/articles/${id}`, payload);
