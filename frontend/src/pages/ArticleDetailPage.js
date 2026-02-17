@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
-import { renderContent } from "../lib/contentRenderer";
-import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
+import { isHtmlContent, renderContent } from "../lib/contentRenderer";
+import { getCategoryColor, slugify } from "../lib/categories";
+import { Loader2, ArrowLeft, Calendar, User, Eye, Tag } from "lucide-react";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
@@ -17,11 +18,9 @@ export default function ArticleDetailPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Fetch article then increment view count
     api.get(`/articles/${id}`)
       .then((r) => {
         setArticle(r.data);
-        // Increment views (fire-and-forget)
         api.post(`/articles/${id}/view`)
           .then((res) => setArticle((prev) => prev ? { ...prev, views: res.data.views } : prev))
           .catch(() => {});
@@ -33,13 +32,12 @@ export default function ArticleDetailPage() {
   return (
     <div className="min-h-screen bg-white font-['Manrope']">
       <Header />
-      <div className="h-1.5 bg-[#FF6600]" />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link
           to="/"
           data-testid="back-to-home"
-          className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-['Manrope'] text-zinc-500 hover:text-[#FF6600] transition-colors duration-200 mb-10"
+          className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors duration-200 mb-10"
         >
           <ArrowLeft className="w-4 h-4" />
           Retour aux actualités
@@ -54,62 +52,70 @@ export default function ArticleDetailPage() {
         {error && (
           <div className="text-center py-24" data-testid="article-error">
             <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">{error}</p>
-            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold underline">
-              Retour à l'accueil
-            </Link>
+            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold underline">Retour à l'accueil</Link>
           </div>
         )}
 
         {article && (
           <article data-testid="article-detail">
-            {/* Meta */}
-            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-[#FF6600] mb-4 flex-wrap">
-              <span className="flex items-center gap-1">
+            {/* Category + meta row */}
+            <div className="flex flex-wrap items-center gap-3 mb-5">
+              {article.category && (
+                <Link
+                  to={`/categorie/${slugify(article.category)}`}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest font-['Manrope'] ${getCategoryColor(article.category).bg} ${getCategoryColor(article.category).text}`}
+                >
+                  <Tag className="w-2.5 h-2.5" />
+                  {article.category}
+                </Link>
+              )}
+              <span className="flex items-center gap-1 text-xs text-zinc-400 font-['Manrope']">
                 <User className="w-3 h-3" />
                 {article.author_username}
               </span>
-              <span className="text-zinc-300">|</span>
-              <span className="flex items-center gap-1 text-zinc-400">
+              <span className="flex items-center gap-1 text-xs text-zinc-400 font-['Manrope']">
                 <Calendar className="w-3 h-3" />
                 {formatDate(article.published_at)}
               </span>
-              <span className="text-zinc-300">|</span>
-              <span className="flex items-center gap-1 text-[#FF6600]" data-testid="article-views">
+              <span className="flex items-center gap-1 text-xs text-[#FF6600] font-['Manrope'] font-bold" data-testid="article-views">
                 <Eye className="w-3 h-3" />
                 {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
               </span>
             </div>
 
             {/* Title */}
-            <h1 className="font-['Oswald'] text-4xl md:text-6xl font-bold uppercase tracking-tighter text-black leading-none mb-8">
+            <h1 className="font-['Oswald'] text-4xl md:text-5xl font-bold uppercase tracking-tighter text-black leading-tight mb-8">
               {article.title}
             </h1>
 
-            {/* Image */}
+            {/* Cover image */}
             {article.image_url && (
-              <div className="mb-10 overflow-hidden">
+              <div className="mb-8 overflow-hidden rounded-lg">
                 <img
                   src={article.image_url}
                   alt={article.title}
                   data-testid="article-image"
+                  loading="lazy"
                   className="w-full object-cover max-h-[480px]"
                   onError={(e) => { e.target.style.display = "none"; }}
                 />
               </div>
             )}
 
-            {/* Separator */}
-            <div className="flex items-center gap-4 mb-8">
-              <div className="h-0.5 w-12 bg-[#FF6600]" />
-            </div>
+            <div className="h-0.5 w-12 bg-[#FF6600] mb-8" />
 
-            {/* Content — renders [img:url] inline */}
-            <div
-              className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed"
-              data-testid="article-content"
-            >
-              {renderContent(article.content)}
-            </div>
+            {/* Content — HTML (Quill) or legacy [img:url] */}
+            {isHtmlContent(article.content) ? (
+              <div
+                className="article-content"
+                data-testid="article-content"
+                dangerouslySetInnerHTML={{ __html: article.content }}
+              />
+            ) : (
+              <div className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed" data-testid="article-content">
+                {renderContent(article.content)}
+              </div>
+            )}
           </article>
         )}
       </main>
