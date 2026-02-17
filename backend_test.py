@@ -467,7 +467,8 @@ def main():
     if tester.failed_tests:
         print(f"\n❌ Failed Tests ({len(tester.failed_tests)}):")
         for fail in tester.failed_tests:
-            print(f"  • {fail['test']}: {fail.get('error', f'Status {fail.get(\"actual\", \"N/A\")} vs {fail.get(\"expected\", \"N/A\")}')}")
+            error_msg = fail.get('error', f"Status {fail.get('actual', 'N/A')} vs {fail.get('expected', 'N/A')}")
+            print(f"  • {fail['test']}: {error_msg}")
     
     success_rate = tester.tests_passed / tester.tests_run
     if success_rate >= 0.9:
