@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
+import { renderContent } from "../lib/contentRenderer";
 import { Loader2, ArrowLeft, Calendar, User, Eye } from "lucide-react";
 
 function formatDate(isoString) {
