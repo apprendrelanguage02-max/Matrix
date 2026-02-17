@@ -195,6 +195,85 @@ class NewsAppTester:
             return response['id']
         return None
 
+    def test_rich_text_article_creation(self):
+        """Test creating article with rich HTML content"""
+        rich_content = """
+        <h2>Titre de Section</h2>
+        <p>Ceci est un paragraphe avec <strong>gras</strong>, <em>italique</em>, et <u>souligné</u>.</p>
+        <ul>
+            <li>Premier élément de liste</li>
+            <li>Deuxième élément</li>
+        </ul>
+        <blockquote>Ceci est une citation importante</blockquote>
+        <p><img src="https://via.placeholder.com/400x300" alt="Image test" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;margin:12px auto;display:block;" /></p>
+        """
+        
+        success, response = self.run_test(
+            "Create Rich Text Article",
+            "POST", 
+            "/articles",
+            200,
+            data={
+                "title": "Article avec Rich Text",
+                "content": rich_content,
+                "category": "Technologie"
+            }
+        )
+        if success and 'id' in response:
+            print(f"   ✅ Rich text article created with ID: {response['id']}")
+            return response['id']
+        return None
+
+    def test_html_sanitization_xss(self):
+        """Test HTML sanitization against XSS"""
+        malicious_content = """
+        <h2>Article Normal</h2>
+        <p>Contenu légitime</p>
+        <script>alert('XSS Attack!');</script>
+        <img src="x" onerror="alert('Image XSS')" />
+        <div onclick="maliciousFunction()">Texte avec event handler</div>
+        <a href="javascript:alert('Link XSS')">Lien malveillant</a>
+        <iframe src="http://malicious.com"></iframe>
+        """
+        
+        success, response = self.run_test(
+            "XSS Sanitization Test", 
+            "POST",
+            "/articles",
+            200,
+            data={
+                "title": "Test Sanitisation XSS",
+                "content": malicious_content,
+                "category": "Technologie"
+            }
+        )
+        
+        if success and 'id' in response:
+            # Verify the content was sanitized
+            article_id = response['id']
+            success2, article = self.run_test(
+                "Verify XSS Sanitization",
+                "GET",
+                f"/articles/{article_id}",
+                200
+            )
+            
+            if success2:
+                content = article.get('content', '')
+                # Check that malicious elements were removed
+                if ('<script>' not in content and 
+                    'onerror=' not in content and 
+                    'onclick=' not in content and
+                    'javascript:' not in content and
+                    '<iframe>' not in content):
+                    print(f"   ✅ XSS content successfully sanitized")
+                    return True
+                else:
+                    print(f"   ❌ XSS sanitization failed. Dangerous content found: {content[:200]}...")
+                    self.failed_tests.append("XSS sanitization: Dangerous content not removed")
+            
+        return False
+
     def test_get_articles_with_pagination(self):
         """Test articles with pagination"""
         success, response = self.run_test(
