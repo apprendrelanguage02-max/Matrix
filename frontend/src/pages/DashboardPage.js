@@ -132,9 +132,15 @@ export default function DashboardPage() {
                   <h3 className="font-['Oswald'] text-lg font-bold uppercase tracking-tight text-black truncate">
                     {article.title}
                   </h3>
-                  <p className="text-xs text-zinc-400 flex items-center gap-1 mt-1 font-['Manrope']">
-                    <Calendar className="w-3 h-3" />
-                    {formatDate(article.published_at)}
+                <p className="text-xs text-zinc-400 flex items-center gap-3 mt-1 font-['Manrope']">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {formatDate(article.published_at)}
+                    </span>
+                    <span className="flex items-center gap-1 text-[#FF6600]" data-testid={`dashboard-views-${article.id}`}>
+                      <Eye className="w-3 h-3" />
+                      {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
+                    </span>
                   </p>
                 </div>
 
