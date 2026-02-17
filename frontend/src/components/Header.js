@@ -1,7 +1,8 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { PenSquare, Newspaper, Search, X } from "lucide-react";
 import { useState } from "react";
+import { CATEGORIES, getCategoryColor, slugify } from "../lib/categories";
 
 function getInitials(username) {
   if (!username) return "?";
@@ -25,15 +26,21 @@ function getAvatarColor(username) {
 export default function Header({ onSearch, searchValue }) {
   const { token, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [focused, setFocused] = useState(false);
   const color = getAvatarColor(user?.username);
 
+  // Determine active category from URL
+  const activeCategory = location.pathname.startsWith("/categorie/")
+    ? decodeURIComponent(location.pathname.replace("/categorie/", ""))
+    : null;
+
   return (
-    <header className="bg-black text-white" data-testid="main-header">
+    <header className="bg-black text-white sticky top-0 z-50 shadow-lg" data-testid="main-header">
+      {/* Top bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 h-16">
-
-          {/* Logo — far left */}
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" data-testid="header-logo">
             <Newspaper className="w-6 h-6 text-[#FF6600]" />
             <span className="font-['Oswald'] text-xl font-bold tracking-widest uppercase text-white group-hover:text-[#FF6600] transition-colors duration-200 whitespace-nowrap">
@@ -41,7 +48,7 @@ export default function Header({ onSearch, searchValue }) {
             </span>
           </Link>
 
-          {/* Search bar — pill shape, grows to fill space */}
+          {/* Search bar */}
           <div className="flex-1 max-w-xl">
             <div className={`flex items-center border ${focused ? "border-[#FF6600]" : "border-zinc-700"} bg-zinc-900 rounded-full transition-colors duration-200`}>
               <Search className="w-4 h-4 text-zinc-500 ml-4 flex-shrink-0" />
@@ -67,7 +74,7 @@ export default function Header({ onSearch, searchValue }) {
             </div>
           </div>
 
-          {/* Nav — push to far right */}
+          {/* Nav */}
           <nav className="flex items-center gap-3 ml-auto flex-shrink-0">
             {token && user ? (
               <>
@@ -81,8 +88,6 @@ export default function Header({ onSearch, searchValue }) {
                     Dashboard
                   </Link>
                 )}
-
-                {/* Avatar — cercle, coin haut droit */}
                 <button
                   onClick={() => navigate("/profil")}
                   data-testid="profile-avatar-btn"
@@ -102,6 +107,38 @@ export default function Header({ onSearch, searchValue }) {
                 Connexion
               </Link>
             )}
+          </nav>
+        </div>
+      </div>
+
+      {/* Category navigation bar */}
+      <div className="border-t border-zinc-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center gap-0 overflow-x-auto scrollbar-hide" data-testid="category-nav">
+            <Link
+              to="/"
+              className={`flex-shrink-0 px-4 py-2.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${
+                !activeCategory && location.pathname === "/"
+                  ? "border-[#FF6600] text-[#FF6600]"
+                  : "border-transparent text-zinc-400 hover:text-white"
+              }`}
+            >
+              Toutes
+            </Link>
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat}
+                to={`/categorie/${slugify(cat)}`}
+                data-testid={`nav-category-${cat}`}
+                className={`flex-shrink-0 px-4 py-2.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${
+                  activeCategory === cat
+                    ? "border-[#FF6600] text-[#FF6600]"
+                    : "border-transparent text-zinc-400 hover:text-white"
+                }`}
+              >
+                {cat}
+              </Link>
+            ))}
           </nav>
         </div>
       </div>
