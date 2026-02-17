@@ -28,7 +28,7 @@ export default function ArticleCard({ article }) {
           {article.title}
         </h2>
         <p className="font-['Manrope'] text-zinc-600 text-base leading-relaxed mb-4 line-clamp-3">
-          {article.content}
+          {stripImageTags(article.content)}
         </p>
         <div className="flex items-center gap-4 text-xs font-['Manrope'] font-semibold uppercase tracking-wider text-zinc-400">
           <span className="flex items-center gap-1">
