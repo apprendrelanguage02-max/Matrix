@@ -361,7 +361,7 @@ async def update_article(
     if data.title is not None:
         updates["title"] = sanitize(data.title)
     if data.content is not None:
-        updates["content"] = data.content.strip()
+        updates["content"] = sanitize_html(data.content)
     if data.image_url is not None:
         updates["image_url"] = sanitize_url(data.image_url)
     if data.category is not None:
