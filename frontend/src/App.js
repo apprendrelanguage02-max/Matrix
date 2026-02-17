@@ -8,6 +8,8 @@ import DashboardPage from "./pages/DashboardPage";
 import ArticleFormPage from "./pages/ArticleFormPage";
 import ProfilePage from "./pages/ProfilePage";
 import CategoryPage from "./pages/CategoryPage";
+import SavedArticlesPage from "./pages/SavedArticlesPage";
+import SettingsPage from "./pages/SettingsPage";
 import "./App.css";
 
 function PrivateRoute({ children }) {
@@ -32,6 +34,8 @@ function App() {
           <Route path="/categorie/:slug" element={<CategoryPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/profil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+          <Route path="/sauvegardes" element={<PrivateRoute><SavedArticlesPage /></PrivateRoute>} />
+          <Route path="/parametres" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/admin" element={<AuthorRoute><DashboardPage /></AuthorRoute>} />
           <Route path="/admin/nouvelle" element={<AuthorRoute><ArticleFormPage /></AuthorRoute>} />
           <Route path="/admin/modifier/:id" element={<AuthorRoute><ArticleFormPage /></AuthorRoute>} />
