@@ -10,7 +10,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState("login"); // "login" | "register"
-  const [form, setForm] = useState({ username: "", email: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ username: "", email: "", password: "", confirmPassword: "", role: "visiteur" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
