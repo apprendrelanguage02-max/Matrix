@@ -1,4 +1,4 @@
-# Matrix News - PRD (Product Requirements Document)
+# Matrix News / GIMO - PRD (Product Requirements Document)
 
 ## Problème Original
 Application web full-stack combinant un média d'actualités et une marketplace immobilière pour la Guinée.
@@ -17,11 +17,12 @@ Application web full-stack combinant un média d'actualités et une marketplace 
 1. **Visiteur** - Peut lire les articles et consulter les annonces
 2. **Auteur** - Peut créer/modifier/supprimer ses articles
 3. **Agent immobilier** - Peut publier et gérer des annonces immobilières
+4. **Admin** - Accès complet à toutes les fonctionnalités + gestion de la base de données
 
 ## Ce qui a été implémenté (Fév 2026)
 
 ### Section News
-- Authentification JWT (register/login/logout) avec 3 rôles
+- Authentification JWT (register/login/logout) avec 4 rôles
 - CRUD complet articles (create, read, update, delete)
 - Catégories: Actualité, Politique, Sport, Technologie, Économie
 - Recherche et pagination
@@ -36,6 +37,34 @@ Application web full-stack combinant un média d'actualités et une marketplace 
 - Formulaire de publication d'annonce (agents uniquement)
 - Types: Vente, Achat, Location
 - Statuts: Disponible, Réservé, Vendu/Loué
+- Interface sobre sans icône décorative
+
+### Section Paiements (Phase 2 - Complète)
+- Création de paiements simulés
+- Méthodes: Orange Money, Mobile Money, PayCard, Carte bancaire
+- Génération de références uniques (format GIMO-YYYYMMDDHHMM-XXXXXXXX)
+- Statuts: En attente, Confirmé, Annulé
+- Mise à jour automatique du statut des propriétés
+
+### Section Admin - Base de Données (Nouveau)
+- **Page /admin/database** accessible uniquement aux admins
+- **4 onglets** : Utilisateurs, Articles, Annonces, Paiements
+- **Compteurs en temps réel** des totaux
+- **Tableau utilisateurs** : Nom, Email, Rôle, Téléphone, Pays, Date d'inscription, Statut
+  - Actions: Suspendre/Activer, Changer rôle, Supprimer
+  - Filtres: Recherche par nom/email, filtre par rôle
+- **Tableau articles** : Titre, Catégorie, Auteur, Date, Vues
+  - Actions: Voir, Modifier, Supprimer
+  - Filtres: Recherche, filtre par catégorie
+- **Tableau annonces** : Titre, Type, Prix, Ville, Agent, Statut
+  - Actions: Voir, Modifier, Changer statut, Supprimer
+  - Filtres: Type, Ville, Statut
+- **Tableau paiements** : Référence, Propriété, Client, Montant, Méthode, Statut, Date
+  - Actions: Changer statut, Supprimer
+  - Filtres: Statut, Méthode de paiement
+- **Export CSV** pour toutes les sections
+- **Confirmation obligatoire** avant suppression
+- **Pagination** 20 éléments par page
 
 ### Fonctionnalités Transverses
 - **Responsivité complète** (mobile 375px, tablette 768px, desktop)
@@ -55,52 +84,67 @@ Application web full-stack combinant un média d'actualités et une marketplace 
 ### Articles
 - GET /api/articles (public, avec pagination et recherche)
 - GET /api/articles/:id (public)
-- POST /api/articles (auth: auteur)
-- PUT /api/articles/:id (auth: auteur, own)
-- DELETE /api/articles/:id (auth: auteur, own)
+- POST /api/articles (auth: auteur/admin)
+- PUT /api/articles/:id (auth: auteur/admin, own)
+- DELETE /api/articles/:id (auth: auteur/admin, own)
 
 ### Immobilier
 - GET /api/properties (public, avec filtres)
 - GET /api/properties/:id (public)
-- POST /api/properties (auth: agent/auteur)
-- PUT /api/properties/:id (auth: agent/auteur, own)
-- DELETE /api/properties/:id (auth: agent/auteur, own)
+- POST /api/properties (auth: agent/auteur/admin)
+- PUT /api/properties/:id (auth: agent/auteur/admin, own)
+- DELETE /api/properties/:id (auth: agent/auteur/admin, own)
+
+### Paiements
+- POST /api/payments (auth)
+- GET /api/payments/my (auth)
+- GET /api/payments (auth: auteur/admin)
+- PUT /api/payments/:id/status (auth: auteur/admin)
+
+### Admin (role: admin uniquement)
+- GET /api/admin/stats
+- GET /api/admin/users
+- GET /api/admin/users/:id
+- PUT /api/admin/users/:id/status
+- PUT /api/admin/users/:id/role
+- DELETE /api/admin/users/:id
+- GET /api/admin/articles
+- DELETE /api/admin/articles/:id
+- GET /api/admin/properties
+- PUT /api/admin/properties/:id/status
+- DELETE /api/admin/properties/:id
+- GET /api/admin/payments
+- DELETE /api/admin/payments/:id
+- GET /api/admin/export/users (CSV)
+- GET /api/admin/export/articles (CSV)
+- GET /api/admin/export/properties (CSV)
+- GET /api/admin/export/payments (CSV)
 
 ### Upload
 - POST /api/upload (auth)
 - GET /api/media/images/{filename} (static)
 - GET /api/media/videos/{filename} (static)
 
-### Autres
-- GET /api/categories
-- GET /api/saved-articles (auth)
-- POST /api/saved-articles/:id (auth)
-- DELETE /api/saved-articles/:id (auth)
-
 ## Compte Test
-- **Admin/Auteur**: admin@example.com / adminpassword
+- **Admin**: admin@example.com / adminpassword
 
 ## Backlog
 
 ### P1 - Priorité Haute
-- **Phase 2 - Paiements Simulés**
-  - Bouton "Payer/Réserver" sur les annonces
-  - Sélection méthode de paiement (Orange Money, Mobile Money)
-  - Génération référence unique
-  - Historique des paiements (admin)
-
-### P2 - Priorité Moyenne  
 - **Phase 3 - Carte Interactive**
   - Intégration Leaflet.js
   - Affichage des annonces sur carte
   - Centrage par défaut sur Conakry
 
-### P3 - Backlog
+### P2 - Priorité Moyenne  
 - Inscription publique des agents immobiliers
+- Notifications par email
+
+### P3 - Backlog
 - Modèle économique (abonnements agents)
 - Intégration réelle API de paiement
-- Notifications email
 - PWA / mode hors ligne
+- Dashboard analytics avancé
 
 ## Issues Connues
 - Le rate limiter retourne parfois HTTP 520 au lieu de 429 (problème infrastructure Kubernetes, pas de bug code)
