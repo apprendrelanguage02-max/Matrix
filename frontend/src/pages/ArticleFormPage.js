@@ -57,6 +57,30 @@ export default function ArticleFormPage() {
     if (errors.content) setErrors((prev) => ({ ...prev, content: null }));
   };
 
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setForm((prev) => ({ ...prev, image_url: res.data.url }));
+      toast.success("Image de couverture uploadée !");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erreur lors de l'upload de l'image.");
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+  };
+
+  const removeCoverImage = () => {
+    setForm((prev) => ({ ...prev, image_url: "" }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validation = validate();
