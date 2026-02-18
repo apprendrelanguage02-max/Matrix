@@ -281,6 +281,22 @@ export default function Header({ onSearch, searchValue }) {
                 {cat}
               </Link>
             ))}
+
+            {/* Séparateur vertical */}
+            <span className="flex-shrink-0 w-px h-4 bg-zinc-700 mx-2 self-center" />
+
+            {/* Lien Immobilier */}
+            <Link
+              to="/immobilier"
+              data-testid="immobilier-nav-link"
+              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${
+                location.pathname.startsWith("/immobilier") || location.pathname.startsWith("/mes-annonces")
+                  ? "border-[#FF6600] text-[#FF6600]"
+                  : "border-transparent text-zinc-400 hover:text-white"
+              }`}
+            >
+              🏘 Immobilier
+            </Link>
           </nav>
         </div>
       </div>
