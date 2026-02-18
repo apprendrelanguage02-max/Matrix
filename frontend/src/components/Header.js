@@ -330,13 +330,13 @@ export default function Header({ onSearch, searchValue }) {
             <Link
               to="/immobilier"
               data-testid="immobilier-nav-link"
-              className={`flex-shrink-0 flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 whitespace-nowrap ${
+              className={`flex-shrink-0 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 whitespace-nowrap ${
                 location.pathname.startsWith("/immobilier") || location.pathname.startsWith("/mes-annonces")
                   ? "border-[#FF6600] text-[#FF6600]"
                   : "border-transparent text-zinc-400 hover:text-white"
               }`}
             >
-              🏘 Immobilier
+              Immobilier
             </Link>
           </nav>
         </div>
