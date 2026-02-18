@@ -61,6 +61,7 @@ function App() {
           <Route path="/admin/nouvelle" element={<AuthorRoute><ArticleFormPage /></AuthorRoute>} />
           <Route path="/admin/modifier/:id" element={<AuthorRoute><ArticleFormPage /></AuthorRoute>} />
           <Route path="/admin/paiements" element={<AuthorRoute><PaymentsAdminPage /></AuthorRoute>} />
+          <Route path="/admin/database" element={<AdminRoute><DatabasePage /></AdminRoute>} />
 
           {/* Immobilier */}
           <Route path="/immobilier" element={<ImmobilierPage />} />
