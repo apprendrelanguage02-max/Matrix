@@ -67,10 +67,17 @@ function ProfileDropdown({ user, onClose }) {
         <div className="py-1.5">
           {user?.role === "admin" && (
             <>
+              {/* Section Dashboard Articles */}
+              <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Dashboard Articles</p>
               <DropdownItem icon={LayoutDashboard} label="Mes articles" onClick={() => go("/admin")} testid="dropdown-dashboard" />
               <DropdownItem icon={Plus} label="Créer un article" onClick={() => go("/admin/nouvelle")} testid="dropdown-new-article" />
-              <DropdownItem icon={Settings} label="Base de données" onClick={() => go("/admin/database")} testid="dropdown-database" />
-              <div className="h-px bg-zinc-800 mx-3 my-1" />
+              <div className="h-px bg-zinc-800 mx-3 my-2" />
+              
+              {/* Section Dashboard Admin */}
+              <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Dashboard Admin</p>
+              <DropdownItem icon={Database} label="Base de données" onClick={() => go("/admin/database")} testid="dropdown-database" />
+              <DropdownItem icon={CreditCard} label="Paiements" onClick={() => go("/admin/paiements")} testid="dropdown-payments" />
+              <div className="h-px bg-zinc-800 mx-3 my-2" />
             </>
           )}
           {user?.role === "auteur" && (
@@ -82,6 +89,7 @@ function ProfileDropdown({ user, onClose }) {
           )}
           {(user?.role === "agent" || user?.role === "auteur" || user?.role === "admin") && (
             <>
+              <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Immobilier</p>
               <DropdownItem icon={PenSquare} label="Mes annonces" onClick={() => go("/mes-annonces")} testid="dropdown-my-properties" />
               <DropdownItem icon={Plus} label="Publier une annonce" onClick={() => go("/immobilier/publier")} testid="dropdown-new-property" />
               <div className="h-px bg-zinc-800 mx-3 my-1" />
