@@ -902,7 +902,7 @@ async def upload_media(file: UploadFile = File(...), current_user: dict = Depend
 
     # Build public URL
     backend_url = os.environ.get("REACT_APP_BACKEND_URL", "")
-    public_url = f"{backend_url}/media/{media_type}s/{unique_name}"
+    public_url = f"{backend_url}/api/media/{media_type}s/{unique_name}"
 
     return {"url": public_url, "type": media_type, "filename": unique_name}
 
