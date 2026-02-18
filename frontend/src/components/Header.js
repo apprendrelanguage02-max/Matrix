@@ -54,10 +54,11 @@ function ProfileDropdown({ user, onClose }) {
             </p>
             <p className="text-[11px] text-zinc-500 font-['Manrope'] truncate">{user?.email}</p>
             <span className={`inline-block mt-0.5 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${
+              user?.role === "admin" ? "bg-purple-600 text-white" :
               user?.role === "auteur" ? "bg-[#FF6600] text-white" :
               user?.role === "agent" ? "bg-blue-600 text-white" : "bg-zinc-700 text-zinc-300"
             }`}>
-              {user?.role === "auteur" ? "Admin" : user?.role === "agent" ? "Agent" : "Visiteur"}
+              {user?.role === "admin" ? "Admin" : user?.role === "auteur" ? "Auteur" : user?.role === "agent" ? "Agent" : "Visiteur"}
             </span>
           </div>
         </div>
