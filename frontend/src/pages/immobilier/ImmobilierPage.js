@@ -67,17 +67,17 @@ export default function ImmobilierPage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-black py-12 md:py-16">
+      <section className="bg-black py-8 sm:py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            <img src={LOGO} alt="GIMO" className="w-20 h-20 md:w-28 md:h-28 object-contain flex-shrink-0" />
-            <div className="flex items-start gap-4">
-              <div className="w-1.5 h-14 bg-[#FF6600] flex-shrink-0 mt-1" />
+          <div className="flex items-center gap-3 sm:gap-6">
+            <img src={LOGO} alt="GIMO" className="w-14 h-14 sm:w-20 sm:h-20 md:w-28 md:h-28 object-contain flex-shrink-0" />
+            <div className="flex items-start gap-2 sm:gap-4">
+              <div className="w-1 sm:w-1.5 h-10 sm:h-14 bg-[#FF6600] flex-shrink-0 mt-1" />
               <div>
-                <p className="text-[#FF6600] text-xs font-bold uppercase tracking-widest mb-2">
+                <p className="text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
                   {total > 0 ? `${total} annonce${total > 1 ? "s" : ""} disponibles` : "Immobilier GIMO"}
                 </p>
-                <h1 className="font-['Oswald'] text-3xl md:text-5xl font-bold uppercase tracking-tighter text-white leading-none">
+                <h1 className="font-['Oswald'] text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tighter text-white leading-none">
                   Immobilier<br />
                   <span className="text-[#FF6600]">Guinée</span>
                 </h1>
@@ -86,54 +86,54 @@ export default function ImmobilierPage() {
           </div>
         </div>
       </section>
-      <div className="h-1.5 bg-[#FF6600]" />
+      <div className="h-1 sm:h-1.5 bg-[#FF6600]" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Action bar */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-zinc-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+          <p className="text-xs sm:text-sm text-zinc-500">
             {!loading && <span><strong className="text-black">{total}</strong> annonce{total !== 1 ? "s" : ""}</span>}
           </p>
           {canPublish && (
             <Link to="/immobilier/publier"
-              className="flex items-center gap-2 bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#CC5200] transition-colors">
-              <PlusCircle className="w-4 h-4" /> Publier une annonce
+              className="flex items-center gap-2 bg-[#FF6600] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:bg-[#CC5200] transition-colors">
+              <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Publier une annonce
             </Link>
           )}
         </div>
 
         <PropertyFilters filters={filters} onChange={handleFilters} />
 
-        {loading && <div className="flex justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-[#FF6600]" /></div>}
-        {error && !loading && <p className="text-center text-red-600 py-24">{error}</p>}
+        {loading && <div className="flex justify-center py-16 sm:py-24"><Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-[#FF6600]" /></div>}
+        {error && !loading && <p className="text-center text-red-600 py-16 sm:py-24 text-sm sm:text-base">{error}</p>}
         {!loading && !error && properties.length === 0 && (
-          <div className="text-center py-24">
-            <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">Aucune annonce</p>
-            <p className="text-zinc-500 mt-2 text-sm">Essayez de modifier vos filtres.</p>
+          <div className="text-center py-16 sm:py-24">
+            <p className="font-['Oswald'] text-2xl sm:text-3xl uppercase text-zinc-300">Aucune annonce</p>
+            <p className="text-zinc-500 mt-2 text-xs sm:text-sm">Essayez de modifier vos filtres.</p>
           </div>
         )}
 
         {!loading && !error && properties.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {properties.map(p => <PropertyCard key={p.id} property={p} />)}
           </div>
         )}
 
         {pages > 1 && !loading && (
-          <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-zinc-200">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-zinc-200">
             <button onClick={() => goToPage(filters.page - 1)} disabled={filters.page <= 1}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold uppercase border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30">
-              <ChevronLeft className="w-4 h-4" /> Précédent
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold uppercase border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30">
+              <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Précédent</span>
             </button>
             {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
               <button key={p} onClick={() => goToPage(p)}
-                className={`w-10 h-10 text-sm font-bold border transition-all ${
+                className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm font-bold border transition-all ${
                   p === filters.page ? "bg-[#FF6600] border-[#FF6600] text-white" : "border-zinc-300 hover:border-black hover:bg-black hover:text-white"
                 }`}>{p}</button>
             ))}
             <button onClick={() => goToPage(filters.page + 1)} disabled={filters.page >= pages}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold uppercase border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30">
-              Suivant <ChevronRight className="w-4 h-4" />
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold uppercase border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30">
+              <span className="hidden sm:inline">Suivant</span> <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
         )}
