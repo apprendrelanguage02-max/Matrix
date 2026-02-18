@@ -80,58 +80,58 @@ export default function CategoryPage() {
 
       <div className="h-1 sm:h-1.5 bg-[#FF6600]" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Back */}
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors duration-200 mb-8"
+          className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors duration-200 mb-6 sm:mb-8"
         >
           ← Toutes les catégories
         </Link>
 
         {loading && (
-          <div className="flex justify-center py-24">
-            <Loader2 className="w-8 h-8 animate-spin text-[#FF6600]" />
+          <div className="flex justify-center py-16 sm:py-24">
+            <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-[#FF6600]" />
           </div>
         )}
 
         {error && !loading && (
-          <div className="text-center py-24">
-            <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">{error}</p>
-            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline">Retour à l'accueil</Link>
+          <div className="text-center py-16 sm:py-24">
+            <p className="font-['Oswald'] text-2xl sm:text-3xl uppercase text-zinc-300">{error}</p>
+            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline text-sm sm:text-base">Retour à l'accueil</Link>
           </div>
         )}
 
         {!loading && !error && articles.length === 0 && (
-          <div className="text-center py-24" data-testid="empty-category">
-            <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">Aucun article</p>
-            <p className="font-['Manrope'] text-zinc-500 mt-2 text-sm">Aucun article dans cette catégorie pour l'instant.</p>
-            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline">Retour à l'accueil</Link>
+          <div className="text-center py-16 sm:py-24" data-testid="empty-category">
+            <p className="font-['Oswald'] text-2xl sm:text-3xl uppercase text-zinc-300">Aucun article</p>
+            <p className="font-['Manrope'] text-zinc-500 mt-2 text-xs sm:text-sm">Aucun article dans cette catégorie pour l'instant.</p>
+            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline text-sm sm:text-base">Retour à l'accueil</Link>
           </div>
         )}
 
         {!loading && !error && articles.length > 0 && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" data-testid="category-articles-list">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10" data-testid="category-articles-list">
               {articles.map((a) => (
                 <ArticleCard key={a.id} article={a} />
               ))}
             </div>
 
             {pages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8 pt-8 border-t border-zinc-200">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-zinc-200">
                 <button
                   onClick={() => goToPage(page - 1)}
                   disabled={page <= 1}
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-bold border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30"
+                  className="flex items-center gap-1 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Précédent
+                  <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Précédent</span>
                 </button>
                 {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
                   <button
                     key={p}
                     onClick={() => goToPage(p)}
-                    className={`w-10 h-10 text-sm font-bold border transition-all ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm font-bold border transition-all ${
                       p === page ? "bg-[#FF6600] border-[#FF6600] text-white" : "border-zinc-300 hover:border-black hover:bg-black hover:text-white"
                     }`}
                   >
@@ -141,9 +141,9 @@ export default function CategoryPage() {
                 <button
                   onClick={() => goToPage(page + 1)}
                   disabled={page >= pages}
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-bold border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30"
+                  className="flex items-center gap-1 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30"
                 >
-                  Suivant <ChevronRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">Suivant</span> <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             )}
@@ -151,12 +151,7 @@ export default function CategoryPage() {
         )}
       </main>
 
-      <footer className="bg-black text-zinc-400 py-8 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-['Oswald'] text-white font-bold tracking-widest uppercase">Matrix News</span>
-          <p className="font-['Manrope'] text-xs">&copy; {new Date().getFullYear()} — Tous droits réservés</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
