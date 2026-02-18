@@ -12,7 +12,14 @@ const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a
 
 export default function CategoryPage() {
   const { slug } = useParams();
-  const category = decodeURIComponent(slug);
+  const decodedSlug = decodeURIComponent(slug);
+  
+  // Trouver la catégorie correspondante (insensible aux accents/casse)
+  const category = CATEGORIES.find(cat => 
+    cat.toLowerCase() === decodedSlug.toLowerCase() ||
+    cat.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === decodedSlug.toLowerCase()
+  ) || decodedSlug;
+  
   const [articles, setArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
