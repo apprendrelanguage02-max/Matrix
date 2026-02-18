@@ -190,7 +190,7 @@ export default function Header({ onSearch, searchValue }) {
           <nav className="flex items-center gap-2 sm:gap-3 ml-auto flex-shrink-0">
             {token && user ? (
               <>
-                {user.role === "auteur" && (
+                {(user.role === "auteur" || user.role === "admin") && (
                   <Link to="/admin" data-testid="admin-dashboard-link" className="hidden lg:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200">
                     <PenSquare className="w-4 h-4" />
                     Dashboard
