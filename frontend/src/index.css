@@ -15,6 +15,15 @@ body {
 
 * { box-sizing: border-box; }
 
+/* ── Scrollbar hide utility ─────────────────── */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+}
+
 .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
