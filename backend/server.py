@@ -396,8 +396,13 @@ async def require_author(current_user: dict = Depends(get_current_user)):
     return current_user
 
 async def require_agent(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ("agent", "auteur"):
+    if current_user.get("role") not in ("agent", "auteur", "admin"):
         raise HTTPException(status_code=403, detail="Accès réservé aux agents immobiliers")
+    return current_user
+
+async def require_admin(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     return current_user
 
 # ─── Auth Routes ───────────────────────────────────────────────────────────────
