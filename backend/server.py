@@ -160,6 +160,23 @@ class UserOut(BaseModel):
     address: Optional[str] = None
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
+    status: str = "actif"
+
+class UserAdminOut(BaseModel):
+    id: str
+    username: str
+    email: str
+    role: str
+    created_at: str = ""
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    status: str = "actif"
+
+class PaginatedUsers(BaseModel):
+    users: List[UserAdminOut]
+    total: int
+    page: int
+    pages: int
 
 class UserProfileUpdate(BaseModel):
     username: Optional[str] = Field(default=None, min_length=2, max_length=50)
