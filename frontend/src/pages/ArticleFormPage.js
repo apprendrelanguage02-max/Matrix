@@ -191,31 +191,55 @@ export default function ArticleFormPage() {
               {errors.category && <p className="text-red-600 text-xs mt-1" data-testid="category-error">{errors.category}</p>}
             </div>
 
-            {/* Cover image URL */}
+            {/* Cover image Upload */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-1.5">
                 <ImageIcon className="w-3 h-3" />
                 Image de couverture (optionnel)
               </label>
-              <input
-                type="url"
-                name="image_url"
-                value={form.image_url}
-                onChange={handleChange}
-                data-testid="image-url-input"
-                placeholder="https://exemple.com/image.jpg"
-                className="w-full border border-zinc-300 px-4 py-3 text-base font-['Manrope'] text-black placeholder:text-zinc-300 focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] transition-colors"
-              />
-              {form.image_url && (
-                <div className="mt-3 overflow-hidden h-40 border border-zinc-200">
+              <p className="text-xs text-zinc-400 mb-3">JPG, PNG ou WEBP · max 5 Mo</p>
+              
+              {form.image_url ? (
+                <div className="relative overflow-hidden h-48 border border-zinc-200 group">
                   <img
                     src={form.image_url}
                     alt="Aperçu couverture"
                     data-testid="image-preview"
                     className="w-full h-full object-cover"
-                    onError={(e) => { e.target.style.display = "none"; }}
+                    onError={(e) => { e.target.src = ""; e.target.parentElement.classList.add("bg-zinc-100"); }}
                   />
+                  <button
+                    type="button"
+                    onClick={removeCoverImage}
+                    className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Supprimer l'image"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Cliquez sur × pour changer l'image
+                  </div>
                 </div>
+              ) : (
+                <label className={`flex flex-col items-center justify-center h-40 border-2 border-dashed border-zinc-300 hover:border-[#FF6600] cursor-pointer transition-colors ${uploadingCover ? "opacity-50 cursor-not-allowed" : ""}`}>
+                  {uploadingCover ? (
+                    <Loader2 className="w-8 h-8 text-[#FF6600] animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 text-zinc-400 mb-2" />
+                      <span className="text-sm text-zinc-500 font-['Manrope']">Cliquez pour uploader une image</span>
+                    </>
+                  )}
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    disabled={uploadingCover}
+                    onChange={handleCoverUpload}
+                    data-testid="cover-image-upload"
+                  />
+                </label>
               )}
             </div>
 
