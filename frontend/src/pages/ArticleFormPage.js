@@ -4,18 +4,20 @@ import Header from "../components/Header";
 import RichEditor from "../components/RichEditor";
 import api from "../lib/api";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, ImageIcon, ChevronDown } from "lucide-react";
+import { Loader2, ArrowLeft, ImageIcon, ChevronDown, Upload, X } from "lucide-react";
 import { CATEGORIES } from "../lib/categories";
 
 export default function ArticleFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const coverInputRef = useRef(null);
 
   const [form, setForm] = useState({ title: "", content: "", image_url: "", category: "" });
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEdit);
   const [errors, setErrors] = useState({});
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
     if (!isEdit) return;
