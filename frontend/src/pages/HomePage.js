@@ -201,12 +201,7 @@ export default function HomePage() {
         )}
       </main>
 
-      <footer className="bg-black text-zinc-400 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-['Oswald'] text-white font-bold tracking-widest uppercase">Matrix News</span>
-          <p className="font-['Manrope'] text-xs">&copy; {new Date().getFullYear()} — Tous droits réservés</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
