@@ -23,7 +23,6 @@ import uuid
 from datetime import datetime, timezone
 import bcrypt
 import jwt
-import re
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -218,7 +217,7 @@ class ArticleUpdate(BaseModel):
     @classmethod
     def valid_category(cls, v):
         if v is not None and v not in CATEGORIES:
-            raise ValueError(f'Catégorie invalide')
+            raise ValueError('Catégorie invalide')
         return v
 
 class ArticleOut(BaseModel):
