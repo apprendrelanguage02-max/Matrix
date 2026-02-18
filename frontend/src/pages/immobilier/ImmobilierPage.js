@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Header from "../../components/Header";
+import Footer from "../../components/layout/Footer";
 import PropertyCard from "../../components/immobilier/PropertyCard";
 import PropertyFilters from "../../components/immobilier/PropertyFilters";
 import api from "../../lib/api";
