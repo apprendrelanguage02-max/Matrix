@@ -216,12 +216,7 @@ export default function PropertyDetailPage() {
 
       {showPayment && <PaymentModal property={property} onClose={() => { setShowPayment(false); api.get(`/properties/${id}`).then(r => setProperty(r.data)).catch(() => {}); }} />}
 
-      <footer className="bg-black text-zinc-400 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <span className="font-['Oswald'] text-white font-bold tracking-widest uppercase">Immobilier GIMO</span>
-          <p className="text-xs">&copy; {new Date().getFullYear()}</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
