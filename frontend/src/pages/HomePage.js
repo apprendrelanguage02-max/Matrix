@@ -132,10 +132,10 @@ export default function HomePage() {
           <div data-testid="articles-list">
             {/* Featured */}
             {featuredArticle && (
-              <div className="mb-10">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="h-0.5 w-8 bg-[#FF6600]" />
-                  <span className="font-['Manrope'] text-xs font-bold uppercase tracking-widest text-[#FF6600]">À la une</span>
+              <div className="mb-6 sm:mb-10">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+                  <span className="h-0.5 w-6 sm:w-8 bg-[#FF6600]" />
+                  <span className="font-['Manrope'] text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#FF6600]">À la une</span>
                 </div>
                 <ArticleCard article={featuredArticle} featured />
               </div>
@@ -145,12 +145,12 @@ export default function HomePage() {
             {gridArticles.length > 0 && (
               <div>
                 {featuredArticle && (
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="h-0.5 w-8 bg-zinc-300" />
-                    <span className="font-['Manrope'] text-xs font-bold uppercase tracking-widest text-zinc-400">Toutes les nouvelles</span>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <span className="h-0.5 w-6 sm:w-8 bg-zinc-300" />
+                    <span className="font-['Manrope'] text-[10px] sm:text-xs font-bold uppercase tracking-widest text-zinc-400">Toutes les nouvelles</span>
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {gridArticles.map((a) => (
                     <ArticleCard key={a.id} article={a} />
                   ))}
@@ -160,15 +160,15 @@ export default function HomePage() {
 
             {/* Pagination */}
             {pages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-zinc-200" data-testid="pagination">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-zinc-200" data-testid="pagination">
                 <button
                   onClick={() => goToPage(page - 1)}
                   disabled={page <= 1}
                   data-testid="prev-page"
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold font-['Manrope'] uppercase tracking-wider border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold font-['Manrope'] uppercase tracking-wider border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Précédent
+                  <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Précédent</span>
                 </button>
 
                 {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
@@ -176,7 +176,7 @@ export default function HomePage() {
                     key={p}
                     onClick={() => goToPage(p)}
                     data-testid={`page-${p}`}
-                    className={`w-10 h-10 text-sm font-bold font-['Manrope'] border transition-all ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm font-bold font-['Manrope'] border transition-all ${
                       p === page
                         ? "bg-[#FF6600] border-[#FF6600] text-white"
                         : "border-zinc-300 hover:border-black hover:bg-black hover:text-white"
@@ -190,10 +190,10 @@ export default function HomePage() {
                   onClick={() => goToPage(page + 1)}
                   disabled={page >= pages}
                   data-testid="next-page"
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold font-['Manrope'] uppercase tracking-wider border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold font-['Manrope'] uppercase tracking-wider border border-zinc-300 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  Suivant
-                  <ChevronRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">Suivant</span>
+                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             )}
