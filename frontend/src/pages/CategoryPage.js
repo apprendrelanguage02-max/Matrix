@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/layout/Footer";
 import ArticleCard from "../components/ArticleCard";
 import api from "../lib/api";
 import { Loader2, Tag, ChevronLeft, ChevronRight } from "lucide-react";
 import { CATEGORIES, getCategoryColor } from "../lib/categories";
 
 const PAGE_SIZE = 10;
+const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -45,32 +47,38 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-white font-['Manrope']">
       <Header />
 
-      {/* Hero catégorie */}
-      <section className="bg-black py-14 md:py-20">
+      {/* Hero catégorie avec logo */}
+      <section className="bg-black py-8 sm:py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-4">
-            <div className="w-1.5 h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase tracking-widest font-['Manrope'] ${catColor.bg} ${catColor.text}`}>
-                  <Tag className="w-3 h-3" />
-                  {category}
-                </span>
-              </div>
-              <h1 className="font-['Oswald'] text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
-                {category}
-              </h1>
-              {!loading && (
-                <p className="font-['Manrope'] text-zinc-400 text-sm mt-2">
-                  {total} article{total !== 1 ? "s" : ""}
+          <div className="flex items-center gap-3 sm:gap-6">
+            {/* Logo Nimba */}
+            <img
+              src={LOGO}
+              alt="Matrix News"
+              className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain flex-shrink-0"
+            />
+            <div className="flex items-start gap-2 sm:gap-4">
+              <div className="w-1 sm:w-1.5 h-12 sm:h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
+              <div>
+                <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                  <span className={`inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest font-['Manrope'] ${catColor.bg} ${catColor.text}`}>
+                    <Tag className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    {category}
+                  </span>
+                </div>
+                <p className="font-['Manrope'] text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
+                  {!loading && `${total} article${total !== 1 ? "s" : ""}`}
                 </p>
-              )}
+                <h1 className="font-['Oswald'] text-2xl sm:text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
+                  {category}
+                </h1>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="h-1.5 bg-[#FF6600]" />
+      <div className="h-1 sm:h-1.5 bg-[#FF6600]" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back */}
