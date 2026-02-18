@@ -16,6 +16,7 @@ import PropertyFormPage from "./pages/immobilier/PropertyFormPage";
 import AgentDashboardPage from "./pages/immobilier/AgentDashboardPage";
 import PaymentsAdminPage from "./pages/immobilier/PaymentsAdminPage";
 import DatabasePage from "./pages/admin/DatabasePage";
+import ChatHelp from "./components/ChatHelp";
 import "./App.css";
 
 function PrivateRoute({ children }) {
