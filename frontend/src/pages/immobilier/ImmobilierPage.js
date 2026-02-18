@@ -69,19 +69,16 @@ export default function ImmobilierPage() {
       {/* Hero */}
       <section className="bg-black py-8 sm:py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 sm:gap-6">
-            <img src={LOGO} alt="GIMO" className="w-14 h-14 sm:w-20 sm:h-20 md:w-28 md:h-28 object-contain flex-shrink-0" />
-            <div className="flex items-start gap-2 sm:gap-4">
-              <div className="w-1 sm:w-1.5 h-10 sm:h-14 bg-[#FF6600] flex-shrink-0 mt-1" />
-              <div>
-                <p className="text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
-                  {total > 0 ? `${total} annonce${total > 1 ? "s" : ""} disponibles` : "Immobilier GIMO"}
-                </p>
-                <h1 className="font-['Oswald'] text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tighter text-white leading-none">
-                  Immobilier<br />
-                  <span className="text-[#FF6600]">Guinée</span>
-                </h1>
-              </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="w-1 sm:w-1.5 h-12 sm:h-16 bg-[#FF6600] flex-shrink-0" />
+            <div>
+              <p className="text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
+                {total > 0 ? `${total} annonce${total > 1 ? "s" : ""} disponibles` : "Immobilier GIMO"}
+              </p>
+              <h1 className="font-['Oswald'] text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tighter text-white leading-none">
+                Immobilier<br />
+                <span className="text-[#FF6600]">Guinée</span>
+              </h1>
             </div>
           </div>
         </div>
