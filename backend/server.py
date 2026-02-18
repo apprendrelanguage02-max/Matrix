@@ -392,6 +392,19 @@ def user_to_out(user: dict) -> UserOut:
         address=user.get("address"),
         avatar_url=user.get("avatar_url"),
         bio=user.get("bio"),
+        status=user.get("status", "actif"),
+    )
+
+def user_to_admin_out(user: dict) -> UserAdminOut:
+    return UserAdminOut(
+        id=user["id"],
+        username=user["username"],
+        email=user["email"],
+        role=user.get("role", "visiteur"),
+        created_at=user.get("created_at", ""),
+        phone=user.get("phone"),
+        country=user.get("country"),
+        status=user.get("status", "actif"),
     )
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
