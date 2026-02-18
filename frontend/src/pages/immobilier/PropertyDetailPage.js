@@ -1,6 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
+import Footer from "../../components/layout/Footer";
 import PaymentModal from "../../components/immobilier/PaymentModal";
 import { formatPrice } from "../../components/immobilier/PropertyCard";
 import { useAuth } from "../../context/AuthContext";
