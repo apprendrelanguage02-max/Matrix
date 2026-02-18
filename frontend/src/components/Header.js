@@ -114,6 +114,8 @@ export default function Header({ onSearch, searchValue }) {
   const location = useLocation();
   const [focused, setFocused] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const dropdownRef = useRef(null);
   const bg = getAvatarBg(user?.username);
 
