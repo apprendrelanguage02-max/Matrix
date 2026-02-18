@@ -295,25 +295,25 @@ export default function Header({ onSearch, searchValue }) {
       {/* Category nav */}
       <div className="border-t border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center overflow-x-auto" data-testid="category-nav">
-            <Link to="/" className={`flex-shrink-0 px-4 py-2.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${!activeCategory && location.pathname === "/" ? "border-[#FF6600] text-[#FF6600]" : "border-transparent text-zinc-400 hover:text-white"}`}>
+          <nav className="flex items-center overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0" data-testid="category-nav">
+            <Link to="/" className={`flex-shrink-0 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${!activeCategory && location.pathname === "/" ? "border-[#FF6600] text-[#FF6600]" : "border-transparent text-zinc-400 hover:text-white"}`}>
               Toutes
             </Link>
             {CATEGORIES.map((cat) => (
               <Link key={cat} to={`/categorie/${slugify(cat)}`} data-testid={`nav-category-${cat}`}
-                className={`flex-shrink-0 px-4 py-2.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${activeCategory === cat ? "border-[#FF6600] text-[#FF6600]" : "border-transparent text-zinc-400 hover:text-white"}`}>
+                className={`flex-shrink-0 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 whitespace-nowrap ${activeCategory === cat ? "border-[#FF6600] text-[#FF6600]" : "border-transparent text-zinc-400 hover:text-white"}`}>
                 {cat}
               </Link>
             ))}
 
             {/* Séparateur vertical */}
-            <span className="flex-shrink-0 w-px h-4 bg-zinc-700 mx-2 self-center" />
+            <span className="flex-shrink-0 w-px h-4 bg-zinc-700 mx-1 sm:mx-2 self-center" />
 
             {/* Lien Immobilier */}
             <Link
               to="/immobilier"
               data-testid="immobilier-nav-link"
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 ${
+              className={`flex-shrink-0 flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 whitespace-nowrap ${
                 location.pathname.startsWith("/immobilier") || location.pathname.startsWith("/mes-annonces")
                   ? "border-[#FF6600] text-[#FF6600]"
                   : "border-transparent text-zinc-400 hover:text-white"
