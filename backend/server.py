@@ -391,7 +391,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Token invalide ou expiré")
 
 async def require_author(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "auteur":
+    if current_user.get("role") not in ("auteur", "admin"):
         raise HTTPException(status_code=403, detail="Accès réservé aux auteurs")
     return current_user
 
