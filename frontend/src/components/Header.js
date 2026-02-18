@@ -136,25 +136,28 @@ export default function Header({ onSearch, searchValue }) {
 
   useEffect(() => { setDropdownOpen(false); }, [location.pathname]);
 
+  // Close mobile menu on route change
+  useEffect(() => { setMobileMenuOpen(false); setMobileSearchOpen(false); }, [location.pathname]);
+
   return (
     <header className="bg-black text-white sticky top-0 z-50 shadow-lg" data-testid="main-header">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4 h-16">
+        <div className="flex items-center gap-2 sm:gap-4 h-14 sm:h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" data-testid="header-logo">
             <img
               src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
               alt="Matrix News Logo"
-              className="w-9 h-9 object-contain rounded-sm"
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-sm"
             />
-            <span className="font-['Oswald'] text-xl font-bold tracking-widest uppercase text-white group-hover:text-[#FF6600] transition-colors duration-200 whitespace-nowrap">
+            <span className="hidden sm:inline font-['Oswald'] text-xl font-bold tracking-widest uppercase text-white group-hover:text-[#FF6600] transition-colors duration-200 whitespace-nowrap">
               Matrix News
             </span>
           </Link>
 
-          {/* Search */}
-          <div className="flex-1 max-w-xl">
-            <div className={`flex items-center border ${focused ? "border-[#FF6600]" : "border-zinc-700"} bg-zinc-900 rounded-full transition-colors duration-200`}>
+          {/* Desktop Search */}
+          <div className="hidden md:flex flex-1 max-w-xl">
+            <div className={`flex items-center w-full border ${focused ? "border-[#FF6600]" : "border-zinc-700"} bg-zinc-900 rounded-full transition-colors duration-200`}>
               <Search className="w-4 h-4 text-zinc-500 ml-4 flex-shrink-0" />
               <input
                 type="text"
@@ -174,14 +177,21 @@ export default function Header({ onSearch, searchValue }) {
             </div>
           </div>
 
-          {/* Immobilier nav link - moved to category bar */}
+          {/* Mobile Search Button */}
+          <button 
+            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            className="md:hidden p-2 text-zinc-400 hover:text-white transition-colors"
+            data-testid="mobile-search-btn"
+          >
+            <Search className="w-5 h-5" />
+          </button>
 
           {/* Nav */}
-          <nav className="flex items-center gap-3 ml-auto flex-shrink-0">
+          <nav className="flex items-center gap-2 sm:gap-3 ml-auto flex-shrink-0">
             {token && user ? (
               <>
                 {user.role === "auteur" && (
-                  <Link to="/admin" data-testid="admin-dashboard-link" className="hidden sm:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200">
+                  <Link to="/admin" data-testid="admin-dashboard-link" className="hidden lg:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200">
                     <PenSquare className="w-4 h-4" />
                     Dashboard
                   </Link>
@@ -195,15 +205,15 @@ export default function Header({ onSearch, searchValue }) {
                     className="flex items-center gap-1 group"
                   >
                     <div
-                      className={`w-9 h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 transition-all duration-200 select-none ${dropdownOpen ? "ring-[#FF6600]" : "ring-transparent group-hover:ring-[#FF6600]"}`}
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 transition-all duration-200 select-none ${dropdownOpen ? "ring-[#FF6600]" : "ring-transparent group-hover:ring-[#FF6600]"}`}
                       style={{ backgroundColor: user.avatar_url ? "transparent" : bg, color: "#fff" }}
                     >
                       {user.avatar_url
-                        ? <img src={user.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={(e) => { e.target.style.display="none"; }} />
+                        ? <img src={user.avatar_url} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover" onError={(e) => { e.target.style.display="none"; }} />
                         : getInitials(user.username)
                       }
                     </div>
-                    <ChevronDown className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`hidden sm:block w-3 h-3 text-zinc-500 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
                   </button>
                   {dropdownOpen && <ProfileDropdown user={user} onClose={() => setDropdownOpen(false)} />}
                 </div>
@@ -258,6 +268,29 @@ export default function Header({ onSearch, searchValue }) {
           </nav>
         </div>
       </div>
+
+      {/* Mobile Search Bar */}
+      {mobileSearchOpen && (
+        <div className="md:hidden px-4 pb-3 bg-black border-t border-zinc-800">
+          <div className="flex items-center border border-zinc-700 bg-zinc-900 rounded-full">
+            <Search className="w-4 h-4 text-zinc-500 ml-4 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchValue || ""}
+              onChange={(e) => onSearch && onSearch(e.target.value)}
+              data-testid="mobile-search-input"
+              placeholder="Rechercher..."
+              className="flex-1 bg-transparent text-white text-sm font-['Manrope'] placeholder:text-zinc-500 px-3 py-2 focus:outline-none"
+              autoFocus
+            />
+            {searchValue && (
+              <button onClick={() => onSearch && onSearch("")} className="p-2 mr-1 text-zinc-500 hover:text-white">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Category nav */}
       <div className="border-t border-zinc-800">
