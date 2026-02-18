@@ -15,6 +15,7 @@ import PropertyDetailPage from "./pages/immobilier/PropertyDetailPage";
 import PropertyFormPage from "./pages/immobilier/PropertyFormPage";
 import AgentDashboardPage from "./pages/immobilier/AgentDashboardPage";
 import PaymentsAdminPage from "./pages/immobilier/PaymentsAdminPage";
+import DatabasePage from "./pages/admin/DatabasePage";
 import "./App.css";
 
 function PrivateRoute({ children }) {
@@ -25,14 +26,21 @@ function PrivateRoute({ children }) {
 function AuthorRoute({ children }) {
   const { token, user } = useAuth();
   if (!token) return <Navigate to="/connexion" replace />;
-  if (user?.role !== "auteur") return <Navigate to="/profil" replace />;
+  if (user?.role !== "auteur" && user?.role !== "admin") return <Navigate to="/profil" replace />;
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { token, user } = useAuth();
+  if (!token) return <Navigate to="/connexion" replace />;
+  if (user?.role !== "admin") return <Navigate to="/" replace />;
   return children;
 }
 
 function AgentRoute({ children }) {
   const { token, user } = useAuth();
   if (!token) return <Navigate to="/connexion" replace />;
-  if (user?.role !== "agent" && user?.role !== "auteur") return <Navigate to="/immobilier" replace />;
+  if (user?.role !== "agent" && user?.role !== "auteur" && user?.role !== "admin") return <Navigate to="/immobilier" replace />;
   return children;
 }
 
