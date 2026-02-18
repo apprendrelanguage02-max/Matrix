@@ -63,21 +63,21 @@ export default function HomePage() {
       <Header onSearch={setSearch} searchValue={search} />
 
       {/* Hero */}
-      <section className="bg-black py-14 md:py-20">
+      <section className="bg-black py-8 sm:py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             <img
               src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
               alt="Matrix News"
-              className="w-24 h-24 md:w-32 md:h-32 object-contain flex-shrink-0"
+              className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain flex-shrink-0"
             />
-            <div className="flex items-start gap-4">
-              <div className="w-1.5 h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
+            <div className="flex items-start gap-2 sm:gap-4">
+              <div className="w-1 sm:w-1.5 h-12 sm:h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
               <div>
-                <p className="font-['Manrope'] text-[#FF6600] text-xs font-bold uppercase tracking-widest mb-2">
+                <p className="font-['Manrope'] text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
                   {total > 0 ? `${total} article${total > 1 ? "s" : ""} publiés` : "Actualités"}
                 </p>
-                <h1 className="font-['Oswald'] text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
+                <h1 className="font-['Oswald'] text-2xl sm:text-4xl md:text-6xl font-bold uppercase tracking-tighter text-white leading-none">
                   Les dernières<br />
                   <span className="text-[#FF6600]">nouvelles</span>
                 </h1>
@@ -87,16 +87,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="h-1.5 bg-[#FF6600]" />
+      <div className="h-1 sm:h-1.5 bg-[#FF6600]" />
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
 
         {/* Search info */}
         {search.trim() && !loading && (
-          <div className="flex items-center gap-2 mb-8 pb-4 border-b border-zinc-200" data-testid="search-results-info">
+          <div className="flex items-center gap-2 mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-zinc-200" data-testid="search-results-info">
             <Search className="w-4 h-4 text-[#FF6600]" />
-            <span className="font-['Manrope'] text-sm text-zinc-500">
+            <span className="font-['Manrope'] text-xs sm:text-sm text-zinc-500">
               <span className="font-bold text-black">{total}</span> résultat{total !== 1 ? "s" : ""} pour «{" "}
               <span className="text-[#FF6600]">{search}</span> »
             </span>
