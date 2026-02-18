@@ -942,6 +942,413 @@ async def upload_media(file: UploadFile = File(...), current_user: dict = Depend
     return {"url": public_url, "type": media_type, "filename": unique_name}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADMIN DATABASE ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(current_user: dict = Depends(require_admin)):
+    """Get dashboard statistics for admin."""
+    total_users = await db.users.count_documents({})
+    total_articles = await db.articles.count_documents({})
+    total_properties = await db.properties.count_documents({})
+    total_payments = await db.payments.count_documents({})
+    
+    return {
+        "total_users": total_users,
+        "total_articles": total_articles,
+        "total_properties": total_properties,
+        "total_payments": total_payments,
+    }
+
+
+@api_router.get("/admin/users", response_model=PaginatedUsers)
+async def get_admin_users(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: str = Query("", max_length=100),
+    role: str = Query("", max_length=20),
+    current_user: dict = Depends(require_admin)
+):
+    """Get paginated users list for admin."""
+    query = {}
+    if search:
+        query["$or"] = [
+            {"username": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+        ]
+    if role:
+        query["role"] = role
+    
+    total = await db.users.count_documents(query)
+    pages = (total + limit - 1) // limit
+    skip = (page - 1) * limit
+    
+    users = await db.users.find(query, {"_id": 0, "hashed_password": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return PaginatedUsers(
+        users=[user_to_admin_out(u) for u in users],
+        total=total,
+        page=page,
+        pages=pages
+    )
+
+
+@api_router.get("/admin/users/{user_id}")
+async def get_admin_user_detail(user_id: str, current_user: dict = Depends(require_admin)):
+    """Get single user detail for admin."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    return user
+
+
+@api_router.put("/admin/users/{user_id}/status")
+async def update_user_status(user_id: str, status: str = Query(...), current_user: dict = Depends(require_admin)):
+    """Suspend or activate a user."""
+    if status not in ("actif", "suspendu"):
+        raise HTTPException(status_code=400, detail="Statut invalide. Utilisez 'actif' ou 'suspendu'.")
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas modifier votre propre statut")
+    
+    await db.users.update_one({"id": user_id}, {"$set": {"status": status}})
+    return {"ok": True, "message": f"Utilisateur {'suspendu' if status == 'suspendu' else 'activé'} avec succès"}
+
+
+@api_router.put("/admin/users/{user_id}/role")
+async def update_user_role(user_id: str, role: str = Query(...), current_user: dict = Depends(require_admin)):
+    """Update user role (admin only)."""
+    if role not in ("visiteur", "auteur", "agent", "admin"):
+        raise HTTPException(status_code=400, detail="Rôle invalide")
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas modifier votre propre rôle")
+    
+    await db.users.update_one({"id": user_id}, {"$set": {"role": role}})
+    return {"ok": True, "message": f"Rôle mis à jour vers '{role}'"}
+
+
+@api_router.delete("/admin/users/{user_id}")
+async def delete_user(user_id: str, current_user: dict = Depends(require_admin)):
+    """Delete a user and their data."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas supprimer votre propre compte")
+    
+    # Delete user and their related data
+    await db.users.delete_one({"id": user_id})
+    await db.articles.delete_many({"author_id": user_id})
+    await db.properties.delete_many({"author_id": user_id})
+    await db.saved_articles.delete_many({"user_id": user_id})
+    await db.payments.delete_many({"user_id": user_id})
+    
+    return {"ok": True, "message": "Utilisateur et données associées supprimés"}
+
+
+class ArticleAdminOut(BaseModel):
+    id: str
+    title: str
+    category: str
+    author_id: str
+    author_username: str
+    published_at: str
+    views: int
+    status: str = "publie"
+
+class PaginatedArticlesAdmin(BaseModel):
+    articles: List[ArticleAdminOut]
+    total: int
+    page: int
+    pages: int
+
+
+@api_router.get("/admin/articles", response_model=PaginatedArticlesAdmin)
+async def get_admin_articles(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: str = Query("", max_length=100),
+    category: str = Query("", max_length=50),
+    current_user: dict = Depends(require_admin)
+):
+    """Get paginated articles for admin."""
+    query = {}
+    if search:
+        query["title"] = {"$regex": search, "$options": "i"}
+    if category:
+        query["category"] = category
+    
+    total = await db.articles.count_documents(query)
+    pages = (total + limit - 1) // limit
+    skip = (page - 1) * limit
+    
+    articles = await db.articles.find(query, {"_id": 0}).sort("published_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Batch fetch authors
+    author_ids = list(set(a.get("author_id", "") for a in articles if a.get("author_id")))
+    authors = await db.users.find({"id": {"$in": author_ids}}, {"_id": 0, "id": 1, "username": 1}).to_list(100)
+    authors_map = {u["id"]: u["username"] for u in authors}
+    
+    result = []
+    for a in articles:
+        result.append(ArticleAdminOut(
+            id=a["id"],
+            title=a["title"],
+            category=a.get("category", "Actualité"),
+            author_id=a.get("author_id", ""),
+            author_username=authors_map.get(a.get("author_id", ""), ""),
+            published_at=a.get("published_at", ""),
+            views=a.get("views", 0),
+            status=a.get("status", "publie")
+        ))
+    
+    return PaginatedArticlesAdmin(articles=result, total=total, page=page, pages=pages)
+
+
+@api_router.delete("/admin/articles/{article_id}")
+async def admin_delete_article(article_id: str, current_user: dict = Depends(require_admin)):
+    """Delete any article (admin only)."""
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+    
+    await db.articles.delete_one({"id": article_id})
+    await db.saved_articles.delete_many({"article_id": article_id})
+    
+    return {"ok": True, "message": "Article supprimé"}
+
+
+class PropertyAdminOut(BaseModel):
+    id: str
+    title: str
+    type: str
+    price: float
+    currency: str
+    city: str
+    author_id: str
+    author_username: str
+    status: str
+    created_at: str
+
+class PaginatedPropertiesAdmin(BaseModel):
+    properties: List[PropertyAdminOut]
+    total: int
+    page: int
+    pages: int
+
+
+@api_router.get("/admin/properties", response_model=PaginatedPropertiesAdmin)
+async def get_admin_properties(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: str = Query("", max_length=100),
+    type: str = Query("", max_length=20),
+    city: str = Query("", max_length=50),
+    status: str = Query("", max_length=20),
+    current_user: dict = Depends(require_admin)
+):
+    """Get paginated properties for admin."""
+    query = {}
+    if search:
+        query["title"] = {"$regex": search, "$options": "i"}
+    if type:
+        query["type"] = type
+    if city:
+        query["city"] = city
+    if status:
+        query["status"] = status
+    
+    total = await db.properties.count_documents(query)
+    pages = (total + limit - 1) // limit
+    skip = (page - 1) * limit
+    
+    props = await db.properties.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Batch fetch authors
+    author_ids = list(set(p.get("author_id", "") for p in props if p.get("author_id")))
+    authors = await db.users.find({"id": {"$in": author_ids}}, {"_id": 0, "id": 1, "username": 1}).to_list(100)
+    authors_map = {u["id"]: u["username"] for u in authors}
+    
+    result = []
+    for p in props:
+        result.append(PropertyAdminOut(
+            id=p["id"],
+            title=p["title"],
+            type=p["type"],
+            price=p["price"],
+            currency=p.get("currency", "GNF"),
+            city=p.get("city", ""),
+            author_id=p.get("author_id", ""),
+            author_username=authors_map.get(p.get("author_id", ""), ""),
+            status=p.get("status", "disponible"),
+            created_at=p.get("created_at", "")
+        ))
+    
+    return PaginatedPropertiesAdmin(properties=result, total=total, page=page, pages=pages)
+
+
+@api_router.put("/admin/properties/{property_id}/status")
+async def admin_update_property_status(property_id: str, status: str = Query(...), current_user: dict = Depends(require_admin)):
+    """Update property status (admin only)."""
+    if status not in PROPERTY_STATUSES + ["loue"]:
+        raise HTTPException(status_code=400, detail="Statut invalide")
+    
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Annonce introuvable")
+    
+    await db.properties.update_one({"id": property_id}, {"$set": {"status": status}})
+    return {"ok": True, "message": f"Statut mis à jour vers '{status}'"}
+
+
+@api_router.delete("/admin/properties/{property_id}")
+async def admin_delete_property(property_id: str, current_user: dict = Depends(require_admin)):
+    """Delete any property (admin only)."""
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Annonce introuvable")
+    
+    await db.properties.delete_one({"id": property_id})
+    await db.payments.delete_many({"property_id": property_id})
+    
+    return {"ok": True, "message": "Annonce supprimée"}
+
+
+class PaymentAdminOut(BaseModel):
+    id: str
+    reference: str
+    property_id: str
+    property_title: str
+    user_id: str
+    user_email: str
+    amount: float
+    currency: str
+    method: str
+    phone: str
+    status: str
+    created_at: str
+
+class PaginatedPaymentsAdmin(BaseModel):
+    payments: List[PaymentAdminOut]
+    total: int
+    page: int
+    pages: int
+
+
+@api_router.get("/admin/payments", response_model=PaginatedPaymentsAdmin)
+async def get_admin_payments(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: str = Query("", max_length=20),
+    method: str = Query("", max_length=30),
+    current_user: dict = Depends(require_admin)
+):
+    """Get paginated payments for admin."""
+    query = {}
+    if status:
+        query["status"] = status
+    if method:
+        query["method"] = method
+    
+    total = await db.payments.count_documents(query)
+    pages = (total + limit - 1) // limit
+    skip = (page - 1) * limit
+    
+    payments = await db.payments.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return PaginatedPaymentsAdmin(
+        payments=[PaymentAdminOut(**p) for p in payments],
+        total=total,
+        page=page,
+        pages=pages
+    )
+
+
+@api_router.delete("/admin/payments/{payment_id}")
+async def admin_delete_payment(payment_id: str, current_user: dict = Depends(require_admin)):
+    """Delete a payment record (admin only)."""
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Paiement introuvable")
+    
+    # Restore property status if needed
+    if payment.get("status") == "en_attente":
+        await db.properties.update_one({"id": payment["property_id"]}, {"$set": {"status": "disponible"}})
+    
+    await db.payments.delete_one({"id": payment_id})
+    return {"ok": True, "message": "Paiement supprimé"}
+
+
+@api_router.get("/admin/export/users")
+async def export_users_csv(current_user: dict = Depends(require_admin)):
+    """Export users as CSV."""
+    users = await db.users.find({}, {"_id": 0, "hashed_password": 0}).to_list(10000)
+    
+    csv_lines = ["id,username,email,role,phone,country,status,created_at"]
+    for u in users:
+        line = f'"{u.get("id", "")}","{u.get("username", "")}","{u.get("email", "")}","{u.get("role", "")}","{u.get("phone", "")}","{u.get("country", "")}","{u.get("status", "actif")}","{u.get("created_at", "")}"'
+        csv_lines.append(line)
+    
+    csv_content = "\n".join(csv_lines)
+    return Response(content=csv_content, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=utilisateurs.csv"})
+
+
+@api_router.get("/admin/export/articles")
+async def export_articles_csv(current_user: dict = Depends(require_admin)):
+    """Export articles as CSV."""
+    articles = await db.articles.find({}, {"_id": 0, "content": 0}).to_list(10000)
+    
+    csv_lines = ["id,title,category,author_id,published_at,views"]
+    for a in articles:
+        title = a.get("title", "").replace('"', '""')
+        line = f'"{a.get("id", "")}","{title}","{a.get("category", "")}","{a.get("author_id", "")}","{a.get("published_at", "")}",{a.get("views", 0)}'
+        csv_lines.append(line)
+    
+    csv_content = "\n".join(csv_lines)
+    return Response(content=csv_content, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=articles.csv"})
+
+
+@api_router.get("/admin/export/properties")
+async def export_properties_csv(current_user: dict = Depends(require_admin)):
+    """Export properties as CSV."""
+    props = await db.properties.find({}, {"_id": 0, "description": 0, "images": 0}).to_list(10000)
+    
+    csv_lines = ["id,title,type,price,currency,city,status,author_id,created_at"]
+    for p in props:
+        title = p.get("title", "").replace('"', '""')
+        line = f'"{p.get("id", "")}","{title}","{p.get("type", "")}",{p.get("price", 0)},"{p.get("currency", "GNF")}","{p.get("city", "")}","{p.get("status", "")}","{p.get("author_id", "")}","{p.get("created_at", "")}"'
+        csv_lines.append(line)
+    
+    csv_content = "\n".join(csv_lines)
+    return Response(content=csv_content, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=annonces.csv"})
+
+
+@api_router.get("/admin/export/payments")
+async def export_payments_csv(current_user: dict = Depends(require_admin)):
+    """Export payments as CSV."""
+    payments = await db.payments.find({}, {"_id": 0}).to_list(10000)
+    
+    csv_lines = ["id,reference,property_title,user_email,amount,currency,method,status,created_at"]
+    for p in payments:
+        title = p.get("property_title", "").replace('"', '""')
+        line = f'"{p.get("id", "")}","{p.get("reference", "")}","{title}","{p.get("user_email", "")}",{p.get("amount", 0)},"{p.get("currency", "GNF")}","{p.get("method", "")}","{p.get("status", "")}","{p.get("created_at", "")}"'
+        csv_lines.append(line)
+    
+    csv_content = "\n".join(csv_lines)
+    return Response(content=csv_content, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=paiements.csv"})
+
+
 app.include_router(api_router)
 
 # ─── Servir les fichiers uploadés ─────────────────────────────────────────────
