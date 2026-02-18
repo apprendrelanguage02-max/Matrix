@@ -71,6 +71,7 @@ function App() {
           <Route path="/immobilier/modifier/:id" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />
           <Route path="/mes-annonces" element={<AgentRoute><AgentDashboardPage /></AgentRoute>} />
         </Routes>
+        <ChatHelp />
         <Toaster position="top-right" />
       </BrowserRouter>
     </AuthProvider>
