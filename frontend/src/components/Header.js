@@ -64,6 +64,14 @@ function ProfileDropdown({ user, onClose }) {
 
         {/* Menu items */}
         <div className="py-1.5">
+          {user?.role === "admin" && (
+            <>
+              <DropdownItem icon={LayoutDashboard} label="Mes articles" onClick={() => go("/admin")} testid="dropdown-dashboard" />
+              <DropdownItem icon={Plus} label="Créer un article" onClick={() => go("/admin/nouvelle")} testid="dropdown-new-article" />
+              <DropdownItem icon={Settings} label="Base de données" onClick={() => go("/admin/database")} testid="dropdown-database" />
+              <div className="h-px bg-zinc-800 mx-3 my-1" />
+            </>
+          )}
           {user?.role === "auteur" && (
             <>
               <DropdownItem icon={LayoutDashboard} label="Mes articles" onClick={() => go("/admin")} testid="dropdown-dashboard" />
@@ -71,7 +79,7 @@ function ProfileDropdown({ user, onClose }) {
               <div className="h-px bg-zinc-800 mx-3 my-1" />
             </>
           )}
-          {(user?.role === "agent" || user?.role === "auteur") && (
+          {(user?.role === "agent" || user?.role === "auteur" || user?.role === "admin") && (
             <>
               <DropdownItem icon={PenSquare} label="Mes annonces" onClick={() => go("/mes-annonces")} testid="dropdown-my-properties" />
               <DropdownItem icon={Plus} label="Publier une annonce" onClick={() => go("/immobilier/publier")} testid="dropdown-new-property" />
