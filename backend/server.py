@@ -49,6 +49,15 @@ JWT_ALGORITHM = 'HS256'
 # ─── Catégories prédéfinies ────────────────────────────────────────────────────
 CATEGORIES = ["Actualité", "Politique", "Sport", "Technologie", "Économie"]
 
+# ─── Sous-catégories Procédures ────────────────────────────────────────────────
+PROCEDURE_SUBCATEGORIES = [
+    {"id": "guinee", "name": "Procédures en Guinée", "flag": "🇬🇳"},
+    {"id": "canada", "name": "Procédures Canada", "flag": "🇨🇦"},
+    {"id": "france", "name": "Procédures France", "flag": "🇫🇷"},
+    {"id": "turquie", "name": "Procédures Turquie", "flag": "🇹🇷"},
+    {"id": "japon", "name": "Procédures Japon", "flag": "🇯🇵"},
+]
+
 # ─── Rate Limiter ──────────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
