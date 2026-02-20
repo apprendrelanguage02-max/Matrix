@@ -149,7 +149,7 @@ class UserRegister(BaseModel):
     @field_validator('role')
     @classmethod
     def validate_role(cls, v):
-        if v not in ("visiteur", "agent", "auteur"):
+        if v not in ("visiteur", "agent"):
             raise ValueError('Rôle invalide. Choisissez visiteur ou agent.')
         return v
 
