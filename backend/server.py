@@ -23,6 +23,8 @@ import uuid
 from datetime import datetime, timezone
 import bcrypt
 import jwt
+from user import router as user_router
+from config import JWT_SECRET, JWT_ALGORITHM
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -39,11 +41,11 @@ ALLOWED_VIDEO_TYPES = {"video/mp4", "video/webm"}
 MAX_IMAGE_SIZE = 5 * 1024 * 1024   # 5 MB
 MAX_VIDEO_SIZE = 20 * 1024 * 1024  # 20 MB
 
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-JWT_SECRET = os.environ.get('JWT_SECRET', 'newsapp_secret_key_change_in_prod')
+# JWT_SECRET = os.environ.get('JWT_SECRET', 'newsapp_secret_key_change_in_prod')
 JWT_ALGORITHM = 'HS256'
 
 # ─── Catégories prédéfinies ────────────────────────────────────────────────────
@@ -61,7 +63,21 @@ PROCEDURE_SUBCATEGORIES = [
 # ─── Rate Limiter ──────────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.include_router(user_router)
 app.state.limiter = limiter
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.environ.get("CORS_ORIGINS", "")],  # en dev uniquement
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/api/media/images", StaticFiles(directory=UPLOAD_IMAGES_DIR), name="images")
+app.mount("/api/media/videos", StaticFiles(directory=UPLOAD_VIDEOS_DIR), name="videos")
+
+
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
@@ -1424,3 +1440,9 @@ app.add_middleware(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+app.include_router(api_router)
+
+@app.get("/")
+def root():
+    return {"message": "Matrix Backend running "}
