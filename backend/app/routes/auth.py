@@ -16,6 +16,7 @@ from app.models.user import (
     UserOut,
     TokenResponse
 )
+from app.core.database import db
 from app.models.auth import TokenResponse
 from app.core.security import (
     hash_password,
