@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { WebSocketProvider } from "./context/WebSocketContext";
 import HomePage from "./pages/HomePage";
 import ArticleDetailPage from "./pages/ArticleDetailPage";
 import LoginPage from "./pages/LoginPage";
@@ -52,7 +53,8 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
+        <WebSocketProvider>
+          <Routes>
           {/* News */}
           <Route path="/" element={<HomePage />} />
           <Route path="/article/:id" element={<ArticleDetailPage />} />
@@ -80,8 +82,9 @@ function App() {
           <Route path="/procedures/nouvelle" element={<AdminRoute><ProcedureFormPage /></AdminRoute>} />
           <Route path="/procedures/modifier/:id" element={<AdminRoute><ProcedureFormPage /></AdminRoute>} />
         </Routes>
-        <ChatHelp />
-        <Toaster position="top-right" />
+          <ChatHelp />
+          <Toaster position="top-right" />
+        </WebSocketProvider>
       </BrowserRouter>
     </AuthProvider>
   );

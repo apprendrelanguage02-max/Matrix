@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useWebSocket } from "../context/WebSocketContext";
 import api from "../lib/api";
 import { toast } from "sonner";
 import { X, Send, MessageSquare, Loader2, ArrowLeft, ExternalLink } from "lucide-react";
@@ -22,7 +23,6 @@ function formatDate(dateStr) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-/* Animated typing dots */
 function TypingDots({ username }) {
   return (
     <div className="flex justify-start mb-3">
@@ -38,7 +38,6 @@ function TypingDots({ username }) {
   );
 }
 
-/* Clickable property banner with image */
 function PropertyBanner({ conv, onNavigate }) {
   const title = conv?.property_title;
   const image = conv?.property_image;
@@ -69,9 +68,11 @@ function PropertyBanner({ conv, onNavigate }) {
   );
 }
 
-export default function ChatPanel({ type, recipientId, recipientName, propertyId, propertyTitle, onClose }) {
-  const { token, user } = useAuth();
+export default function ChatPanel({ type, recipientId, recipientName, propertyId, onClose }) {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const { send, subscribe, onlineUsers } = useWebSocket();
+
   const [conversations, setConversations] = useState([]);
   const [activeConv, setActiveConv] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -79,12 +80,16 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState({});
   const [isTyping, setIsTyping] = useState(false);
-  const wsRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const activeConvRef = useRef(null);
+  const isTypingRef = useRef(false);
 
-  // Hide ChatHelp
+  // Keep refs in sync for use in closures
+  useEffect(() => { activeConvRef.current = activeConv; }, [activeConv]);
+  useEffect(() => { isTypingRef.current = isTyping; }, [isTyping]);
+
+  // Hide ChatHelp when open
   useEffect(() => {
     document.body.dataset.chatOpen = "true";
     return () => { delete document.body.dataset.chatOpen; };
@@ -94,95 +99,76 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Fetch conversations + online status
+  // Subscribe to WebSocket events from the shared context
   useEffect(() => {
-    if (!token) return;
-    api.get(`/conversations?type=${type}`)
-      .then(r => {
-        setConversations(r.data);
-        setLoading(false);
-        const otherIds = r.data.map(c => {
-          const idx = c.participant_ids?.indexOf(user?.id);
-          return idx === 0 ? c.participant_ids[1] : c.participant_ids[0];
-        }).filter(Boolean);
-        otherIds.forEach(uid => {
-          api.get(`/users/${uid}/online`).then(res => {
-            setOnlineUsers(prev => ({ ...prev, [uid]: res.data.online }));
-          }).catch(() => {});
-        });
-      })
-      .catch(() => setLoading(false));
-  }, [token, type, user?.id]);
+    const unsubscribe = subscribe((data) => {
+      const conv = activeConvRef.current;
 
-  // Auto-open conversation
-  useEffect(() => {
-    if (recipientId && token) {
-      const params = new URLSearchParams({ recipient_id: recipientId, type });
-      if (propertyId) params.append("property_id", propertyId);
-      api.post(`/conversations?${params.toString()}`)
-        .then(r => {
-          setActiveConv(r.data);
-          loadMessages(r.data.id);
-          api.get(`/users/${recipientId}/online`).then(res => {
-            setOnlineUsers(prev => ({ ...prev, [recipientId]: res.data.online }));
-          }).catch(() => {});
-        })
-        .catch(err => toast.error(err.response?.data?.detail || "Erreur"));
-    }
-  }, [recipientId, token, type, propertyId]);
-
-  // WebSocket connection
-  useEffect(() => {
-    if (!token || !activeConv) return;
-
-    const wsUrl = process.env.REACT_APP_BACKEND_URL
-      ?.replace("https://", "wss://")
-      .replace("http://", "ws://");
-    const ws = new WebSocket(`${wsUrl}/api/ws/chat?token=${token}`);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "new_message" && data.message.conversation_id === activeConv.id) {
-          setMessages(prev => [...prev, data.message]);
+      if (data.type === "new_message") {
+        if (conv && data.message.conversation_id === conv.id) {
+          setMessages((prev) => {
+            // Avoid duplicate messages
+            if (prev.some((m) => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
           setTimeout(scrollToBottom, 100);
-          // Mark as read immediately since we're viewing the conversation
+          // Mark as read immediately
           if (data.message.sender_id !== user?.id) {
-            ws.send(JSON.stringify({ type: "mark_read", conversation_id: activeConv.id }));
+            send({ type: "mark_read", conversation_id: conv.id });
           }
         }
-        if (data.type === "typing_start" && data.conversation_id === activeConv.id) {
-          setTyping(data.username);
-        }
-        if (data.type === "typing_stop" && data.conversation_id === activeConv.id) {
-          setTyping(null);
-        }
-        if (data.type === "status") {
-          setOnlineUsers(prev => ({ ...prev, [data.user_id]: data.online }));
-        }
-      } catch {}
-    };
-
-    // Mark conversation as read on open
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "mark_read", conversation_id: activeConv.id }));
-    };
-
-    return () => {
-      // Stop typing when leaving conversation
-      if (ws.readyState === WebSocket.OPEN && isTyping) {
-        ws.send(JSON.stringify({ type: "typing_stop", conversation_id: activeConv.id }));
+        // Update last_message in conversation list
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === data.message.conversation_id
+              ? { ...c, last_message: data.message.content, last_message_at: data.message.created_at }
+              : c
+          )
+        );
       }
-      if (ws.readyState === WebSocket.OPEN) ws.close();
-    };
-  }, [token, activeConv?.id, scrollToBottom, user?.id]);
+
+      if (data.type === "typing_start" && conv && data.conversation_id === conv.id) {
+        setTyping(data.username);
+      }
+      if (data.type === "typing_stop" && conv && data.conversation_id === conv.id) {
+        setTyping(null);
+      }
+    });
+
+    return unsubscribe;
+  }, [subscribe, send, user?.id, scrollToBottom]);
+
+  // Fetch conversations
+  useEffect(() => {
+    api.get(`/conversations?type=${type}`)
+      .then((r) => { setConversations(r.data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [type]);
+
+  // Auto-open conversation when recipientId provided (from property page)
+  useEffect(() => {
+    if (!recipientId) return;
+    const params = new URLSearchParams({ recipient_id: recipientId, type });
+    if (propertyId) params.append("property_id", propertyId);
+    api.post(`/conversations?${params.toString()}`)
+      .then((r) => {
+        setActiveConv(r.data);
+        loadMessages(r.data.id);
+      })
+      .catch((err) => toast.error(err.response?.data?.detail || "Erreur"));
+  }, [recipientId, type, propertyId]);
 
   const loadMessages = async (convId) => {
     try {
       const r = await api.get(`/conversations/${convId}/messages`);
       setMessages(r.data.messages || []);
+      // Update conv with full data (including property_image)
+      if (r.data.conversation) {
+        setActiveConv((prev) => prev ? { ...prev, ...r.data.conversation } : r.data.conversation);
+      }
       setTimeout(scrollToBottom, 200);
+      // Mark as read on open
+      send({ type: "mark_read", conversation_id: convId });
     } catch {
       toast.error("Erreur de chargement");
     }
@@ -190,57 +176,52 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
 
   const handleSend = () => {
     const content = newMessage.trim();
-    if (!content || !activeConv) return;
+    if (!content || !activeConvRef.current) return;
 
     setSending(true);
     setNewMessage("");
 
+    // Stop typing indicator
+    if (isTypingRef.current) {
+      send({ type: "typing_stop", conversation_id: activeConvRef.current.id });
+      setIsTyping(false);
+    }
+
     // Prepend property info on first message
     let finalContent = content;
-    if (messages.length === 0 && activeConv.property_title) {
-      finalContent = `[Annonce: ${activeConv.property_title}]\n\n${content}`;
+    if (messages.length === 0 && activeConvRef.current.property_title) {
+      finalContent = `[Annonce: ${activeConvRef.current.property_title}]\n\n${content}`;
     }
 
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      // Stop typing indicator
-      wsRef.current.send(JSON.stringify({ type: "typing_stop", conversation_id: activeConv.id }));
-      setIsTyping(false);
-      // Send message
-      wsRef.current.send(JSON.stringify({
-        type: "message",
-        conversation_id: activeConv.id,
-        content: finalContent,
-      }));
-      setSending(false);
-    } else {
-      setSending(false);
-      toast.error("Connexion perdue");
-    }
-  };
+    const sent = send({
+      type: "message",
+      conversation_id: activeConvRef.current.id,
+      content: finalContent,
+    });
 
-  // Typing: start on focus+input, stop on blur/send
-  const handleInputFocus = () => {
-    if (newMessage.trim().length > 0 && !isTyping && wsRef.current?.readyState === WebSocket.OPEN && activeConv) {
-      wsRef.current.send(JSON.stringify({ type: "typing_start", conversation_id: activeConv.id }));
-      setIsTyping(true);
+    if (!sent) {
+      toast.error("Connexion perdue, reconnexion...");
     }
+    setSending(false);
   };
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
-    if (e.target.value.trim().length > 0 && !isTyping && wsRef.current?.readyState === WebSocket.OPEN && activeConv) {
-      wsRef.current.send(JSON.stringify({ type: "typing_start", conversation_id: activeConv.id }));
+    if (!activeConvRef.current) return;
+
+    if (e.target.value.trim().length > 0 && !isTypingRef.current) {
+      send({ type: "typing_start", conversation_id: activeConvRef.current.id });
       setIsTyping(true);
     }
-    if (e.target.value.trim().length === 0 && isTyping && wsRef.current?.readyState === WebSocket.OPEN && activeConv) {
-      wsRef.current.send(JSON.stringify({ type: "typing_stop", conversation_id: activeConv.id }));
+    if (e.target.value.trim().length === 0 && isTypingRef.current) {
+      send({ type: "typing_stop", conversation_id: activeConvRef.current.id });
       setIsTyping(false);
     }
   };
 
   const handleInputBlur = () => {
-    if (isTyping && wsRef.current?.readyState === WebSocket.OPEN && activeConv) {
-      wsRef.current.send(JSON.stringify({ type: "typing_stop", conversation_id: activeConv.id }));
+    if (isTypingRef.current && activeConvRef.current) {
+      send({ type: "typing_stop", conversation_id: activeConvRef.current.id });
       setIsTyping(false);
     }
   };
@@ -248,19 +229,13 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
   const openConversation = (conv) => {
     setActiveConv(conv);
     setTyping(null);
+    setMessages([]);
     loadMessages(conv.id);
-    const oId = otherId(conv);
-    if (oId) {
-      api.get(`/users/${oId}/online`).then(res => {
-        setOnlineUsers(prev => ({ ...prev, [oId]: res.data.online }));
-      }).catch(() => {});
-    }
   };
 
   const handleBack = () => {
-    // Stop typing
-    if (isTyping && wsRef.current?.readyState === WebSocket.OPEN && activeConv) {
-      wsRef.current.send(JSON.stringify({ type: "typing_stop", conversation_id: activeConv.id }));
+    if (isTypingRef.current && activeConvRef.current) {
+      send({ type: "typing_stop", conversation_id: activeConvRef.current.id });
       setIsTyping(false);
     }
     setActiveConv(null);
@@ -268,7 +243,7 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
     setTyping(null);
     setNewMessage("");
     // Refresh conversation list
-    api.get(`/conversations?type=${type}`).then(r => setConversations(r.data)).catch(() => {});
+    api.get(`/conversations?type=${type}`).then((r) => setConversations(r.data)).catch(() => {});
   };
 
   const otherName = (conv) => {
@@ -286,10 +261,8 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
     navigate(path);
   };
 
-  if (!token) return null;
-
   const activeOtherId = activeConv ? otherId(activeConv) : null;
-  const activeIsOnline = activeOtherId ? onlineUsers[activeOtherId] : false;
+  const activeIsOnline = activeOtherId ? !!onlineUsers?.[activeOtherId] : false;
 
   return (
     <div className="fixed bottom-4 right-4 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] bg-white border border-zinc-200 shadow-2xl flex flex-col z-50 rounded-xl overflow-hidden" data-testid="chat-panel">
@@ -304,18 +277,16 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold font-['Oswald'] uppercase tracking-wider truncate">
-              {activeConv ? (recipientName || otherName(activeConv)) : (type === "immobilier" ? "Messages Immobilier" : "Messages Procédures")}
+              {activeConv
+                ? (recipientName || otherName(activeConv))
+                : (type === "immobilier" ? "Messages Immobilier" : "Messages Procédures")}
             </p>
             {activeConv && activeIsOnline && (
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full flex-shrink-0 ring-2 ring-green-500/30" data-testid="chat-header-online" />
             )}
           </div>
-          {activeConv && activeIsOnline && (
-            <p className="text-[10px] text-green-400">En ligne</p>
-          )}
-          {activeConv && !activeIsOnline && (
-            <p className="text-[10px] text-zinc-500">Hors ligne</p>
-          )}
+          {activeConv && activeIsOnline && <p className="text-[10px] text-green-400">En ligne</p>}
+          {activeConv && !activeIsOnline && <p className="text-[10px] text-zinc-500">Hors ligne</p>}
         </div>
         <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded" data-testid="chat-close-btn">
           <X className="w-4 h-4" />
@@ -329,20 +300,21 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
             <Loader2 className="w-6 h-6 animate-spin text-[#FF6600]" />
           </div>
         ) : !activeConv ? (
-          /* Conversation List */
           <div className="divide-y divide-zinc-100 bg-white">
             {conversations.length === 0 ? (
               <div className="text-center py-12 px-4">
                 <MessageSquare className="w-8 h-8 mx-auto mb-3 text-zinc-300" />
                 <p className="text-sm text-zinc-400 font-['Manrope']">Aucune conversation</p>
                 <p className="text-xs text-zinc-300 font-['Manrope'] mt-1">
-                  {type === "immobilier" ? "Contactez un agent depuis une annonce" : "Contactez-nous depuis une procédure"}
+                  {type === "immobilier"
+                    ? "Contactez un agent depuis une annonce"
+                    : "Contactez-nous depuis une procédure"}
                 </p>
               </div>
             ) : (
-              conversations.map(conv => {
+              conversations.map((conv) => {
                 const oId = otherId(conv);
-                const isOnline = oId ? onlineUsers[oId] : false;
+                const isOnline = oId ? !!onlineUsers?.[oId] : false;
                 return (
                   <button
                     key={conv.id}
@@ -381,12 +353,8 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
             )}
           </div>
         ) : (
-          /* Messages */
           <div className="p-3">
-            {/* Property banner with image, clickable */}
-            {activeConv.property_title && (
-              <PropertyBanner conv={activeConv} onNavigate={handleNavProperty} />
-            )}
+            <PropertyBanner conv={activeConv} onNavigate={handleNavProperty} />
 
             {messages.length === 0 && (
               <p className="text-center text-xs text-zinc-400 py-8 font-['Manrope']">Début de la conversation</p>
@@ -421,9 +389,7 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
               })}
             </div>
 
-            {/* Typing indicator */}
             {typing && <TypingDots username={typing} />}
-
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -436,7 +402,6 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
             type="text"
             value={newMessage}
             onChange={handleInputChange}
-            onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }

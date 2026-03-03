@@ -77,9 +77,13 @@ async def register(data: UserRegister):
 @router.post("/login", response_model=TokenResponse)
 async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    dummy_hash = "$2b$12$dummy_hash_for_timing_attack_prevention_only"
+    # Valid bcrypt hash for timing-attack prevention (never matches real passwords)
+    dummy_hash = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/ufn/P0SqS"
     stored_hash = user["hashed_password"] if user else dummy_hash
-    valid = bcrypt.checkpw(data.password.encode(), stored_hash.encode())
+    try:
+        valid = bcrypt.checkpw(data.password.encode(), stored_hash.encode())
+    except ValueError:
+        valid = False
     if not user or not valid:
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
