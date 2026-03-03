@@ -1,78 +1,74 @@
 # Matrix News / GIMO - PRD (Product Requirements Document)
 
-## Problème Original
-Application web full-stack combinant un média d'actualités et une marketplace immobilière pour la Guinée.
-- Thème: Orange #FF6600, Noir, Blanc
-- Interface: Français
-- Zones couvertes: Conakry et principales villes de Guinée
+## Probleme Original
+Application web full-stack combinant un media d'actualites et une marketplace immobiliere pour la Guinee.
+- Theme: Orange #FF6600, Noir, Blanc
+- Interface: Francais
+- Zones couvertes: Conakry et principales villes de Guinee
 
 ## Architecture Technique
-- **Frontend**: React (CRA + Craco + TailwindCSS) → port 3000
-- **Backend**: FastAPI → port 8001
-- **Base de données**: MongoDB (motor async)
-- **Authentification**: JWT (pyjwt + bcrypt)
+- **Frontend**: React (CRA + Craco + TailwindCSS) - port 3000
+- **Backend**: FastAPI - port 8001
+- **Base de donnees**: MongoDB (motor async)
+- **Authentification**: JWT (pyjwt + bcrypt) avec roles et systeme d'approbation
 - **Upload fichiers**: python-multipart, fichiers servis via /api/media/
 
-## Rôles Utilisateurs
-1. **Visiteur** - Peut lire les articles et consulter les annonces
-2. **Auteur** - Peut créer/modifier/supprimer ses articles
-3. **Agent immobilier** - Peut publier et gérer des annonces immobilières
-4. **Admin** - Accès complet à toutes les fonctionnalités + gestion de la base de données
+## Roles Utilisateurs
+1. **Visiteur** - Peut lire les articles et consulter les annonces (acces immediat)
+2. **Auteur** - Peut creer/modifier/supprimer ses articles (necessite approbation admin)
+3. **Agent immobilier** - Peut publier et gerer des annonces immobilieres (necessite approbation admin)
+4. **Admin** - Acces complet + gestion BDD + approbation roles (unique: matrixguinea@gmail.com)
 
-## Ce qui a été implémenté (Fév 2026)
+## Ce qui a ete implemente
 
 ### Section News
-- Authentification JWT (register/login/logout) avec 4 rôles
+- Authentification JWT (register/login/logout) avec 4 roles
 - CRUD complet articles (create, read, update, delete)
-- Catégories: Actualité, Politique, Sport, Technologie, Économie
+- Categories: Actualite, Politique, Sport, Technologie, Economie
 - Recherche et pagination
-- Upload d'images de couverture (local, pas d'URL externe)
-- Éditeur de texte riche (contentEditable)
+- Upload d'images de couverture (local)
 - Sauvegarde d'articles favoris
 - Compteur de vues
 
-### Section Immobilier (Phase 1 - Complète)
+### Section Immobilier (Phase 1)
 - Listing des annonces avec filtres (type, ville, prix, statut)
-- Page détail annonce avec galerie d'images
+- Page detail annonce avec galerie d'images
 - Formulaire de publication d'annonce (agents uniquement)
 - Types: Vente, Achat, Location
-- Statuts: Disponible, Réservé, Vendu/Loué
-- Interface sobre sans icône décorative
+- Statuts: Disponible, Reserve, Vendu/Loue
 
-### Section Paiements (Phase 2 - Complète)
-- Création de paiements simulés
-- Méthodes: Orange Money, Mobile Money, PayCard, Carte bancaire
-- Génération de références uniques (format GIMO-YYYYMMDDHHMM-XXXXXXXX)
-- Statuts: En attente, Confirmé, Annulé
-- Mise à jour automatique du statut des propriétés
+### Section Paiements (Phase 2 - Simules)
+- Creation de paiements simules
+- Methodes: Orange Money, Mobile Money, PayCard, Carte bancaire
+- Generation de references uniques
+- Statuts: En attente, Confirme, Annule
 
-### Section Admin - Base de Données (Nouveau)
-- **Page /admin/database** accessible uniquement aux admins
-- **4 onglets** : Utilisateurs, Articles, Annonces, Paiements
-- **Compteurs en temps réel** des totaux
-- **Tableau utilisateurs** : Nom, Email, Rôle, Téléphone, Pays, Date d'inscription, Statut
-  - Actions: Suspendre/Activer, Changer rôle, Supprimer
-  - Filtres: Recherche par nom/email, filtre par rôle
-- **Tableau articles** : Titre, Catégorie, Auteur, Date, Vues
-  - Actions: Voir, Modifier, Supprimer
-  - Filtres: Recherche, filtre par catégorie
-- **Tableau annonces** : Titre, Type, Prix, Ville, Agent, Statut
-  - Actions: Voir, Modifier, Changer statut, Supprimer
-  - Filtres: Type, Ville, Statut
-- **Tableau paiements** : Référence, Propriété, Client, Montant, Méthode, Statut, Date
-  - Actions: Changer statut, Supprimer
-  - Filtres: Statut, Méthode de paiement
-- **Export CSV** pour toutes les sections
-- **Confirmation obligatoire** avant suppression
-- **Pagination** 20 éléments par page
+### Section Procedures & Demarches
+- Listing avec sous-categories par pays (Guinee, Canada, France, Turquie, Japon)
+- CRUD admin uniquement
+- Pages de listing, detail et formulaire de creation
 
-### Fonctionnalités Transverses
-- **Responsivité complète** (mobile 375px, tablette 768px, desktop)
-- Menu hamburger sur mobile pour la recherche
-- Navigation des catégories défilante horizontalement
-- Footer responsive avec 4 colonnes → 2 colonnes sur mobile
-- Upload de médias (images JPG/PNG/WEBP jusqu'à 5MB, vidéos MP4/WebM jusqu'à 20MB)
-- Avatar personnalisable pour le profil utilisateur
+### Dashboard Admin /admin/database
+- 5 onglets: Demandes, Utilisateurs, Articles, Annonces, Paiements
+- Compteurs en temps reel
+- CRUD complet avec filtres et pagination
+- Export CSV pour toutes les sections
+- Confirmation obligatoire avant suppression
+
+### Systeme d'Approbation des Roles (NOUVEAU - Mars 2026)
+- Inscription auteur/agent cree un statut "pending" et role "visiteur"
+- Notification admin creee automatiquement
+- Onglet "Demandes" dans dashboard admin avec boutons Approuver/Rejeter
+- Badge notification dans le header pour l'admin
+- Banniere "en attente" sur le profil des utilisateurs pending
+- 3 options de role a l'inscription (Visiteur, Auteur, Agent)
+- Message d'info sur la validation admin pour auteur/agent
+
+### Fonctionnalites Transverses
+- Responsivite complete (mobile 375px, tablette 768px, desktop)
+- Widget chat d'aide (remplacement badge Emergent)
+- Logo Nimba sur les pages de categories
+- Menu profil admin reorganise
 
 ## API Routes
 
@@ -80,71 +76,67 @@ Application web full-stack combinant un média d'actualités et une marketplace 
 - POST /api/auth/register
 - POST /api/auth/login
 - GET /api/auth/me
+- PUT /api/auth/profile
+- PUT /api/auth/password
 
 ### Articles
-- GET /api/articles (public, avec pagination et recherche)
-- GET /api/articles/:id (public)
-- POST /api/articles (auth: auteur/admin)
-- PUT /api/articles/:id (auth: auteur/admin, own)
-- DELETE /api/articles/:id (auth: auteur/admin, own)
+- GET /api/articles
+- GET /api/articles/:id
+- POST /api/articles
+- PUT /api/articles/:id
+- DELETE /api/articles/:id
 
 ### Immobilier
-- GET /api/properties (public, avec filtres)
-- GET /api/properties/:id (public)
-- POST /api/properties (auth: agent/auteur/admin)
-- PUT /api/properties/:id (auth: agent/auteur/admin, own)
-- DELETE /api/properties/:id (auth: agent/auteur/admin, own)
+- GET /api/properties
+- GET /api/properties/:id
+- POST /api/properties
+- PUT /api/properties/:id
+- DELETE /api/properties/:id
+
+### Procedures
+- GET /api/procedures/subcategories
+- GET /api/procedures
+- GET /api/procedures/:id
+- POST /api/procedures
+- PUT /api/procedures/:id
+- DELETE /api/procedures/:id
 
 ### Paiements
-- POST /api/payments (auth)
-- GET /api/payments/my (auth)
-- GET /api/payments (auth: auteur/admin)
-- PUT /api/payments/:id/status (auth: auteur/admin)
+- POST /api/payments
+- GET /api/payments/my
+- GET /api/payments
+- PUT /api/payments/:id/status
 
-### Admin (role: admin uniquement)
+### Admin
 - GET /api/admin/stats
-- GET /api/admin/users
-- GET /api/admin/users/:id
-- PUT /api/admin/users/:id/status
-- PUT /api/admin/users/:id/role
-- DELETE /api/admin/users/:id
-- GET /api/admin/articles
-- DELETE /api/admin/articles/:id
-- GET /api/admin/properties
-- PUT /api/admin/properties/:id/status
-- DELETE /api/admin/properties/:id
-- GET /api/admin/payments
-- DELETE /api/admin/payments/:id
-- GET /api/admin/export/users (CSV)
-- GET /api/admin/export/articles (CSV)
-- GET /api/admin/export/properties (CSV)
-- GET /api/admin/export/payments (CSV)
+- GET /api/admin/users (+ CRUD)
+- GET /api/admin/articles (+ DELETE)
+- GET /api/admin/properties (+ status update, DELETE)
+- GET /api/admin/payments (+ DELETE)
+- GET /api/admin/export/{data_type} (CSV)
+- GET /api/admin/notifications/count
+- GET /api/admin/notifications
+- PUT /api/admin/notifications/{id}/action
 
-### Upload
-- POST /api/upload (auth)
-- GET /api/media/images/{filename} (static)
-- GET /api/media/videos/{filename} (static)
-
-## Compte Test
-- **Admin**: admin@example.com / adminpassword
+## Comptes Test
+- **Admin**: matrixguinea@gmail.com / strongpassword123
 
 ## Backlog
 
-### P1 - Priorité Haute
-- **Phase 3 - Carte Interactive**
-  - Intégration Leaflet.js
-  - Affichage des annonces sur carte
-  - Centrage par défaut sur Conakry
+### P1 - Priorite Haute
+- Editeur de Texte Enrichi (WYSIWYG) pour articles, annonces et procedures
+- Refactoring backend: decomposer server.py en modules
 
-### P2 - Priorité Moyenne  
+### P2 - Priorite Moyenne
+- Phase 3 - Carte Interactive (Leaflet.js)
 - Inscription publique des agents immobiliers
 - Notifications par email
 
 ### P3 - Backlog
-- Modèle économique (abonnements agents)
-- Intégration réelle API de paiement
+- Modele economique (abonnements agents)
+- Integration reelle API de paiement (Orange Money, etc.)
 - PWA / mode hors ligne
-- Dashboard analytics avancé
+- Dashboard analytics avance
 
 ## Issues Connues
-- Le rate limiter retourne parfois HTTP 520 au lieu de 429 (problème infrastructure Kubernetes, pas de bug code)
+- Le rate limiter retourne parfois HTTP 520 au lieu de 429 (probleme infrastructure Kubernetes)
