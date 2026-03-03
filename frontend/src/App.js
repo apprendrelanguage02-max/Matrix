@@ -16,6 +16,9 @@ import PropertyFormPage from "./pages/immobilier/PropertyFormPage";
 import AgentDashboardPage from "./pages/immobilier/AgentDashboardPage";
 import PaymentsAdminPage from "./pages/immobilier/PaymentsAdminPage";
 import DatabasePage from "./pages/admin/DatabasePage";
+import ProceduresPage from "./pages/procedures/ProceduresPage";
+import ProcedureDetailPage from "./pages/procedures/ProcedureDetailPage";
+import ProcedureFormPage from "./pages/procedures/ProcedureFormPage";
 import ChatHelp from "./components/ChatHelp";
 import "./App.css";
 
@@ -70,6 +73,12 @@ function App() {
           <Route path="/immobilier/publier" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />
           <Route path="/immobilier/modifier/:id" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />
           <Route path="/mes-annonces" element={<AgentRoute><AgentDashboardPage /></AgentRoute>} />
+
+          {/* Procédures & Démarches */}
+          <Route path="/procedures" element={<ProceduresPage />} />
+          <Route path="/procedures/:id" element={<ProcedureDetailPage />} />
+          <Route path="/procedures/nouvelle" element={<AdminRoute><ProcedureFormPage /></AdminRoute>} />
+          <Route path="/procedures/modifier/:id" element={<AdminRoute><ProcedureFormPage /></AdminRoute>} />
         </Routes>
         <ChatHelp />
         <Toaster position="top-right" />

@@ -997,7 +997,8 @@ async def create_procedure(data: ProcedureCreate, current_user: dict = Depends(r
     proc["subcategory_name"] = subcat["name"]
     proc["subcategory_flag"] = subcat["flag"]
     proc["author_username"] = current_user.get("username", "")
-    del proc["_id"] if "_id" in proc else None
+    if "_id" in proc:
+        del proc["_id"]
     
     return proc
 

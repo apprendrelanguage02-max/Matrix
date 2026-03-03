@@ -338,6 +338,22 @@ export default function Header({ onSearch, searchValue }) {
             >
               Immobilier
             </Link>
+
+            {/* Séparateur vertical */}
+            <span className="flex-shrink-0 w-px h-4 bg-zinc-700 mx-1 sm:mx-2 self-center" />
+
+            {/* Lien Procédures & Démarches */}
+            <Link
+              to="/procedures"
+              data-testid="procedures-nav-link"
+              className={`flex-shrink-0 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs font-bold font-['Manrope'] uppercase tracking-wider transition-colors duration-200 border-b-2 whitespace-nowrap ${
+                location.pathname.startsWith("/procedures")
+                  ? "border-[#FF6600] text-[#FF6600]"
+                  : "border-transparent text-zinc-400 hover:text-white"
+              }`}
+            >
+              Procédures
+            </Link>
           </nav>
         </div>
       </div>
