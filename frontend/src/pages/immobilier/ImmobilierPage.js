@@ -8,6 +8,8 @@ import api from "../../lib/api";
 import { Loader2, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
+const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
+
 export default function ImmobilierPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,16 +69,24 @@ export default function ImmobilierPage() {
       {/* Hero */}
       <section className="bg-black py-8 sm:py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="w-1 sm:w-1.5 h-12 sm:h-16 bg-[#FF6600] flex-shrink-0" />
-            <div>
-              <p className="text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
-                {total > 0 ? `${total} annonce${total > 1 ? "s" : ""} disponibles` : "Immobilier GIMO"}
-              </p>
-              <h1 className="font-['Oswald'] text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tighter text-white leading-none">
-                Immobilier<br />
-                <span className="text-[#FF6600]">Guinée</span>
-              </h1>
+          <div className="flex items-center gap-3 sm:gap-6">
+            {/* Logo Nimba */}
+            <img
+              src={LOGO}
+              alt="Matrix News"
+              className="w-14 h-14 sm:w-20 sm:h-20 md:w-28 md:h-28 object-contain flex-shrink-0"
+            />
+            <div className="flex items-start gap-2 sm:gap-4">
+              <div className="w-1 sm:w-1.5 h-12 sm:h-16 bg-[#FF6600] flex-shrink-0 mt-1" />
+              <div>
+                <p className="text-[#FF6600] text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1 sm:mb-2">
+                  {total > 0 ? `${total} annonce${total > 1 ? "s" : ""} disponibles` : "Immobilier GIMO"}
+                </p>
+                <h1 className="font-['Oswald'] text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tighter text-white leading-none">
+                  Immobilier<br />
+                  <span className="text-[#FF6600]">Guinée</span>
+                </h1>
+              </div>
             </div>
           </div>
         </div>
