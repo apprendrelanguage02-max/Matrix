@@ -93,11 +93,16 @@ backend/
 - Fix critique: bug de livraison de messages résolu (connexions multiples → connexion unique)
 - Tests: 33/33 backend + 100% frontend (100% succès, Itérations 14 & 15)
 
-### Dashboard Admin /admin/database
+### Dashboard Admin /admin/database (Mis à jour - Mars 2026)
 - 5 onglets: Demandes, Utilisateurs, Articles, Annonces, Paiements
-- CRUD complet, filtres, pagination, export CSV
-- Systeme d'approbation roles (approuver/rejeter)
+- CRUD complet, filtres, pagination, export CSV authentifié (via axios + blob)
+- Systeme d'approbation roles (approuver/rejeter) avec mise à jour temps réel via WebSocket
+- Bouton de suppression sur chaque demande de rôle
+- Bouton CSV sur l'onglet Demandes (export role-requests)
+- Rejet = statut 'rejected' → utilisateur bloqué au login (HTTP 403)
+- Approbation = rôle mis à jour instantanément via WebSocket role_update
 - Badge cloche qui disparait automatiquement
+- Tests: 17/17 backend + 100% frontend (Itération 17)
 
 ### Systeme de Notifications
 - Admin: notifications pour demandes de role avec badge cloche
@@ -123,16 +128,19 @@ backend/
 ## Backlog
 
 ### P1 - Priorite Haute
+- Finalisation intégration Resend : guider utilisateur pour vérifier son domaine (emails OTP en production)
+- Intégration OTP par numéro de téléphone (Twilio ou service SMS)
 - Ameliorer le chat (notifications push, historique persistant)
 - Mode brouillon pour articles
 
 ### P2 - Priorite Moyenne
 - Carte interactive (Leaflet.js) pour annonces
-- Notifications email (SendGrid)
+- Integration paiements simulés → réels
 - Ouvrir messagerie entre tous les utilisateurs
 
 ### P3 - Backlog
 - Integration paiements reels (Orange Money)
+- Inscription publique des agents immobiliers
 - Modele economique (abonnements agents)
 - PWA / mode hors ligne
 - Dashboard analytics avance
