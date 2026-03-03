@@ -194,6 +194,8 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=403, detail="Votre compte a été bloqué. Contactez l'administrateur.")
     if user.get("status") == "suspendu":
         raise HTTPException(status_code=403, detail="Votre compte est temporairement suspendu.")
+    if user.get("status") == "rejected":
+        raise HTTPException(status_code=403, detail="Votre demande de rôle a été refusée. Vous ne pouvez plus accéder à la plateforme avec ce compte.")
 
     token = create_token(user["id"])
     return TokenResponse(token=token, user=user_to_out(user))

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import api from "../lib/api";
 
 const AuthContext = createContext(null);
 
@@ -28,8 +29,18 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.get("/auth/me");
+      updateUser(res.data);
+      return res.data;
+    } catch {
+      return null;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ token, user, login, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

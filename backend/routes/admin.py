@@ -7,6 +7,7 @@ from models.user import PaginatedUsers, user_to_admin_out
 from models.notification import AdminNotification, PaginatedNotifications, RoleRequestAction
 from models.property import PROPERTY_STATUSES
 from middleware.auth import get_current_user, require_admin
+from routes.messages import manager
 import uuid
 from datetime import datetime, timezone
 
@@ -347,6 +348,15 @@ async def export_payments_csv(current_user: dict = Depends(require_admin)):
     return Response(content="\n".join(csv_lines), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=paiements.csv"})
 
 
+@router.get("/export/role-requests")
+async def export_role_requests_csv(current_user: dict = Depends(require_admin)):
+    notifs = await db.admin_notifications.find({}, {"_id": 0}).to_list(10000)
+    csv_lines = ["id,user_username,user_email,requested_role,status,created_at,processed_at"]
+    for n in notifs:
+        csv_lines.append(f'"{n.get("id", "")}","{n.get("user_username", "")}","{n.get("user_email", "")}","{n.get("requested_role", "")}","{n.get("status", "")}","{n.get("created_at", "")}","{n.get("processed_at", "")}"')
+    return Response(content="\n".join(csv_lines), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=demandes_roles.csv"})
+
+
 # ─── Notifications & Role Approval ─────────────────────────────────────────────
 
 @router.get("/notifications/count")
@@ -404,23 +414,48 @@ async def process_role_request(notification_id: str, data: RoleRequestAction, cu
             "message": f"Votre demande de rôle {role_label} a été approuvée par le groupe MatrixNews. Vous avez maintenant accès à toutes les fonctionnalités.",
             "is_read": False, "created_at": now
         })
+        # Real-time: push role_update to the user via WebSocket
+        await manager.send_to_user(notification["user_id"], {
+            "type": "role_update",
+            "action": "approved",
+            "role": notification["requested_role"],
+            "status": "actif",
+            "message": f"Votre demande de rôle {role_label} a été approuvée !",
+        })
         return {"ok": True, "message": f"Rôle {role_label} approuvé pour {notification['user_username']}"}
     else:
         await db.users.update_one(
             {"id": notification["user_id"]},
-            {"$set": {"status": "actif", "requested_role": None}}
+            {"$set": {"status": "rejected", "requested_role": None}}
         )
         await db.admin_notifications.update_one({"id": notification_id}, {"$set": {"status": "rejected", "processed_at": now}})
         await db.user_notifications.insert_one({
             "id": str(uuid.uuid4()), "user_id": notification["user_id"],
             "type": "role_rejected",
-            "message": f"Votre demande de rôle professionnel a été refusée par le groupe MatrixNews. Vous conservez votre accès en tant que visiteur.",
+            "message": "Votre demande de rôle professionnel a été refusée par le groupe MatrixNews. Votre accès a été suspendu.",
             "is_read": False, "created_at": now
         })
-        return {"ok": True, "message": f"Demande de rôle rejetée pour {notification['user_username']}"}
+        # Real-time: push role_update to the user via WebSocket → triggers immediate logout
+        await manager.send_to_user(notification["user_id"], {
+            "type": "role_update",
+            "action": "rejected",
+            "status": "rejected",
+            "message": "Votre demande a été refusée. Votre accès a été suspendu.",
+        })
+        return {"ok": True, "message": f"Demande rejetée pour {notification['user_username']}"}
 
 
 @router.put("/notifications/mark-seen")
 async def admin_mark_notifications_seen(current_user: dict = Depends(require_admin)):
     await db.admin_notifications.update_many({"seen": {"$ne": True}}, {"$set": {"seen": True}})
     return {"ok": True}
+
+
+@router.delete("/notifications/{notification_id}")
+async def delete_role_request(notification_id: str, current_user: dict = Depends(require_admin)):
+    """Delete a role request from the list."""
+    notif = await db.admin_notifications.find_one({"id": notification_id}, {"_id": 0, "id": 1})
+    if not notif:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+    await db.admin_notifications.delete_one({"id": notification_id})
+    return {"ok": True, "message": "Demande supprimée"}

@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 const WebSocketContext = createContext(null);
 
 export function WebSocketProvider({ children }) {
-  const { token } = useAuth();
+  const { token, logout, refreshUser } = useAuth();
   const wsRef = useRef(null);
   const subscribersRef = useRef(new Set());
   const reconnectTimerRef = useRef(null);
@@ -29,6 +30,21 @@ export function WebSocketProvider({ children }) {
       try {
         const data = JSON.parse(event.data);
 
+        // ── Role update (approve / reject) ──────────────────────────────
+        if (data.type === "role_update") {
+          if (data.action === "approved") {
+            toast.success(data.message || "Votre rôle a été mis à jour !");
+            refreshUser(); // Re-fetch user from DB → updates role in context
+          } else if (data.action === "rejected") {
+            toast.error(data.message || "Votre demande a été refusée. Accès révoqué.");
+            setTimeout(() => {
+              logout();
+              window.location.href = "/connexion";
+            }, 2000);
+          }
+          return;
+        }
+
         // Handle global state updates
         if (data.type === "unread_update") {
           setUnreadImmo(data.immobilier || 0);
@@ -47,15 +63,12 @@ export function WebSocketProvider({ children }) {
 
     ws.onclose = () => {
       if (!isUnmountedRef.current && token) {
-        // Auto-reconnect after 3s
         reconnectTimerRef.current = setTimeout(connect, 3000);
       }
     };
 
-    ws.onerror = () => {
-      ws.close();
-    };
-  }, [token]);
+    ws.onerror = () => { ws.close(); };
+  }, [token, logout, refreshUser]);
 
   useEffect(() => {
     isUnmountedRef.current = false;
@@ -64,7 +77,7 @@ export function WebSocketProvider({ children }) {
       isUnmountedRef.current = true;
       clearTimeout(reconnectTimerRef.current);
       if (wsRef.current) {
-        wsRef.current.onclose = null; // prevent reconnect on intentional close
+        wsRef.current.onclose = null;
         wsRef.current.close();
         wsRef.current = null;
       }

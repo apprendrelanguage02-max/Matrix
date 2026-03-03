@@ -151,6 +151,7 @@ function RequestsTab({ onCountChange }) {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [processing, setProcessing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchNotifications = useCallback(() => {
     setLoading(true);
@@ -173,11 +174,45 @@ function RequestsTab({ onCountChange }) {
     try {
       const res = await api.put(`/admin/notifications/${notifId}/action`, { action });
       toast.success(res.data.message);
-      fetchNotifications();
+      // Optimistic: remove from list immediately
+      setNotifications(prev => prev.filter(n => n.id !== notifId));
+      setPendingCount(prev => Math.max(0, prev - 1));
+      if (onCountChange) onCountChange(Math.max(0, pendingCount - 1));
     } catch (err) {
       toast.error(err.response?.data?.detail || "Erreur");
+      fetchNotifications();
     } finally {
       setProcessing(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await api.delete(`/admin/notifications/${confirmDelete.id}`);
+      toast.success("Demande supprimée");
+      setNotifications(prev => prev.filter(n => n.id !== confirmDelete.id));
+      if (confirmDelete.status === "pending") {
+        setPendingCount(prev => Math.max(0, prev - 1));
+        if (onCountChange) onCountChange(Math.max(0, pendingCount - 1));
+      }
+      setConfirmDelete(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erreur");
+    }
+  };
+
+  const exportCSV = async () => {
+    try {
+      const res = await api.get("/admin/export/role-requests", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "demandes_roles.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
     }
   };
 
@@ -209,6 +244,9 @@ function RequestsTab({ onCountChange }) {
         >
           {REQUEST_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
+        <button onClick={exportCSV} data-testid="requests-csv-btn" className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider hover:bg-black transition-colors ml-auto">
+          <Download className="w-4 h-4" /> CSV
+        </button>
       </div>
 
       {loading ? (
@@ -246,28 +284,38 @@ function RequestsTab({ onCountChange }) {
                 )}
               </div>
 
-              {n.status === "pending" && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => handleAction(n.id, "approve")}
-                    disabled={processing === n.id}
-                    data-testid={`approve-btn-${n.id}`}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-green-700 transition-colors disabled:opacity-50"
-                  >
-                    {processing === n.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
-                    Approuver
-                  </button>
-                  <button
-                    onClick={() => handleAction(n.id, "reject")}
-                    disabled={processing === n.id}
-                    data-testid={`reject-btn-${n.id}`}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-red-700 transition-colors disabled:opacity-50"
-                  >
-                    {processing === n.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
-                    Rejeter
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {n.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => handleAction(n.id, "approve")}
+                      disabled={processing === n.id}
+                      data-testid={`approve-btn-${n.id}`}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-green-700 transition-colors disabled:opacity-50"
+                    >
+                      {processing === n.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                      Approuver
+                    </button>
+                    <button
+                      onClick={() => handleAction(n.id, "reject")}
+                      disabled={processing === n.id}
+                      data-testid={`reject-btn-${n.id}`}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {processing === n.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+                      Rejeter
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setConfirmDelete(n)}
+                  data-testid={`delete-request-btn-${n.id}`}
+                  className="p-2 text-zinc-400 hover:text-red-600 transition-colors"
+                  title="Supprimer cette demande"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
           {notifications.length === 0 && (
@@ -280,6 +328,16 @@ function RequestsTab({ onCountChange }) {
       )}
 
       <Pagination page={page} pages={pages} onPageChange={setPage} />
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Supprimer la demande"
+        message={`Supprimer la demande de "${confirmDelete?.user_username}" (${confirmDelete?.user_email}) ?`}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(null)}
+        confirmText="Supprimer"
+        danger
+      />
     </div>
   );
 }
@@ -337,8 +395,18 @@ function UsersTab() {
     }
   };
 
-  const exportCSV = () => {
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/admin/export/users`, "_blank");
+  const exportCSV = async () => {
+    try {
+      const res = await api.get("/admin/export/users", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "utilisateurs.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    }
   };
 
   return (
@@ -476,8 +544,18 @@ function ArticlesTab() {
     }
   };
 
-  const exportCSV = () => {
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/admin/export/articles`, "_blank");
+  const exportCSV = async () => {
+    try {
+      const res = await api.get("/admin/export/articles", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "articles.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    }
   };
 
   return (
@@ -594,8 +672,18 @@ function PropertiesTab() {
     }
   };
 
-  const exportCSV = () => {
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/admin/export/properties`, "_blank");
+  const exportCSV = async () => {
+    try {
+      const res = await api.get("/admin/export/properties", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "annonces.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    }
   };
 
   return (
@@ -729,8 +817,18 @@ function PaymentsTab() {
     }
   };
 
-  const exportCSV = () => {
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/admin/export/payments`, "_blank");
+  const exportCSV = async () => {
+    try {
+      const res = await api.get("/admin/export/payments", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "paiements.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Erreur lors du téléchargement");
+    }
   };
 
   const getMethodLabel = (m) => {
