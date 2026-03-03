@@ -114,7 +114,7 @@ export default function ArticleCard({ article, featured = false }) {
         <div className="flex items-center justify-between mt-auto pt-2 sm:pt-3 border-t border-zinc-100">
           <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-['Manrope'] font-semibold uppercase tracking-wider text-[#FF6600]" data-testid={`views-${article.id}`}>
             <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
+            {article.views ?? 0} <span className="whitespace-nowrap">vue{(article.views ?? 0) !== 1 ? "s" : ""}</span>
           </span>
           <Link
             to={`/article/${article.id}`}

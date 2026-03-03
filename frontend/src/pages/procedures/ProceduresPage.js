@@ -56,7 +56,7 @@ function ProcedureCard({ procedure }) {
           </span>
           <span className="flex items-center gap-1">
             <Eye className="w-3 h-3" />
-            {procedure.views} vue{procedure.views !== 1 ? "s" : ""}
+            {procedure.views} <span className="whitespace-nowrap">vue{procedure.views !== 1 ? "s" : ""}</span>
           </span>
         </div>
         

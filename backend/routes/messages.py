@@ -347,3 +347,21 @@ async def check_user_online(user_id: str):
         last_seen = user.get("last_seen") if user else None
         return {"online": False, "last_seen": last_seen}
     return {"online": True, "last_seen": None}
+
+
+
+@router.delete("/conversations/{conversation_id}")
+async def delete_conversation(
+    conversation_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a conversation and all its messages. User must be a participant."""
+    conv = await db.conversations.find_one({"id": conversation_id}, {"_id": 0})
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation introuvable")
+    if current_user["id"] not in conv.get("participant_ids", []):
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    await db.messages.delete_many({"conversation_id": conversation_id})
+    await db.conversations.delete_one({"id": conversation_id})
+    return {"message": "Conversation supprimée"}

@@ -139,7 +139,7 @@ export default function DashboardPage() {
                     </span>
                     <span className="flex items-center gap-1 text-[#FF6600]" data-testid={`dashboard-views-${article.id}`}>
                       <Eye className="w-3 h-3" />
-                      {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
+                      {article.views ?? 0} <span className="whitespace-nowrap">vue{(article.views ?? 0) !== 1 ? "s" : ""}</span>
                     </span>
                   </p>
                 </div>

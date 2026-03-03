@@ -171,7 +171,7 @@ export default function PropertyDetailPage() {
               <h1 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">{property.title}</h1>
               <p className="font-['Oswald'] text-3xl font-bold text-[#FF6600]">{formatPrice(property.price, property.currency)}</p>
               <div className="flex items-center gap-1 text-zinc-400 text-xs mt-2">
-                <Eye className="w-3 h-3" /> {property.views} vue{property.views !== 1 ? "s" : ""}
+                <Eye className="w-3 h-3" /> <span className="whitespace-nowrap">{property.views} vue{property.views !== 1 ? "s" : ""}</span>
               </div>
             </div>
 

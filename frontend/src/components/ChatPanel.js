@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useWebSocket } from "../context/WebSocketContext";
 import api from "../lib/api";
 import { toast } from "sonner";
-import { X, Send, MessageSquare, Loader2, ArrowLeft, ExternalLink } from "lucide-react";
+import { X, Send, MessageSquare, Loader2, ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
 
 function formatTime(dateStr) {
   if (!dateStr) return "";
@@ -81,6 +81,7 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [deletingConvId, setDeletingConvId] = useState(null);
   const messagesEndRef = useRef(null);
   const activeConvRef = useRef(null);
   const isTypingRef = useRef(false);
@@ -233,6 +234,21 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
     loadMessages(conv.id);
   };
 
+  const deleteConversation = async (convId, e) => {
+    e.stopPropagation(); // don't open the conversation
+    if (!window.confirm("Supprimer cette conversation ? Cette action est irréversible.")) return;
+    setDeletingConvId(convId);
+    try {
+      await api.delete(`/conversations/${convId}`);
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+      toast.success("Conversation supprimée");
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeletingConvId(null);
+    }
+  };
+
   const handleBack = () => {
     if (isTypingRef.current && activeConvRef.current) {
       send({ type: "typing_stop", conversation_id: activeConvRef.current.id });
@@ -320,7 +336,7 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
                     key={conv.id}
                     onClick={() => openConversation(conv)}
                     data-testid={`conv-${conv.id}`}
-                    className="w-full text-left px-4 py-3 hover:bg-zinc-50 transition-colors"
+                    className="w-full text-left px-4 py-3 hover:bg-zinc-50 transition-colors group/conv relative"
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative flex-shrink-0">
@@ -334,7 +350,7 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-semibold font-['Manrope'] truncate">{otherName(conv)}</p>
-                          <span className="text-[10px] text-zinc-400">{formatDate(conv.last_message_at)}</span>
+                          <span className="text-[10px] text-zinc-400 group-hover/conv:opacity-0 transition-opacity">{formatDate(conv.last_message_at)}</span>
                         </div>
                         {conv.property_title && (
                           <p className="text-[10px] text-[#FF6600] truncate">{conv.property_title}</p>
@@ -342,11 +358,23 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
                         <p className="text-xs text-zinc-500 truncate">{conv.last_message || "Nouvelle conversation"}</p>
                       </div>
                       {conv.unread_count > 0 && (
-                        <span className="bg-[#FF6600] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                        <span className="bg-[#FF6600] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 group-hover/conv:opacity-0 transition-opacity">
                           {conv.unread_count}
                         </span>
                       )}
                     </div>
+                    {/* Delete button appears on hover */}
+                    <button
+                      onClick={(e) => deleteConversation(conv.id, e)}
+                      data-testid={`delete-conv-${conv.id}`}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/conv:opacity-100 transition-opacity p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded"
+                      title="Supprimer la conversation"
+                    >
+                      {deletingConvId === conv.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />
+                      }
+                    </button>
                   </button>
                 );
               })

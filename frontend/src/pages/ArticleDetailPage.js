@@ -107,7 +107,7 @@ export default function ArticleDetailPage() {
               </span>
               <span className="flex items-center gap-1 text-xs text-[#FF6600] font-['Manrope'] font-bold" data-testid="article-views">
                 <Eye className="w-3 h-3" />
-                {article.views ?? 0} vue{(article.views ?? 0) !== 1 ? "s" : ""}
+                {article.views ?? 0} <span className="whitespace-nowrap">vue{(article.views ?? 0) !== 1 ? "s" : ""}</span>
               </span>
               {token && (
                 <button

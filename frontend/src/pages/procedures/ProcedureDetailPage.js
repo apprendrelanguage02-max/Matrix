@@ -153,7 +153,7 @@ export default function ProcedureDetailPage() {
           </span>
           <span className="flex items-center gap-1.5">
             <Eye className="w-4 h-4" />
-            {procedure.views} vue{procedure.views !== 1 ? "s" : ""}
+            {procedure.views} <span className="whitespace-nowrap">vue{procedure.views !== 1 ? "s" : ""}</span>
           </span>
         </div>
         
