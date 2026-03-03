@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { isHtmlContent, renderContent } from "../lib/contentRenderer";
 import { getCategoryColor, slugify } from "../lib/categories";
 import { Loader2, ArrowLeft, Calendar, User, Eye, Tag, Bookmark } from "lucide-react";
+import LikeButton from "../components/LikeButton";
 import { toast } from "sonner";
 
 function formatDate(isoString) {
@@ -109,6 +110,13 @@ export default function ArticleDetailPage() {
                 <Eye className="w-3 h-3" />
                 {article.views ?? 0} <span className="whitespace-nowrap">vue{(article.views ?? 0) !== 1 ? "s" : ""}</span>
               </span>
+              <LikeButton
+                type="article"
+                id={article.id}
+                initialCount={article.likes_count || 0}
+                initialLikedBy={article.liked_by || []}
+                className="text-sm"
+              />
               {token && (
                 <button
                   onClick={toggleSave}

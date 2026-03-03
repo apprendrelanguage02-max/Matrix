@@ -8,6 +8,7 @@ from models.article import (
 )
 from middleware.auth import get_current_user, require_author
 from utils import sanitize, sanitize_html, sanitize_url
+from datetime import datetime, timezone
 import uuid
 from datetime import datetime, timezone
 
@@ -166,3 +167,41 @@ async def delete_article(article_id: str, current_user: dict = Depends(require_a
         raise HTTPException(status_code=403, detail="Non autorisé")
     await db.articles.delete_one({"id": article_id})
     return {"message": "Article supprimé"}
+
+
+@router.post("/articles/{article_id}/like")
+async def toggle_article_like(article_id: str, current_user: dict = Depends(get_current_user)):
+    article = await db.articles.find_one({"id": article_id}, {"_id": 0, "id": 1, "liked_by": 1, "title": 1, "author_id": 1})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+
+    user_id = current_user["id"]
+    liked_by = article.get("liked_by", [])
+    already_liked = user_id in liked_by
+
+    if already_liked:
+        await db.articles.update_one(
+            {"id": article_id},
+            {"$pull": {"liked_by": user_id}, "$inc": {"likes_count": -1}}
+        )
+        action = "unlike"
+    else:
+        await db.articles.update_one(
+            {"id": article_id},
+            {"$addToSet": {"liked_by": user_id}, "$inc": {"likes_count": 1}}
+        )
+        action = "like"
+        # Notify article author (not self-like)
+        if article.get("author_id") and article["author_id"] != user_id:
+            import uuid as _uuid
+            await db.user_notifications.insert_one({
+                "id": str(_uuid.uuid4()),
+                "user_id": article["author_id"],
+                "type": "article_like",
+                "message": f"{current_user.get('username', 'Un utilisateur')} a aimé votre article \"{article.get('title', '')}\"",
+                "is_read": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+    updated = await db.articles.find_one({"id": article_id}, {"_id": 0, "likes_count": 1, "liked_by": 1})
+    return {"action": action, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])}

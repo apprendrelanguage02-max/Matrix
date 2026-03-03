@@ -88,6 +88,8 @@ class PropertyOut(BaseModel):
     author_username: str = ""
     created_at: str
     views: int
+    likes_count: int = 0
+    liked_by: List[str] = []
 
 
 class PaginatedProperties(BaseModel):

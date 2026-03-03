@@ -36,6 +36,8 @@ class ArticleOut(BaseModel):
     author_username: str = ""
     image_url: Optional[str] = None
     views: int = 0
+    likes_count: int = 0
+    liked_by: List[str] = []
     published_at: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

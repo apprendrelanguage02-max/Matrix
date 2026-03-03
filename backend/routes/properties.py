@@ -9,6 +9,7 @@ from middleware.auth import get_current_user, require_agent
 from utils import sanitize, sanitize_html, sanitize_url
 import uuid
 from datetime import datetime, timezone
+from datetime import datetime, timezone
 
 router = APIRouter(tags=["properties"])
 
@@ -99,6 +100,8 @@ async def create_property(data: PropertyCreate, current_user: dict = Depends(req
         "author_id": current_user["id"],
         "created_at": now,
         "views": 0,
+        "likes_count": 0,
+        "liked_by": [],
     }
     await db.properties.insert_one(prop)
     prop["author_username"] = current_user.get("username", "")
@@ -148,3 +151,41 @@ async def get_my_properties(current_user: dict = Depends(require_agent)):
     for p in props:
         p["author_username"] = current_user.get("username", "")
     return props
+
+
+@router.post("/properties/{property_id}/like")
+async def toggle_property_like(property_id: str, current_user: dict = Depends(get_current_user)):
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0, "id": 1, "liked_by": 1, "title": 1, "author_id": 1})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Annonce introuvable")
+
+    user_id = current_user["id"]
+    liked_by = prop.get("liked_by", [])
+    already_liked = user_id in liked_by
+
+    if already_liked:
+        await db.properties.update_one(
+            {"id": property_id},
+            {"$pull": {"liked_by": user_id}, "$inc": {"likes_count": -1}}
+        )
+        action = "unlike"
+    else:
+        await db.properties.update_one(
+            {"id": property_id},
+            {"$addToSet": {"liked_by": user_id}, "$inc": {"likes_count": 1}}
+        )
+        action = "like"
+        # Notify property owner (not self-like)
+        if prop.get("author_id") and prop["author_id"] != user_id:
+            import uuid as _uuid
+            await db.user_notifications.insert_one({
+                "id": str(_uuid.uuid4()),
+                "user_id": prop["author_id"],
+                "type": "property_like",
+                "message": f"{current_user.get('username', 'Un utilisateur')} a aimé votre annonce \"{prop.get('title', '')}\"",
+                "is_read": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+    updated = await db.properties.find_one({"id": property_id}, {"_id": 0, "likes_count": 1, "liked_by": 1})
+    return {"action": action, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])}

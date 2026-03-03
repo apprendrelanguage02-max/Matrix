@@ -8,6 +8,7 @@ import { formatPrice } from "../../components/immobilier/PropertyCard";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../lib/api";
 import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video } from "lucide-react";
+import LikeButton from "../../components/LikeButton";
 import { toast } from "sonner";
 
 const PropertyMap = lazy(() => import("../../components/immobilier/PropertyMap"));
@@ -173,6 +174,13 @@ export default function PropertyDetailPage() {
               <div className="flex items-center gap-1 text-zinc-400 text-xs mt-2">
                 <Eye className="w-3 h-3" /> <span className="whitespace-nowrap">{property.views} vue{property.views !== 1 ? "s" : ""}</span>
               </div>
+              <LikeButton
+                type="property"
+                id={property.id}
+                initialCount={property.likes_count || 0}
+                initialLikedBy={property.liked_by || []}
+                className="text-sm"
+              />
             </div>
 
             {/* Seller */}

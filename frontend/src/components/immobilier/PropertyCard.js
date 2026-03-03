@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { MapPin, Eye, Phone, Tag } from "lucide-react";
+import LikeButton from "../LikeButton";
 
 const TYPE_CONFIG = {
   achat:    { label: "Achat",    bg: "bg-green-600",  text: "text-white" },
@@ -79,6 +80,13 @@ export default function PropertyCard({ property }) {
           >
             <Phone className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> <span className="hidden sm:inline">Contacter</span>
           </a>
+          <LikeButton
+            type="property"
+            id={property.id}
+            initialCount={property.likes_count || 0}
+            initialLikedBy={property.liked_by || []}
+            className="px-2 py-1.5"
+          />
         </div>
       </div>
     </div>

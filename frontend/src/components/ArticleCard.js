@@ -6,6 +6,7 @@ import { getCategoryColor, slugify } from "../lib/categories";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "sonner";
+import LikeButton from "./LikeButton";
 
 function formatDate(isoString) {
   const d = new Date(isoString);
@@ -116,6 +117,12 @@ export default function ArticleCard({ article, featured = false }) {
             <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             {article.views ?? 0} <span className="whitespace-nowrap">vue{(article.views ?? 0) !== 1 ? "s" : ""}</span>
           </span>
+          <LikeButton
+            type="article"
+            id={article.id}
+            initialCount={article.likes_count || 0}
+            initialLikedBy={article.liked_by || []}
+          />
           <Link
             to={`/article/${article.id}`}
             data-testid={`read-more-${article.id}`}

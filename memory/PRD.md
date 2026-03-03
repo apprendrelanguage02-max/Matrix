@@ -63,7 +63,13 @@ backend/
 - CRUD admin uniquement avec editeur WYSIWYG
 - Bouton "Poser une question" pour contacter l'admin
 
-### Fix Messagerie Procédures (Terminé - Fev 2026)
+### Compteur de Likes (Terminé - Fev 2026)
+- Bouton cœur (Heart) sur PropertyCard, PropertyDetailPage, ArticleCard, ArticleDetailPage
+- Toggle like/unlike avec animation burst + rouge sur activation
+- Notification créée pour l'auteur à chaque nouveau like ("X a aimé votre annonce/article")
+- liked_by (liste user IDs) + likes_count stockés dans la DB
+- Endpoints: POST /api/properties/{id}/like et POST /api/articles/{id}/like
+
 - DB mise à jour : procédures pointaient vers ancien admin (f7f5d389) → corrigé vers admin actuel (acc21120)
 - Endpoint public GET /api/admin/contact → retourne toujours l'admin actuel
 - ProcedureDetailPage utilise adminContact.id au lieu de procedure.author_id
