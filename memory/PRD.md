@@ -63,7 +63,19 @@ backend/
 - CRUD admin uniquement avec editeur WYSIWYG
 - Bouton "Poser une question" pour contacter l'admin
 
-### Messagerie Temps Reel (Terminé & Testé - Fev 2026)
+### Fix Messagerie Procédures (Terminé - Fev 2026)
+- DB mise à jour : procédures pointaient vers ancien admin (f7f5d389) → corrigé vers admin actuel (acc21120)
+- Endpoint public GET /api/admin/contact → retourne toujours l'admin actuel
+- ProcedureDetailPage utilise adminContact.id au lieu de procedure.author_id
+- Admin voit maintenant les conversations de type procedures dans sa boîte de réception
+
+### Vérification OTP Email (Terminé - Fev 2026)
+- POST /api/auth/send-otp : génère code 6 chiffres, stocké 5 min en DB
+- POST /api/auth/register : requiert OTP valide pour créer le compte
+- Toggle Email/Téléphone dans le formulaire d'inscription
+- Mode dev (sans RESEND_API_KEY) : code affiché dans l'interface (boîte ambre)
+- Mode prod : email envoyé via Resend (clé à configurer dans backend/.env)
+- Tests: 18/18 backend (100%) + 100% frontend
 - Chat type WhatsApp via WebSocket (`/api/ws/chat?token=...`)
 - Conversations immobilier (visiteur<->agent) et procedures (utilisateur<->admin)
 - Icone message visible uniquement dans sections immobilier/procedures

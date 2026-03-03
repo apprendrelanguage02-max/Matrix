@@ -438,7 +438,7 @@ export default function LoginPage() {
                   </div>
 
                   <button
-                    type="submit" disabled={loading || otp.length < 6}
+                    type="submit" disabled={loading || (!devOtp && otp.length < 6)}
                     data-testid="auth-submit-button"
                     className="w-full bg-[#FF6600] text-white font-bold font-['Manrope'] uppercase tracking-wider py-3 hover:bg-[#CC5200] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                   >
