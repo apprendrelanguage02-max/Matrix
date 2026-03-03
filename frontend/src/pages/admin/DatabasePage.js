@@ -7,10 +7,11 @@ import { toast } from "sonner";
 import {
   Users, FileText, Home, CreditCard, Search, ChevronLeft, ChevronRight,
   Trash2, Eye, Ban, CheckCircle, Download, Loader2, Database, ArrowLeft,
-  UserCog, Edit, RefreshCw
+  UserCog, Edit, RefreshCw, Bell, UserCheck, UserX, Clock
 } from "lucide-react";
 
 const TABS = [
+  { id: "requests", label: "Demandes", icon: Bell },
   { id: "users", label: "Utilisateurs", icon: Users },
   { id: "articles", label: "Articles", icon: FileText },
   { id: "properties", label: "Annonces", icon: Home },
@@ -127,6 +128,158 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, confirmText =
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// REQUESTS TAB (Role Approval)
+// ──────────────────────────────────────────────────────────────────────────────
+const REQUEST_STATUSES = [
+  { value: "", label: "Tous" },
+  { value: "pending", label: "En attente" },
+  { value: "approved", label: "Approuvé" },
+  { value: "rejected", label: "Rejeté" },
+];
+
+function RequestsTab({ onCountChange }) {
+  const [notifications, setNotifications] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [processing, setProcessing] = useState(null);
+
+  const fetchNotifications = useCallback(() => {
+    setLoading(true);
+    api.get("/admin/notifications", { params: { page, limit: 20, status: statusFilter } })
+      .then(r => {
+        setNotifications(r.data.notifications);
+        setTotal(r.data.total);
+        setPendingCount(r.data.pending_count);
+        setPages(r.data.pages);
+        if (onCountChange) onCountChange(r.data.pending_count);
+      })
+      .catch(() => toast.error("Erreur lors du chargement des notifications"))
+      .finally(() => setLoading(false));
+  }, [page, statusFilter, onCountChange]);
+
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
+  const handleAction = async (notifId, action) => {
+    setProcessing(notifId);
+    try {
+      const res = await api.put(`/admin/notifications/${notifId}/action`, { action });
+      toast.success(res.data.message);
+      fetchNotifications();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erreur");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const getRoleLabel = (role) => {
+    if (role === "auteur") return "Auteur";
+    if (role === "agent") return "Agent immobilier";
+    return role;
+  };
+
+  return (
+    <div>
+      {/* Pending count banner */}
+      {pendingCount > 0 && (
+        <div className="bg-orange-50 border border-orange-200 px-4 py-3 mb-4 flex items-center gap-3" data-testid="pending-requests-banner">
+          <Clock className="w-5 h-5 text-[#FF6600] flex-shrink-0" />
+          <p className="text-sm font-['Manrope'] text-orange-800">
+            <strong>{pendingCount}</strong> demande{pendingCount > 1 ? "s" : ""} en attente d'approbation
+          </p>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <select
+          value={statusFilter}
+          onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+          data-testid="requests-status-filter"
+          className="px-3 py-2 border border-zinc-300 text-sm font-['Manrope'] focus:outline-none focus:border-[#FF6600]"
+        >
+          {REQUEST_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#FF6600]" /></div>
+      ) : (
+        <div className="space-y-3">
+          {notifications.map(n => (
+            <div
+              key={n.id}
+              data-testid={`notification-${n.id}`}
+              className={`border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 transition-colors ${
+                n.status === "pending" ? "bg-orange-50 border-orange-200" :
+                n.status === "approved" ? "bg-green-50 border-green-200" :
+                "bg-zinc-50 border-zinc-200"
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    n.status === "pending" ? "bg-orange-100 text-orange-700" :
+                    n.status === "approved" ? "bg-green-100 text-green-700" :
+                    "bg-red-100 text-red-700"
+                  }`}>
+                    {n.status === "pending" ? "En attente" : n.status === "approved" ? "Approuvé" : "Rejeté"}
+                  </span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-100 text-blue-700">
+                    {getRoleLabel(n.requested_role)}
+                  </span>
+                </div>
+                <p className="font-semibold text-sm font-['Manrope']">{n.user_username}</p>
+                <p className="text-xs text-zinc-500 font-['Manrope']">{n.user_email}</p>
+                <p className="text-xs text-zinc-400 font-['Manrope'] mt-1">{formatDate(n.created_at)}</p>
+                {n.processed_at && (
+                  <p className="text-xs text-zinc-400 font-['Manrope']">Traité le: {formatDate(n.processed_at)}</p>
+                )}
+              </div>
+
+              {n.status === "pending" && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleAction(n.id, "approve")}
+                    disabled={processing === n.id}
+                    data-testid={`approve-btn-${n.id}`}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {processing === n.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                    Approuver
+                  </button>
+                  <button
+                    onClick={() => handleAction(n.id, "reject")}
+                    disabled={processing === n.id}
+                    data-testid={`reject-btn-${n.id}`}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {processing === n.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+                    Rejeter
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {notifications.length === 0 && (
+            <div className="text-center py-12 text-zinc-400 font-['Manrope']">
+              <Bell className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p>Aucune demande {statusFilter ? `avec le statut "${statusFilter}"` : ""}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <Pagination page={page} pages={pages} onPageChange={setPage} />
     </div>
   );
 }
@@ -660,15 +813,20 @@ function PaymentsTab() {
 // MAIN PAGE
 // ──────────────────────────────────────────────────────────────────────────────
 export default function DatabasePage() {
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("requests");
   const [stats, setStats] = useState({ total_users: 0, total_articles: 0, total_properties: 0, total_payments: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     api.get("/admin/stats")
       .then(r => setStats(r.data))
       .catch(() => {})
       .finally(() => setLoadingStats(false));
+    // Fetch pending notification count
+    api.get("/admin/notifications/count")
+      .then(r => setPendingCount(r.data.pending_count))
+      .catch(() => {});
   }, []);
 
   const refreshStats = () => {
@@ -722,7 +880,8 @@ export default function DatabasePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
+                data-testid={`tab-${tab.id}`}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 relative ${
                   activeTab === tab.id
                     ? "border-[#FF6600] text-[#FF6600]"
                     : "border-transparent text-zinc-500 hover:text-black"
@@ -730,6 +889,11 @@ export default function DatabasePage() {
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}
+                {tab.id === "requests" && pendingCount > 0 && (
+                  <span className="ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center" data-testid="pending-badge">
+                    {pendingCount}
+                  </span>
+                )}
               </button>
             ))}
             <button onClick={refreshStats} className="ml-auto px-4 py-3 text-zinc-400 hover:text-[#FF6600] transition-colors" title="Rafraîchir">
@@ -738,6 +902,7 @@ export default function DatabasePage() {
           </div>
 
           <div className="p-4 sm:p-6">
+            {activeTab === "requests" && <RequestsTab onCountChange={setPendingCount} />}
             {activeTab === "users" && <UsersTab />}
             {activeTab === "articles" && <ArticlesTab />}
             {activeTab === "properties" && <PropertiesTab />}

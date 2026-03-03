@@ -1,9 +1,10 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { PenSquare, Search, X, LogOut, Plus, LayoutDashboard, Bookmark, Settings, ChevronDown, LogIn, UserPlus, Menu, Database, CreditCard } from "lucide-react";
+import { PenSquare, Search, X, LogOut, Plus, LayoutDashboard, Bookmark, Settings, ChevronDown, LogIn, UserPlus, Menu, Database, CreditCard, Bell } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { CATEGORIES, slugify } from "../lib/categories";
 import { toast } from "sonner";
+import api from "../lib/api";
 
 function getInitials(username) {
   if (!username) return "?";
@@ -133,8 +134,18 @@ export default function Header({ onSearch, searchValue }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const dropdownRef = useRef(null);
   const bg = getAvatarBg(user?.username);
+
+  // Fetch pending notification count for admin
+  useEffect(() => {
+    if (user?.role === "admin") {
+      api.get("/admin/notifications/count")
+        .then(r => setPendingCount(r.data.pending_count))
+        .catch(() => {});
+    }
+  }, [user?.role, location.pathname]);
 
   const activeCategory = location.pathname.startsWith("/categorie/")
     ? decodeURIComponent(location.pathname.replace("/categorie/", ""))
@@ -211,6 +222,22 @@ export default function Header({ onSearch, searchValue }) {
                   <Link to="/admin" data-testid="admin-dashboard-link" className="hidden lg:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200">
                     <PenSquare className="w-4 h-4" />
                     Dashboard
+                  </Link>
+                )}
+                {/* Admin notification bell */}
+                {user.role === "admin" && (
+                  <Link
+                    to="/admin/database"
+                    data-testid="admin-notification-bell"
+                    className="relative p-1.5 text-zinc-400 hover:text-[#FF6600] transition-colors"
+                    title="Demandes en attente"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1" data-testid="header-pending-badge">
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 )}
                 {/* Avatar + Dropdown */}

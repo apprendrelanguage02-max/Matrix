@@ -1,7 +1,7 @@
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header";
-import { LogOut, User, Mail, Shield, Calendar, ArrowLeft } from "lucide-react";
+import { LogOut, User, Mail, Shield, Calendar, ArrowLeft, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 function formatDate(isoString) {
@@ -78,6 +78,20 @@ export default function ProfilePage() {
 
           {/* Content */}
           <div className="pt-16 px-8 pb-8">
+            {/* Pending status banner */}
+            {user.status === "pending" && (
+              <div className="bg-amber-50 border border-amber-200 px-4 py-3 mb-6 flex items-start gap-3" data-testid="pending-status-banner">
+                <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800 font-['Manrope']">Compte en attente de validation</p>
+                  <p className="text-xs text-amber-600 font-['Manrope'] mt-1">
+                    Votre demande de rôle professionnel est en cours d'examen par l'administrateur. 
+                    Vous recevrez un accès complet une fois approuvé.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Name + role badge */}
             <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
               <div>
@@ -87,16 +101,17 @@ export default function ProfilePage() {
                 <span
                   data-testid="profile-role-badge"
                   className={`inline-block mt-1 px-3 py-0.5 text-xs font-bold uppercase tracking-widest font-['Manrope'] ${
-                    user.role === "auteur"
-                      ? "bg-[#FF6600] text-white"
-                      : "bg-zinc-100 text-zinc-600 border border-zinc-300"
+                    user.role === "admin" ? "bg-purple-600 text-white" :
+                    user.role === "auteur" ? "bg-[#FF6600] text-white" :
+                    user.role === "agent" ? "bg-blue-600 text-white" :
+                    "bg-zinc-100 text-zinc-600 border border-zinc-300"
                   }`}
                 >
-                  {user.role === "auteur" ? "Auteur" : "Visiteur"}
+                  {user.role === "admin" ? "Admin" : user.role === "auteur" ? "Auteur" : user.role === "agent" ? "Agent" : "Visiteur"}
                 </span>
               </div>
 
-              {user.role === "auteur" && (
+              {(user.role === "auteur" || user.role === "admin") && (
                 <Link
                   to="/admin"
                   data-testid="go-to-dashboard-btn"
@@ -143,7 +158,10 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Rôle</p>
                   <p className="text-base font-semibold text-black mt-0.5">
-                    {user.role === "auteur" ? "Auteur — peut publier des articles" : "Visiteur — lecture seule"}
+                    {user.role === "admin" ? "Administrateur — accès complet" :
+                     user.role === "auteur" ? "Auteur — peut publier des articles" :
+                     user.role === "agent" ? "Agent immobilier — peut publier des annonces" :
+                     "Visiteur — lecture seule"}
                   </p>
                 </div>
               </div>

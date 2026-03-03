@@ -1638,6 +1638,92 @@ async def export_payments_csv(current_user: dict = Depends(require_admin)):
     return Response(content=csv_content, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=paiements.csv"})
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADMIN NOTIFICATIONS & ROLE APPROVAL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@api_router.get("/admin/notifications/count")
+async def get_notification_count(current_user: dict = Depends(require_admin)):
+    """Get count of pending notifications."""
+    pending = await db.admin_notifications.count_documents({"status": "pending"})
+    return {"pending_count": pending}
+
+
+@api_router.get("/admin/notifications", response_model=PaginatedNotifications)
+async def get_admin_notifications(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: str = Query("", max_length=20),
+    current_user: dict = Depends(require_admin)
+):
+    """Get paginated admin notifications."""
+    query = {}
+    if status:
+        query["status"] = status
+
+    total = await db.admin_notifications.count_documents(query)
+    pending_count = await db.admin_notifications.count_documents({"status": "pending"})
+    pages = max(1, (total + limit - 1) // limit)
+    skip = (page - 1) * limit
+
+    notifications = await db.admin_notifications.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+
+    return PaginatedNotifications(
+        notifications=[AdminNotification(**n) for n in notifications],
+        total=total,
+        pending_count=pending_count,
+        page=page,
+        pages=pages
+    )
+
+
+@api_router.put("/admin/notifications/{notification_id}/action")
+async def process_role_request(
+    notification_id: str,
+    data: RoleRequestAction,
+    current_user: dict = Depends(require_admin)
+):
+    """Approve or reject a role request."""
+    if data.action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="Action invalide. Utilisez 'approve' ou 'reject'.")
+
+    notification = await db.admin_notifications.find_one({"id": notification_id}, {"_id": 0})
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification introuvable")
+
+    if notification["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Cette demande a déjà été traitée")
+
+    now = datetime.now(timezone.utc).isoformat()
+    user = await db.users.find_one({"id": notification["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    if data.action == "approve":
+        # Grant the requested role and activate the account
+        await db.users.update_one(
+            {"id": notification["user_id"]},
+            {"$set": {"role": notification["requested_role"], "status": "actif", "requested_role": None}}
+        )
+        await db.admin_notifications.update_one(
+            {"id": notification_id},
+            {"$set": {"status": "approved", "processed_at": now}}
+        )
+        role_label = "Auteur" if notification["requested_role"] == "auteur" else "Agent immobilier"
+        return {"ok": True, "message": f"Rôle {role_label} approuvé pour {notification['user_username']}"}
+    else:
+        # Reject: keep as visiteur but activate account
+        await db.users.update_one(
+            {"id": notification["user_id"]},
+            {"$set": {"status": "actif", "requested_role": None}}
+        )
+        await db.admin_notifications.update_one(
+            {"id": notification_id},
+            {"$set": {"status": "rejected", "processed_at": now}}
+        )
+        return {"ok": True, "message": f"Demande de rôle rejetée pour {notification['user_username']}"}
+
+
 app.include_router(api_router)
 
 # ─── Servir les fichiers uploadés ─────────────────────────────────────────────

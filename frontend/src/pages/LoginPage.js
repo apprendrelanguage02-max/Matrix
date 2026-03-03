@@ -53,11 +53,18 @@ export default function LoginPage() {
         : { username: form.username, email: form.email, password: form.password, role: form.role || "visiteur" };
 
       const res = await api.post(endpoint, payload);
-      login(res.data.token, res.data.user);
-      toast.success(tab === "login" ? "Connexion réussie !" : "Compte créé avec succès !");
-      if ((form.role === "agent") && tab === "register") {
+      const userData = res.data.user;
+      login(res.data.token, userData);
+      
+      // Check if user has pending status (requested professional role)
+      if (userData.status === "pending") {
+        toast.info("Votre demande de rôle professionnel est en cours de validation par l'administrateur.");
+        navigate("/profil");
+      } else if ((form.role === "agent") && tab === "register") {
+        toast.success("Compte créé avec succès !");
         navigate("/immobilier");
       } else {
+        toast.success(tab === "login" ? "Connexion réussie !" : "Compte créé avec succès !");
         navigate("/profil");
       }
     } catch (err) {
@@ -207,31 +214,49 @@ export default function LoginPage() {
                   <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
                     Je m'inscris en tant que
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => handleChange({ target: { name: "role", value: "visiteur" } })}
-                      className={`py-3 px-4 border-2 text-sm font-bold font-['Manrope'] transition-all ${
+                      data-testid="role-visiteur-btn"
+                      className={`py-3 px-3 border-2 text-sm font-bold font-['Manrope'] transition-all ${
                         (form.role || "visiteur") === "visiteur"
                           ? "border-[#FF6600] bg-orange-50 text-[#FF6600]"
                           : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
                       }`}
                     >
-                      👤 Visiteur
+                      Visiteur
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange({ target: { name: "role", value: "auteur" } })}
+                      data-testid="role-auteur-btn"
+                      className={`py-3 px-3 border-2 text-sm font-bold font-['Manrope'] transition-all ${
+                        form.role === "auteur"
+                          ? "border-purple-600 bg-purple-50 text-purple-600"
+                          : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
+                      }`}
+                    >
+                      Auteur
                     </button>
                     <button
                       type="button"
                       onClick={() => handleChange({ target: { name: "role", value: "agent" } })}
                       data-testid="role-agent-btn"
-                      className={`py-3 px-4 border-2 text-sm font-bold font-['Manrope'] transition-all ${
+                      className={`py-3 px-3 border-2 text-sm font-bold font-['Manrope'] transition-all ${
                         form.role === "agent"
                           ? "border-blue-600 bg-blue-50 text-blue-600"
                           : "border-zinc-200 text-zinc-500 hover:border-zinc-400"
                       }`}
                     >
-                      🏘 Agent immobilier
+                      Agent
                     </button>
                   </div>
+                  {(form.role === "auteur" || form.role === "agent") && (
+                    <p className="text-xs text-amber-600 mt-2 font-['Manrope']">
+                      Les comptes Auteur et Agent nécessitent une validation par l'administrateur.
+                    </p>
+                  )}
                 </div>
               )}
 
