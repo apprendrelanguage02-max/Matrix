@@ -226,6 +226,7 @@ async def get_conversations(
         result.append(ConversationOut(
             id=c["id"], type=c.get("type", ""),
             property_id=c.get("property_id"), property_title=c.get("property_title"),
+            property_image=c.get("property_image"),
             participant_ids=c.get("participant_ids", []),
             participant_names=c.get("participant_names", []),
             last_message=c.get("last_message"),

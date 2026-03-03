@@ -63,12 +63,16 @@ backend/
 - CRUD admin uniquement avec editeur WYSIWYG
 - Bouton "Poser une question" pour contacter l'admin
 
-### Messagerie Temps Reel (NOUVEAU Mars 2026)
-- Chat type WhatsApp via WebSocket
+### Messagerie Temps Reel (Terminé & Testé - Fev 2026)
+- Chat type WhatsApp via WebSocket (`/api/ws/chat?token=...`)
 - Conversations immobilier (visiteur<->agent) et procedures (utilisateur<->admin)
 - Icone message visible uniquement dans sections immobilier/procedures
-- Badge compteur messages non lus
-- Indicateur "en ligne" (point vert) sur l'avatar
+- Badge compteur messages non lus mis à jour en temps réel (WebSocket `unread_update`)
+- Indicateur "en ligne" (point vert) sur l'avatar dans la liste des conversations
+- Indicateur de frappe animé (typing dots) avec stop automatique
+- Carte d'annonce cliquable (PropertyBanner) dans les conversations liées à une annonce
+- WebSocket global dans MessageButton.js pour les mises à jour en arrière-plan
+- Tests: 22/22 backend + 15/15 frontend (100% succès)
 
 ### Dashboard Admin /admin/database
 - 5 onglets: Demandes, Utilisateurs, Articles, Annonces, Paiements
