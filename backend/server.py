@@ -46,6 +46,9 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'newsapp_secret_key_change_in_prod')
 JWT_ALGORITHM = 'HS256'
 
+# ─── Super Admin Configuration ─────────────────────────────────────────────────
+SUPER_ADMIN_EMAIL = "matrixguinea@gmail.com"
+
 # ─── Catégories prédéfinies ────────────────────────────────────────────────────
 CATEGORIES = ["Actualité", "Politique", "Sport", "Technologie", "Économie"]
 
@@ -149,8 +152,11 @@ class UserRegister(BaseModel):
     @field_validator('role')
     @classmethod
     def validate_role(cls, v):
-        if v not in ("visiteur", "agent"):
-            raise ValueError('Rôle invalide. Choisissez visiteur ou agent.')
+        # Admin role can NEVER be requested via registration
+        if v == "admin":
+            raise ValueError('Rôle invalide.')
+        if v not in ("visiteur", "agent", "auteur"):
+            raise ValueError('Rôle invalide. Choisissez visiteur, auteur ou agent.')
         return v
 
 class UserLogin(BaseModel):
@@ -185,6 +191,29 @@ class PaginatedUsers(BaseModel):
     total: int
     page: int
     pages: int
+
+# ─── Admin Notification Models ─────────────────────────────────────────────────
+class AdminNotification(BaseModel):
+    id: str
+    type: str  # "role_request", "new_user", etc.
+    user_id: str
+    user_email: str
+    user_username: str
+    requested_role: str = ""
+    message: str
+    status: str = "pending"  # "pending", "approved", "rejected"
+    created_at: str
+    processed_at: str = ""
+
+class PaginatedNotifications(BaseModel):
+    notifications: List[AdminNotification]
+    total: int
+    pending_count: int
+    page: int
+    pages: int
+
+class RoleRequestAction(BaseModel):
+    action: str  # "approve" or "reject"
 
 class UserProfileUpdate(BaseModel):
     username: Optional[str] = Field(default=None, min_length=2, max_length=50)
@@ -490,14 +519,21 @@ async def require_agent(current_user: dict = Depends(get_current_user)):
     return current_user
 
 async def require_admin(current_user: dict = Depends(get_current_user)):
+    # SECURITY: Only the super admin can access admin features
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    if current_user.get("email") != SUPER_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Accès non autorisé")
     return current_user
 
 # ─── Auth Routes ───────────────────────────────────────────────────────────────
 
 @api_router.post("/auth/register", response_model=TokenResponse)
 async def register(data: UserRegister):
+    # SECURITY: Never allow admin role via registration
+    if data.role == "admin":
+        raise HTTPException(status_code=403, detail="Rôle non autorisé")
+    
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
@@ -505,19 +541,54 @@ async def register(data: UserRegister):
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt(rounds=12)).decode()
     user_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc).isoformat()
+    
+    # Determine status based on requested role
+    # Visiteur: immediate access
+    # Auteur/Agent: requires admin approval (pending)
+    requires_approval = data.role in ("auteur", "agent")
+    actual_role = "visiteur" if requires_approval else data.role
+    status = "pending" if requires_approval else "actif"
+    
     user_doc = {
         "id": user_id,
         "username": sanitize(data.username),
         "email": data.email,
         "hashed_password": hashed,
-        "role": data.role,
+        "role": actual_role,
+        "requested_role": data.role if requires_approval else None,
+        "status": status,
         "created_at": created_at
     }
     await db.users.insert_one(user_doc)
+    
+    # Create admin notification if role approval needed
+    if requires_approval:
+        notification_id = str(uuid.uuid4())
+        role_label = "Auteur" if data.role == "auteur" else "Agent immobilier"
+        await db.admin_notifications.insert_one({
+            "id": notification_id,
+            "type": "role_request",
+            "user_id": user_id,
+            "user_email": data.email,
+            "user_username": sanitize(data.username),
+            "requested_role": data.role,
+            "message": f"Nouvelle demande de rôle {role_label} de {sanitize(data.username)} ({data.email})",
+            "status": "pending",
+            "created_at": created_at,
+            "processed_at": ""
+        })
+    
     token = create_token(user_id)
     return TokenResponse(
         token=token,
-        user=UserOut(id=user_id, username=user_doc["username"], email=data.email, role=data.role, created_at=created_at)
+        user=UserOut(
+            id=user_id, 
+            username=user_doc["username"], 
+            email=data.email, 
+            role=actual_role, 
+            created_at=created_at,
+            status=status
+        )
     )
 
 @api_router.post("/auth/login", response_model=TokenResponse)
@@ -529,6 +600,14 @@ async def login(request: Request, data: UserLogin):
     valid = bcrypt.checkpw(data.password.encode(), stored_hash.encode())
     if not user or not valid:
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+    
+    # Check if user is blocked
+    if user.get("status") == "bloque":
+        raise HTTPException(status_code=403, detail="Votre compte a été bloqué. Contactez l'administrateur.")
+    
+    # Check if user is suspended
+    if user.get("status") == "suspendu":
+        raise HTTPException(status_code=403, detail="Votre compte est temporairement suspendu.")
 
     token = create_token(user["id"])
     return TokenResponse(token=token, user=user_to_out(user))
