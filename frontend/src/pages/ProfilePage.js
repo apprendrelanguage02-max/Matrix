@@ -41,7 +41,12 @@ export default function ProfilePage() {
     if (user) {
       api.get("/my-notifications")
         .then(r => {
-          setNotifications(r.data.notifications || []);
+          // Filter: hide notifications older than 5 minutes
+          const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+          const recent = (r.data.notifications || []).filter(n => {
+            return new Date(n.created_at).getTime() > fiveMinAgo;
+          });
+          setNotifications(recent);
           // Mark all as read when viewing profile
           if (r.data.unread_count > 0) {
             api.put("/my-notifications/read-all").catch(() => {});

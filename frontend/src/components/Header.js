@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { CATEGORIES, slugify } from "../lib/categories";
 import { toast } from "sonner";
 import api from "../lib/api";
+import MessageButton from "./MessageButton";
 
 function getInitials(username) {
   if (!username) return "?";
@@ -247,12 +248,14 @@ export default function Header({ onSearch, searchValue }) {
                     )}
                   </button>
                 )}
+                {/* Message icon (only in immobilier/procedures) */}
+                <MessageButton />
                 {/* Avatar → go to profile */}
                 <button
                   onClick={() => navigate("/profil")}
                   data-testid="profile-avatar-btn"
                   title={`Profil de ${user.username}`}
-                  className="flex items-center group"
+                  className="flex items-center group relative"
                 >
                   <div
                     className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 transition-all duration-200 select-none ring-transparent group-hover:ring-[#FF6600]"
@@ -263,6 +266,8 @@ export default function Header({ onSearch, searchValue }) {
                       : getInitials(user.username)
                     }
                   </div>
+                  {/* Online indicator - green dot */}
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-black rounded-full" data-testid="online-indicator" />
                 </button>
                 {/* Dropdown menu */}
                 <div className="relative" ref={dropdownRef}>

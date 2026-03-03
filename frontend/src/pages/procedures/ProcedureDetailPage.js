@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
+import ChatPanel from "../../components/ChatPanel";
 import api from "../../lib/api";
-import { Loader2, Calendar, Eye, ArrowLeft, Edit, Trash2, User } from "lucide-react";
+import { Loader2, Calendar, Eye, ArrowLeft, Edit, Trash2, User, MessageSquare } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ export default function ProcedureDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   
   useEffect(() => {
     api.get(`/procedures/${id}`)
@@ -165,16 +167,34 @@ export default function ProcedureDetailPage() {
           dangerouslySetInnerHTML={{ __html: procedure.content }}
         />
         
-        {/* Back to list */}
-        <div className="mt-12 pt-8 border-t border-zinc-200">
+        {/* Back to list + Contact button */}
+        <div className="mt-12 pt-8 border-t border-zinc-200 flex items-center justify-between flex-wrap gap-4">
           <Link
             to="/procedures"
             className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Voir toutes les procédures
           </Link>
+          {user && procedure.author_id !== user?.id && (
+            <button
+              onClick={() => setShowChat(true)}
+              data-testid="contact-admin-btn"
+              className="inline-flex items-center gap-2 bg-[#FF6600] text-white text-sm font-bold uppercase tracking-wider px-5 py-2.5 hover:bg-[#CC5200] transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" /> Poser une question
+            </button>
+          )}
         </div>
       </main>
+
+      {showChat && (
+        <ChatPanel
+          type="procedures"
+          recipientId={procedure.author_id}
+          recipientName={procedure.author_username || "Admin"}
+          onClose={() => setShowChat(false)}
+        />
+      )}
       
       <Footer />
     </div>

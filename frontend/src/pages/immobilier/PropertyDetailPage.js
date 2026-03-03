@@ -3,10 +3,11 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import PaymentModal from "../../components/immobilier/PaymentModal";
+import ChatPanel from "../../components/ChatPanel";
 import { formatPrice } from "../../components/immobilier/PropertyCard";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../lib/api";
-import { MapPin, Phone, Mail, MessageCircle, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video } from "lucide-react";
+import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video } from "lucide-react";
 import { toast } from "sonner";
 
 const PropertyMap = lazy(() => import("../../components/immobilier/PropertyMap"));
@@ -28,6 +29,7 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     api.get(`/properties/${id}`)
@@ -194,6 +196,16 @@ export default function PropertyDetailPage() {
                     <Mail className="w-4 h-4" /> Email
                   </a>
                 )}
+                {/* Chat with agent */}
+                {token && property.author_id !== user?.id && (
+                  <button
+                    onClick={() => setShowChat(true)}
+                    data-testid="contact-agent-btn"
+                    className="flex items-center gap-3 w-full bg-black text-white px-4 py-2.5 text-sm font-bold hover:bg-zinc-800 transition-colors font-['Manrope']"
+                  >
+                    <MessageSquare className="w-4 h-4" /> Envoyer un message
+                  </button>
+                )}
               </div>
             </div>
 
@@ -215,6 +227,17 @@ export default function PropertyDetailPage() {
       </main>
 
       {showPayment && <PaymentModal property={property} onClose={() => { setShowPayment(false); api.get(`/properties/${id}`).then(r => setProperty(r.data)).catch(() => {}); }} />}
+
+      {showChat && (
+        <ChatPanel
+          type="immobilier"
+          recipientId={property.author_id}
+          recipientName={property.author_username || property.seller_name}
+          propertyId={property.id}
+          propertyTitle={property.title}
+          onClose={() => setShowChat(false)}
+        />
+      )}
 
       <Footer />
     </div>
