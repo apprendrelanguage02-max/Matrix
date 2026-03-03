@@ -8,152 +8,111 @@ Application web full-stack combinant un media d'actualites et une marketplace im
 
 ## Architecture Technique
 - **Frontend**: React (CRA + Craco + TailwindCSS) - port 3000
-- **Backend**: FastAPI - port 8001
+- **Backend**: FastAPI (modulaire) - port 8001
 - **Base de donnees**: MongoDB (motor async)
 - **Authentification**: JWT (pyjwt + bcrypt) avec roles et systeme d'approbation
+- **Messagerie**: WebSocket temps reel + REST API
 - **Upload fichiers**: python-multipart, fichiers servis via /api/media/
 
-## Roles Utilisateurs
-1. **Visiteur** - Peut lire les articles et consulter les annonces (acces immediat)
-2. **Auteur** - Peut creer/modifier/supprimer ses articles (necessite approbation admin)
-3. **Agent immobilier** - Peut publier et gerer des annonces immobilieres (necessite approbation admin)
-4. **Admin** - Acces complet + gestion BDD + approbation roles (unique: matrixguinea@gmail.com)
+## Architecture Backend (Refactorise Mars 2026)
+```
+backend/
+├── server.py          # Point d'entree slim (~50 lignes)
+├── config.py          # Configuration et constantes
+├── database.py        # Connexion MongoDB
+├── utils.py           # Utilitaires (sanitize HTML, etc.)
+├── models/            # Schemas Pydantic
+│   ├── user.py, article.py, property.py
+│   ├── procedure.py, payment.py
+│   ├── notification.py, message.py
+├── middleware/
+│   └── auth.py        # JWT, get_current_user, require_*
+├── routes/
+│   ├── auth.py        # Auth (register/login/profile)
+│   ├── articles.py    # CRUD articles + sauvegarde
+│   ├── properties.py  # CRUD annonces immobilieres
+│   ├── procedures.py  # CRUD procedures/demarches
+│   ├── payments.py    # Paiements simules
+│   ├── admin.py       # Dashboard admin complet + CSV
+│   ├── notifications.py # Notifications utilisateur
+│   ├── messages.py    # Messagerie temps reel WebSocket
+│   └── upload.py      # Upload fichiers/images/videos
+```
 
-## Ce qui a ete implemente
+## Roles Utilisateurs
+1. **Visiteur** - Lecture seule (acces immediat)
+2. **Auteur** - Publier articles (necessite approbation admin)
+3. **Agent immobilier** - Publier annonces (necessite approbation admin)
+4. **Admin** - Acces complet (unique: matrixguinea@gmail.com)
+
+## Fonctionnalites Implementees
 
 ### Section News
-- Authentification JWT (register/login/logout) avec 4 roles
-- CRUD complet articles (create, read, update, delete)
+- Authentification JWT avec 4 roles et approbation
+- CRUD articles avec editeur WYSIWYG
 - Categories: Actualite, Politique, Sport, Technologie, Economie
-- Recherche et pagination
-- Upload d'images de couverture (local)
-- Sauvegarde d'articles favoris
-- Compteur de vues
+- Recherche, pagination, upload images, favoris, compteur vues
 
-### Section Immobilier (Phase 1)
-- Listing des annonces avec filtres (type, ville, prix, statut)
-- Page detail annonce avec galerie d'images
-- Formulaire de publication d'annonce (agents uniquement)
-- Types: Vente, Achat, Location
-- Statuts: Disponible, Reserve, Vendu/Loue
-
-### Section Paiements (Phase 2 - Simules)
-- Creation de paiements simules
-- Methodes: Orange Money, Mobile Money, PayCard, Carte bancaire
-- Generation de references uniques
-- Statuts: En attente, Confirme, Annule
+### Section Immobilier
+- Listing annonces avec filtres, page detail avec galerie
+- Publication d'annonce (agents), types: Vente/Achat/Location
+- Bouton "Envoyer un message" pour contacter l'agent
 
 ### Section Procedures & Demarches
-- Listing avec sous-categories par pays (Guinee, Canada, France, Turquie, Japon)
-- CRUD admin uniquement
-- Pages de listing, detail et formulaire de creation
+- Listing par pays (Guinee, Canada, France, etc.)
+- CRUD admin uniquement avec editeur WYSIWYG
+- Bouton "Poser une question" pour contacter l'admin
+
+### Messagerie Temps Reel (NOUVEAU Mars 2026)
+- Chat type WhatsApp via WebSocket
+- Conversations immobilier (visiteur<->agent) et procedures (utilisateur<->admin)
+- Icone message visible uniquement dans sections immobilier/procedures
+- Badge compteur messages non lus
+- Indicateur "en ligne" (point vert) sur l'avatar
 
 ### Dashboard Admin /admin/database
 - 5 onglets: Demandes, Utilisateurs, Articles, Annonces, Paiements
-- Compteurs en temps reel
-- CRUD complet avec filtres et pagination
-- Export CSV pour toutes les sections
-- Confirmation obligatoire avant suppression
+- CRUD complet, filtres, pagination, export CSV
+- Systeme d'approbation roles (approuver/rejeter)
+- Badge cloche qui disparait automatiquement
 
-### Systeme d'Approbation des Roles (NOUVEAU - Mars 2026)
-- Inscription auteur/agent cree un statut "pending" et role "visiteur"
-- Notification admin creee automatiquement
-- Onglet "Demandes" dans dashboard admin avec boutons Approuver/Rejeter
-- Badge notification dans le header pour l'admin
-- Banniere "en attente" sur le profil des utilisateurs pending
-- 3 options de role a l'inscription (Visiteur, Auteur, Agent)
-- Message d'info sur la validation admin pour auteur/agent
+### Systeme de Notifications
+- Admin: notifications pour demandes de role avec badge cloche
+- Utilisateurs: notification approuve/rejete (disparait apres 5 min)
+- Texte "groupe MatrixNews" au lieu de "administrateur"
 
-### Fonctionnalites Transverses
-- Responsivite complete (mobile 375px, tablette 768px, desktop)
-- Widget chat d'aide (remplacement badge Emergent)
-- Logo Nimba sur les pages de categories
-- Menu profil admin reorganise
+### Editeur WYSIWYG
+- Integre dans articles, annonces et procedures
+- Undo/Redo, Titres H1-H3, formatage complet
+- Taille/couleur police, alignement, listes, citations
+- Panneau media: Upload fichiers + insertion par URL
+- Images/videos repositionnables par drag-and-drop
 
-### Editeur de Texte Enrichi (WYSIWYG) - Mars 2026
-- Editeur type Word integre dans les 3 formulaires (articles, annonces, procedures)
-- Fonctionnalites: Undo/Redo, Titres H1-H3, Gras/Italique/Souligne/Barre
-- Taille de police, couleur du texte, alignement (gauche/centre/droite/justifie)
-- Listes a puces et numerotees, citations, separateurs, encadres
-- Insertion de liens hypertexte et upload d'images
-- Rendu HTML correct dans les pages de detail
-
-## API Routes
-
-### Auth
-- POST /api/auth/register
-- POST /api/auth/login
-- GET /api/auth/me
-- PUT /api/auth/profile
-- PUT /api/auth/password
-
-### Articles
-- GET /api/articles
-- GET /api/articles/:id
-- POST /api/articles
-- PUT /api/articles/:id
-- DELETE /api/articles/:id
-
-### Immobilier
-- GET /api/properties
-- GET /api/properties/:id
-- POST /api/properties
-- PUT /api/properties/:id
-- DELETE /api/properties/:id
-
-### Procedures
-- GET /api/procedures/subcategories
-- GET /api/procedures
-- GET /api/procedures/:id
-- POST /api/procedures
-- PUT /api/procedures/:id
-- DELETE /api/procedures/:id
-
-### Paiements
-- POST /api/payments
-- GET /api/payments/my
-- GET /api/payments
-- PUT /api/payments/:id/status
-
-### Admin
-- GET /api/admin/stats
-- GET /api/admin/users (+ CRUD)
-- GET /api/admin/articles (+ DELETE)
-- GET /api/admin/properties (+ status update, DELETE)
-- GET /api/admin/payments (+ DELETE)
-- GET /api/admin/export/{data_type} (CSV)
-- GET /api/admin/notifications/count
-- GET /api/admin/notifications
-- PUT /api/admin/notifications/{id}/action
+### Ameliorations UI/UX
+- Avatar click -> page profil, chevron -> menu deroulant
+- Point vert en ligne sur avatar
+- Admin peut supprimer articles/annonces de tous les utilisateurs
+- Responsivite complete
 
 ## Comptes Test
 - **Admin**: matrixguinea@gmail.com / strongpassword123
 
-### Ameliorations UX et Securite Admin - Mars 2026
-- Texte "administrateur" remplace par "groupe MatrixNews" partout
-- Notifications utilisateur: les auteurs/agents recoivent une notification quand approuve/rejete
-- Clic sur avatar dans le header navigue directement vers la page profil
-- Chevron separe pour ouvrir le menu deroulant
-- Admin peut supprimer les articles et annonces de tous les utilisateurs
-- Badge de la cloche disparait automatiquement quand l'admin clique dessus ou entre dans Demandes
-- Editeur ameliore: panneau Media avec Upload fichier et insertion par URL (images, videos, liens)
-- Les medias inseres sont repositionnables par drag-and-drop dans l'editeur
-
 ## Backlog
 
 ### P1 - Priorite Haute
-- Refactoring backend: decomposer server.py en modules
+- Ameliorer le chat (notifications push, historique persistant)
+- Mode brouillon pour articles
 
 ### P2 - Priorite Moyenne
-- Phase 3 - Carte Interactive (Leaflet.js)
-- Inscription publique des agents immobiliers
-- Notifications par email
+- Carte interactive (Leaflet.js) pour annonces
+- Notifications email (SendGrid)
+- Ouvrir messagerie entre tous les utilisateurs
 
 ### P3 - Backlog
+- Integration paiements reels (Orange Money)
 - Modele economique (abonnements agents)
-- Integration reelle API de paiement (Orange Money, etc.)
 - PWA / mode hors ligne
 - Dashboard analytics avance
 
 ## Issues Connues
-- Le rate limiter retourne parfois HTTP 520 au lieu de 429 (probleme infrastructure Kubernetes)
+- Rate limiter retourne parfois HTTP 520 (probleme infra Kubernetes)
