@@ -24,12 +24,17 @@ export default function ProcedureDetailPage() {
   const [error, setError] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [adminContact, setAdminContact] = useState(null);
   
   useEffect(() => {
     api.get(`/procedures/${id}`)
       .then(r => setProcedure(r.data))
       .catch(() => setError("Procédure introuvable."))
       .finally(() => setLoading(false));
+    // Fetch current admin contact info
+    api.get("/admin/contact")
+      .then(r => setAdminContact(r.data))
+      .catch(() => {});
   }, [id]);
   
   const handleDelete = async () => {
@@ -175,7 +180,7 @@ export default function ProcedureDetailPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Voir toutes les procédures
           </Link>
-          {user && procedure.author_id !== user?.id && (
+          {user && (!procedure.author_id || procedure.author_id !== user?.id) && (
             <button
               onClick={() => setShowChat(true)}
               data-testid="contact-admin-btn"
@@ -190,8 +195,8 @@ export default function ProcedureDetailPage() {
       {showChat && (
         <ChatPanel
           type="procedures"
-          recipientId={procedure.author_id}
-          recipientName={procedure.author_username || "Admin"}
+          recipientId={adminContact?.id || procedure.author_id}
+          recipientName={adminContact?.username || procedure.author_username || "Admin"}
           onClose={() => setShowChat(false)}
         />
       )}

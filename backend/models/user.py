@@ -10,6 +10,7 @@ class UserRegister(BaseModel):
     role: str = Field(default="visiteur")
     phone: Optional[str] = None
     country: Optional[str] = None
+    otp: str = Field(..., min_length=6, max_length=6, description="Code OTP à 6 chiffres")
 
     @field_validator('username')
     @classmethod

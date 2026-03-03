@@ -10,14 +10,89 @@ from utils import sanitize, sanitize_url
 import bcrypt
 import uuid
 import jwt
-from datetime import datetime, timezone
+import random
+import os
+import asyncio
+import logging
+from datetime import datetime, timezone, timedelta
+from pydantic import BaseModel, EmailStr
 
 router = APIRouter(tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 def create_token(user_id: str) -> str:
     payload = {"sub": user_id}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+async def _send_otp_email(email: str, code: str):
+    """Send OTP via Resend. Falls back to dev mode if no API key."""
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    if not api_key:
+        logger.info(f"[DEV MODE] OTP for {email}: {code}")
+        return False  # dev mode
+
+    try:
+        import resend
+        resend.api_key = api_key
+        html = f"""
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+          <h2 style="color:#FF6600;margin-bottom:8px">GIMO / Matrix News</h2>
+          <p style="color:#333;margin-bottom:24px">Voici votre code de vérification :</p>
+          <div style="background:#f5f5f5;border:2px solid #FF6600;border-radius:8px;padding:24px;text-align:center">
+            <span style="font-size:36px;font-weight:bold;letter-spacing:12px;color:#000">{code}</span>
+          </div>
+          <p style="color:#888;font-size:13px;margin-top:16px">Ce code expire dans 5 minutes. Ne le partagez pas.</p>
+        </div>
+        """
+        params = {
+            "from": "GIMO <onboarding@resend.dev>",
+            "to": [email],
+            "subject": f"Votre code de vérification : {code}",
+            "html": html,
+        }
+        await asyncio.to_thread(resend.Emails.send, params)
+        return True
+    except Exception as e:
+        logger.error(f"Resend error: {e}")
+        return False
+
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+
+@router.post("/send-otp")
+async def send_otp(data: OTPRequest):
+    """Generate and send 6-digit OTP to email."""
+    # Check if email is already registered
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1})
+    if existing:
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé.")
+
+    # Generate 6-digit OTP
+    code = str(random.randint(100000, 999999))
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(minutes=5)).isoformat()
+
+    # Store (replace any previous OTP for this email)
+    await db.otp_codes.delete_many({"email": data.email})
+    await db.otp_codes.insert_one({
+        "email": data.email,
+        "code": code,
+        "created_at": now.isoformat(),
+        "expires_at": expires_at,
+        "verified": False,
+    })
+
+    sent = await _send_otp_email(data.email, code)
+
+    if not sent:
+        # Dev mode: return code so it can be displayed in UI
+        return {"sent": False, "dev_otp": code, "message": "Mode développement : email service non configuré."}
+
+    return {"sent": True, "message": f"Code envoyé à {data.email}"}
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -28,6 +103,34 @@ async def register(data: UserRegister):
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+
+    # Verify OTP
+    otp_code = getattr(data, "otp", None)
+    if not otp_code:
+        raise HTTPException(status_code=400, detail="Le code de vérification est requis.")
+
+    otp_doc = await db.otp_codes.find_one({"email": data.email}, {"_id": 0})
+    if not otp_doc:
+        raise HTTPException(status_code=400, detail="Aucun code envoyé pour cet email. Demandez un nouveau code.")
+
+    # Check expiry
+    try:
+        expires_at = datetime.fromisoformat(otp_doc["expires_at"])
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires_at:
+            await db.otp_codes.delete_many({"email": data.email})
+            raise HTTPException(status_code=400, detail="Le code a expiré. Demandez un nouveau code.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Erreur de validation du code.")
+
+    if otp_doc["code"] != str(otp_code).strip():
+        raise HTTPException(status_code=400, detail="Code incorrect. Vérifiez et réessayez.")
+
+    # OTP valid – clean up
+    await db.otp_codes.delete_many({"email": data.email})
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt(rounds=12)).decode()
     user_id = str(uuid.uuid4())

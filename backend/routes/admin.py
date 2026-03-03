@@ -70,6 +70,17 @@ class PaginatedPaymentsAdmin(BaseModel):
     pages: int
 
 
+# ─── Public: Admin Contact Info ────────────────────────────────────────────────
+
+@router.get("/contact")
+async def get_admin_contact():
+    """Return the current admin's ID and username (public endpoint for procedures chat)."""
+    admin = await db.users.find_one({"role": "admin"}, {"_id": 0, "id": 1, "username": 1})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin introuvable")
+    return {"id": admin["id"], "username": admin["username"]}
+
+
 # ─── Stats ─────────────────────────────────────────────────────────────────────
 
 @router.get("/stats")
