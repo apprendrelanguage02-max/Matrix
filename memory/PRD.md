@@ -71,8 +71,9 @@ backend/
 - Indicateur "en ligne" (point vert) sur l'avatar dans la liste des conversations
 - Indicateur de frappe animé (typing dots) avec stop automatique
 - Carte d'annonce cliquable (PropertyBanner) dans les conversations liées à une annonce
-- WebSocket global dans MessageButton.js pour les mises à jour en arrière-plan
-- Tests: 22/22 backend + 15/15 frontend (100% succès)
+- **WebSocketContext**: UNE seule connexion WebSocket partagée par utilisateur (contexte React)
+- Fix critique: bug de livraison de messages résolu (connexions multiples → connexion unique)
+- Tests: 33/33 backend + 100% frontend (100% succès, Itérations 14 & 15)
 
 ### Dashboard Admin /admin/database
 - 5 onglets: Demandes, Utilisateurs, Articles, Annonces, Paiements
