@@ -129,6 +129,16 @@ Application web full-stack combinant un media d'actualites et une marketplace im
 ## Comptes Test
 - **Admin**: matrixguinea@gmail.com / strongpassword123
 
+### Ameliorations UX et Securite Admin - Mars 2026
+- Texte "administrateur" remplace par "groupe MatrixNews" partout
+- Notifications utilisateur: les auteurs/agents recoivent une notification quand approuve/rejete
+- Clic sur avatar dans le header navigue directement vers la page profil
+- Chevron separe pour ouvrir le menu deroulant
+- Admin peut supprimer les articles et annonces de tous les utilisateurs
+- Badge de la cloche disparait automatiquement quand l'admin clique dessus ou entre dans Demandes
+- Editeur ameliore: panneau Media avec Upload fichier et insertion par URL (images, videos, liens)
+- Les medias inseres sont repositionnables par drag-and-drop dans l'editeur
+
 ## Backlog
 
 ### P1 - Priorite Haute
