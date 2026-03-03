@@ -1,0 +1,112 @@
+{
+  "summary": "Iteration 14 Testing Complete - Real-Time Messaging System (WebSocket + REST) fully validated. All 22 backend tests passed (100%). All 15 frontend UI tests passed (100%). The complete messaging stack including WebSocket connections, message delivery, PropertyBanner, unread badges, online indicator, and contact-agent button are functioning correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/conversations",
+        "issue": "ConversationOut objects are constructed without property_image field (missing in ConversationOut constructor call in get_conversations endpoint). PropertyBanner will show fallback icon (orange square with MessageSquare icon) instead of real property image when opening from conversation list. Property title IS shown correctly.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Dual WebSocket connections",
+        "issue": "When ChatPanel is opened from PropertyDetailPage, both MessageButton's global WebSocket AND ChatPanel's WebSocket run simultaneously. MessageButton creates a WebSocket for real-time unread updates (always connected when token exists), while ChatPanel creates another WebSocket when activeConv is set. Works correctly in practice but uses double connections.",
+        "affected_selectors": ["[data-testid='message-toggle-btn']", "[data-testid='chat-panel']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "passed_tests": {
+    "backend_api_tests": [
+      "POST /api/auth/login with admin credentials - 200 OK with token",
+      "POST /api/auth/login with invalid password - 401 Unauthorized",
+      "GET /api/conversations?type=immobilier - 200 OK, returns list",
+      "GET /api/conversations?type=procedures - 200 OK, returns list",
+      "GET /api/conversations without auth - 401/403 correctly blocked",
+      "GET /api/conversations/unread-count - 200 OK with unread_count field",
+      "GET /api/conversations/unread-count?type=immobilier - 200 OK filtered",
+      "GET /api/conversations/unread-count?type=procedures - 200 OK filtered",
+      "POST /api/conversations (create) - 200 OK, creates conversation with participant_ids and type",
+      "POST /api/conversations (idempotent) - returns same conversation ID for duplicate request",
+      "POST /api/conversations with self - 400 Bad Request correctly returned",
+      "POST /api/conversations with property_id - property_id stored correctly",
+      "GET /api/conversations/{id}/messages - 200 OK with messages + conversation",
+      "GET /api/conversations/{id}/messages by non-participant - 403 Forbidden",
+      "GET /api/conversations/nonexistent/messages - 403/404 correctly returned",
+      "GET /api/users/{id}/online - 200 OK with boolean online field",
+      "GET /api/users/{random_id}/online - 200 OK with online=false for non-existent user",
+      "GET /api/users/{id}/online offline user has last_seen field",
+      "WebSocket /api/ws/chat connects and receives unread_update event on connect",
+      "WebSocket with invalid token - correctly rejected (ConnectionClosedError)",
+      "WebSocket without token - correctly rejected",
+      "WebSocket send message - new_message event received by recipient with correct content"
+    ],
+    "frontend_ui_tests": [
+      "MessageButton NOT visible on homepage (not logged in) - correct behavior",
+      "MessageButton NOT visible on homepage (logged in admin) - correct behavior",
+      "MessageButton visible on /immobilier when logged in",
+      "MessageButton visible on /procedures when logged in",
+      "Clicking MessageButton opens ChatPanel [data-testid='chat-panel']",
+      "ChatPanel shows 'Aucune conversation' or conversation list",
+      "ChatPanel close button [data-testid='chat-close-btn'] works",
+      "contact-agent-btn [data-testid='contact-agent-btn'] visible on property NOT owned by user",
+      "Clicking contact-agent-btn opens ChatPanel automatically",
+      "PropertyBanner [data-testid='property-banner'] visible in chat with property title 'Appartement dixinn'",
+      "Chat input [data-testid='chat-message-input'] accepts text (black readable text)",
+      "Send button [data-testid='chat-send-btn'] enabled when message typed",
+      "Message sent via WebSocket - input cleared after send, message appears in chat",
+      "Unread badge [data-testid='message-unread-badge'] shows '1' when user has unread messages",
+      "Online indicator [data-testid='online-indicator'] green dot visible on admin avatar"
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_messaging_system.py",
+    "/app/test_reports/pytest/pytest_results_messaging.xml"
+  ],
+  "action_items": [
+    "MINOR: Fix GET /api/conversations endpoint to include property_image in ConversationOut constructor (add property_image=c.get('property_image') to the ConversationOut() call in get_conversations function in messages.py line ~226)"
+  ],
+  "critical_code_review_comments": [
+    "messages.py GET /api/conversations: ConversationOut is constructed without property_image - needs `property_image=c.get('property_image')` added to the ConversationOut() call to ensure PropertyBanner shows property image when opening from conversation list",
+    "Dual WebSocket connections: MessageButton (global) + ChatPanel (per-conversation) both create WebSocket connections. Consider sharing a single WebSocket connection or using context to prevent double connections",
+    "WebSocket reconnection in MessageButton.js: ws.onclose timeout only sets wsRef.current to null after 3s but does not reconnect - users may lose real-time unread updates if connection drops",
+    "ChatPanel.js loadMessages(): After calling GET /api/conversations/{id}/messages, the response includes the full conversation data (with property_image) but loadMessages only sets messages, not updating activeConv with the richer data from the response"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_messaging_system.py"
+  ],
+  "success_rate": {
+    "backend": "100% (22/22 pytest tests passed)",
+    "frontend": "100% (15/15 UI features verified)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "matrixguinea@gmail.com",
+      "password": "strongpassword123"
+    },
+    "test_users": {
+      "chattest": {
+        "email": "chattest@test.com",
+        "password": "testpass123"
+      },
+      "unread_badge_test_user": {
+        "email": "unreadtst2_55dc@test.com",
+        "password": "testpass123",
+        "note": "This user has 1 unread message from admin - good for testing unread badge"
+      }
+    }
+  },
+  "seed_data_creation": "Created test users: unreadtest_* and unreadtst2_55dc for unread badge testing. Conversations created between admin and test users. Test message sent from admin to unreadtst2_55dc@test.com.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Messaging system fully tested and validated. Backend: 22 pytest tests in /app/backend/tests/test_messaging_system.py. Key flows: WebSocket at /api/ws/chat?token=XXX, REST endpoints at /api/conversations, /api/conversations/{id}/messages, /api/conversations/unread-count, /api/users/{id}/online. Frontend: MessageButton in Header (only shows on /immobilier and /procedures paths), ChatPanel component, PropertyBanner in chat. Login route is /connexion (not /login). contact-agent-btn shows only when logged in AND not the property owner. Unread badge works in real-time via WebSocket unread_update events. Minor fix needed: property_image not returned in GET /api/conversations endpoint.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}

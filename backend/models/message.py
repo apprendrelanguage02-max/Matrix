@@ -18,6 +18,7 @@ class ConversationOut(BaseModel):
     type: str  # "immobilier" or "procedures"
     property_id: Optional[str] = None
     property_title: Optional[str] = None
+    property_image: Optional[str] = None
     participant_ids: List[str]
     participant_names: List[str]
     last_message: Optional[str] = None

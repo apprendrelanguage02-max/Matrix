@@ -9,7 +9,7 @@ import base64
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://gimo-role-approval.preview.emergentagent.com"
+    BASE_URL = "https://gimo-instant-chat.preview.emergentagent.com"
 
 # Test credentials
 ADMIN_EMAIL = "admin@example.com"

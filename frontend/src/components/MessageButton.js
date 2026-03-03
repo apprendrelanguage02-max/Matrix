@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import { MessageSquare } from "lucide-react";
@@ -11,21 +11,59 @@ export default function MessageButton() {
   const [open, setOpen] = useState(false);
   const [unreadImmo, setUnreadImmo] = useState(0);
   const [unreadProc, setUnreadProc] = useState(0);
+  const wsRef = useRef(null);
 
   const isImmobilier = location.pathname.startsWith("/immobilier");
   const isProcedures = location.pathname.startsWith("/procedures");
   const isVisible = isImmobilier || isProcedures;
 
+  // Global WebSocket for real-time unread updates
   useEffect(() => {
-    if (!token || !isVisible) return;
-    const type = isImmobilier ? "immobilier" : "procedures";
-    api.get(`/conversations/unread-count?type=${type}`)
-      .then(r => {
-        if (isImmobilier) setUnreadImmo(r.data.unread_count);
-        else setUnreadProc(r.data.unread_count);
-      })
+    if (!token) return;
+
+    const wsUrl = process.env.REACT_APP_BACKEND_URL
+      ?.replace("https://", "wss://")
+      .replace("http://", "ws://");
+    const ws = new WebSocket(`${wsUrl}/api/ws/chat?token=${token}`);
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "unread_update") {
+          setUnreadImmo(data.immobilier || 0);
+          setUnreadProc(data.procedures || 0);
+        }
+        if (data.type === "new_message") {
+          // If chat panel is not open, the WS update will handle the badge
+          // If it IS open, ChatPanel handles it directly
+        }
+      } catch {}
+    };
+
+    ws.onclose = () => {
+      // Attempt reconnect after 3s
+      setTimeout(() => {
+        if (wsRef.current === ws) wsRef.current = null;
+      }, 3000);
+    };
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) ws.close();
+      wsRef.current = null;
+    };
+  }, [token]);
+
+  // Also fetch initial counts via REST
+  useEffect(() => {
+    if (!token) return;
+    api.get("/conversations/unread-count?type=immobilier")
+      .then(r => setUnreadImmo(r.data.unread_count))
       .catch(() => {});
-  }, [token, location.pathname, isVisible, isImmobilier]);
+    api.get("/conversations/unread-count?type=procedures")
+      .then(r => setUnreadProc(r.data.unread_count))
+      .catch(() => {});
+  }, [token]);
 
   if (!token || !isVisible) return null;
 
@@ -53,13 +91,11 @@ export default function MessageButton() {
           type={type}
           onClose={() => {
             setOpen(false);
-            // Refresh unread count
-            api.get(`/conversations/unread-count?type=${type}`)
-              .then(r => {
-                if (isImmobilier) setUnreadImmo(r.data.unread_count);
-                else setUnreadProc(r.data.unread_count);
-              })
-              .catch(() => {});
+            // Refresh counts after closing
+            api.get(`/conversations/unread-count?type=immobilier`)
+              .then(r => setUnreadImmo(r.data.unread_count)).catch(() => {});
+            api.get(`/conversations/unread-count?type=procedures`)
+              .then(r => setUnreadProc(r.data.unread_count)).catch(() => {});
           }}
         />
       )}
