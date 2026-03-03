@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
+import AdvancedRichEditor from "../../components/AdvancedRichEditor";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../lib/api";
 import { toast } from "sonner";
@@ -164,9 +165,11 @@ export default function PropertyFormPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1.5">Description</label>
-                <textarea name="description" value={form.description} onChange={set} rows={5}
+                <AdvancedRichEditor
+                  value={form.description}
+                  onChange={(val) => setForm(f => ({ ...f, description: val }))}
                   placeholder="Décrivez la propriété en détail..."
-                  className="w-full border border-zinc-300 px-3 py-2.5 text-sm font-['Manrope'] focus:outline-none focus:border-[#FF6600] resize-none" />
+                />
               </div>
             </div>
           </div>

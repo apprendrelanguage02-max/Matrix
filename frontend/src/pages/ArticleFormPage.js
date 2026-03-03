@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
-import RichEditor from "../components/RichEditor";
+import AdvancedRichEditor from "../components/AdvancedRichEditor";
 import api from "../lib/api";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ImageIcon, ChevronDown, Upload, X } from "lucide-react";
@@ -251,10 +251,10 @@ export default function ArticleFormPage() {
                   — Insérez des images via l'icône image dans la barre d'outils
                 </span>
               </label>
-              <RichEditor
+              <AdvancedRichEditor
                 value={form.content}
                 onChange={handleContentChange}
-                error={!!errors.content}
+                placeholder="Rédigez votre article ici... Utilisez la barre d'outils pour mettre en forme le texte et insérer des images."
               />
               {errors.content && <p className="text-red-600 text-xs mt-1" data-testid="content-error">{errors.content}</p>}
             </div>

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { 
   Bold, Italic, Underline, Strikethrough, 
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
@@ -56,19 +56,33 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   
-  // Execute command
-  const exec = useCallback((cmd, val = null) => {
-    document.execCommand(cmd, false, val);
-    editorRef.current?.focus();
-    handleInput();
-  }, []);
-  
+  // Initialize content only on mount (avoids cursor jump)
+  useEffect(() => {
+    if (editorRef.current && value && !editorRef.current.innerHTML) {
+      editorRef.current.innerHTML = value;
+    }
+  }, []); // eslint-disable-line
+
+  // Sync external value changes (e.g. loading existing content)
+  useEffect(() => {
+    if (editorRef.current && value && editorRef.current.innerHTML !== value && !editorRef.current.matches(":focus")) {
+      editorRef.current.innerHTML = value;
+    }
+  }, [value]);
+
   // Handle content changes
   const handleInput = () => {
     if (onChange && editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
   };
+
+  // Execute command
+  const exec = useCallback((cmd, val = null) => {
+    document.execCommand(cmd, false, val);
+    editorRef.current?.focus();
+    handleInput();
+  }, []); // eslint-disable-line
   
   // Format block
   const formatBlock = (tag) => {
@@ -243,9 +257,10 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
       <div
         ref={editorRef}
         contentEditable
+        suppressContentEditableWarning
         onInput={handleInput}
         onBlur={handleInput}
-        dangerouslySetInnerHTML={{ __html: value || "" }}
+        data-testid="rich-editor-content"
         data-placeholder={placeholder}
         className="min-h-[400px] p-4 sm:p-6 focus:outline-none prose prose-sm sm:prose max-w-none
           prose-headings:font-['Oswald'] prose-headings:uppercase prose-headings:tracking-tight prose-headings:text-black
