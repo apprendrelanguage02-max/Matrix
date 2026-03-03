@@ -4,7 +4,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Quote, Minus, Image as ImageIcon,
   Type, Heading1, Heading2, Heading3, Pilcrow,
-  Undo, Redo, Link as LinkIcon, Unlink
+  Undo, Redo, Link as LinkIcon, Unlink, Upload, Film, Loader2
 } from "lucide-react";
 import api from "../lib/api";
 import { toast } from "sonner";
@@ -55,6 +55,9 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
   const [uploading, setUploading] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [showMediaPanel, setShowMediaPanel] = useState(false);
+  const [mediaTab, setMediaTab] = useState("upload"); // "upload" | "url"
+  const [mediaUrl, setMediaUrl] = useState("");
   
   // Initialize content only on mount (avoids cursor jump)
   useEffect(() => {
@@ -89,18 +92,25 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
     exec("formatBlock", tag);
   };
   
-  // Insert image
+  // Insert image from upload
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (!file.type.startsWith("image/")) {
-      toast.error("Veuillez sélectionner une image");
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    
+    if (!isImage && !isVideo) {
+      toast.error("Format non supporté. Images: JPG, PNG, WEBP. Vidéos: MP4, WebM.");
       return;
     }
     
-    if (file.size > 5 * 1024 * 1024) {
+    if (isImage && file.size > 5 * 1024 * 1024) {
       toast.error("L'image ne doit pas dépasser 5 Mo");
+      return;
+    }
+    if (isVideo && file.size > 20 * 1024 * 1024) {
+      toast.error("La vidéo ne doit pas dépasser 20 Mo");
       return;
     }
     
@@ -112,15 +122,42 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
         headers: { "Content-Type": "multipart/form-data" },
       });
       
-      // Insert image at cursor position
-      exec("insertHTML", `<img src="${res.data.url}" alt="Image" style="max-width: 100%; height: auto; margin: 1rem 0; border-radius: 8px;" />`);
-      toast.success("Image ajoutée !");
+      if (isVideo) {
+        exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${res.data.url}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
+      } else {
+        exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${res.data.url}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
+      }
+      toast.success(isVideo ? "Vidéo ajoutée !" : "Image ajoutée !");
+      setShowMediaPanel(false);
     } catch (err) {
-      toast.error("Erreur lors de l'upload de l'image");
+      toast.error("Erreur lors de l'upload");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  // Insert media from URL
+  const insertMediaFromUrl = () => {
+    const url = mediaUrl.trim();
+    if (!url) return;
+    
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+    const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+    
+    if (isVideo) {
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${url}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
+      toast.success("Vidéo insérée !");
+    } else if (isImage) {
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${url}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
+      toast.success("Image insérée !");
+    } else {
+      // Generic link — insert as embedded link with preview style
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; cursor: move;"><a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #FF6600; font-weight: 600; word-break: break-all;">${url}</a></div><p><br></p>`);
+      toast.success("Lien inséré !");
+    }
+    setMediaUrl("");
+    setShowMediaPanel(false);
   };
   
   // Insert horizontal rule
@@ -128,11 +165,22 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
     exec("insertHTML", '<hr style="border: none; border-top: 2px solid #FF6600; margin: 1.5rem 0;" />');
   };
   
-  // Insert link
+  // Insert link around selected text
   const insertLink = () => {
     if (!linkUrl.trim()) return;
     const url = linkUrl.startsWith("http") ? linkUrl : `https://${linkUrl}`;
-    exec("createLink", url);
+    
+    // Check if URL is an image or video
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+    const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+    
+    if (isImage) {
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${url}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
+    } else if (isVideo) {
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${url}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
+    } else {
+      exec("createLink", url);
+    }
     setShowLinkModal(false);
     setLinkUrl("");
   };
@@ -238,20 +286,89 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
         
         <Separator />
         
-        {/* Image */}
-        <label className={`p-1.5 sm:p-2 rounded cursor-pointer transition-colors ${uploading ? "text-zinc-300" : "text-zinc-600 hover:bg-zinc-100 hover:text-[#FF6600]"}`}>
+        {/* Media (Image/Video) */}
+        <button
+          type="button"
+          onClick={() => setShowMediaPanel(v => !v)}
+          title="Insérer une image ou vidéo"
+          data-testid="insert-media-btn"
+          className={`flex items-center gap-1 p-1.5 sm:p-2 rounded text-xs font-bold transition-colors ${
+            showMediaPanel ? "bg-[#FF6600] text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-[#FF6600]"
+          }`}
+        >
           <ImageIcon className="w-4 h-4" />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            disabled={uploading}
-            className="hidden"
-          />
-        </label>
-        {uploading && <span className="text-xs text-zinc-500 ml-1">Upload...</span>}
+          <span className="hidden sm:inline">Média</span>
+        </button>
+        {uploading && <span className="text-xs text-zinc-500 ml-1 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Upload...</span>}
       </div>
+
+      {/* Media Panel */}
+      {showMediaPanel && (
+        <div className="bg-orange-50 border-b border-[#FF6600]/30 p-3" data-testid="media-panel">
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => setMediaTab("upload")}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${mediaTab === "upload" ? "bg-[#FF6600] text-white" : "bg-white text-zinc-600 border border-zinc-300 hover:border-[#FF6600]"}`}
+            >
+              <Upload className="w-3.5 h-3.5 inline mr-1" /> Upload
+            </button>
+            <button
+              type="button"
+              onClick={() => setMediaTab("url")}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${mediaTab === "url" ? "bg-[#FF6600] text-white" : "bg-white text-zinc-600 border border-zinc-300 hover:border-[#FF6600]"}`}
+            >
+              <LinkIcon className="w-3.5 h-3.5 inline mr-1" /> URL
+            </button>
+            <button type="button" onClick={() => setShowMediaPanel(false)} className="ml-auto text-zinc-400 hover:text-black text-lg px-2">
+              &times;
+            </button>
+          </div>
+          
+          {mediaTab === "upload" && (
+            <div>
+              <p className="text-xs text-zinc-500 font-['Manrope'] mb-2">
+                Images : JPG, PNG, WEBP (max 5 Mo) &middot; Vidéos : MP4, WebM (max 20 Mo)
+              </p>
+              <label className={`inline-flex items-center gap-2 cursor-pointer px-4 py-2 text-xs font-bold uppercase tracking-wider rounded transition-colors ${uploading ? "bg-zinc-300 text-zinc-500 cursor-not-allowed" : "bg-[#FF6600] text-white hover:bg-[#CC5200]"}`}>
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {uploading ? "Envoi..." : "Choisir un fichier"}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={handleImageUpload}
+                  data-testid="editor-file-upload"
+                />
+              </label>
+            </div>
+          )}
+          
+          {mediaTab === "url" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={mediaUrl}
+                onChange={(e) => setMediaUrl(e.target.value)}
+                placeholder="https://exemple.com/image.jpg ou lien vidéo"
+                data-testid="media-url-input"
+                className="flex-1 bg-white border border-zinc-300 px-3 py-1.5 text-sm rounded focus:outline-none focus:border-[#FF6600]"
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), insertMediaFromUrl())}
+              />
+              <button
+                type="button"
+                onClick={insertMediaFromUrl}
+                data-testid="insert-media-url-btn"
+                className="bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded hover:bg-[#CC5200] transition-colors"
+              >
+                Insérer
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Editor area */}
       <div
@@ -260,6 +377,22 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
         suppressContentEditableWarning
         onInput={handleInput}
         onBlur={handleInput}
+        onDrop={(e) => {
+          // Allow drag-and-drop repositioning of images within the editor
+          const html = e.dataTransfer.getData("text/html");
+          if (html && (html.includes("<img") || html.includes("<video"))) {
+            e.preventDefault();
+            const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+            if (range) {
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+              document.execCommand("insertHTML", false, html);
+              handleInput();
+            }
+          }
+        }}
+        onDragOver={(e) => e.preventDefault()}
         data-testid="rich-editor-content"
         data-placeholder={placeholder}
         className="min-h-[400px] p-4 sm:p-6 focus:outline-none prose prose-sm sm:prose max-w-none
@@ -268,7 +401,9 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
           prose-a:text-[#FF6600]
           prose-strong:text-black
           prose-blockquote:border-l-[#FF6600]
-          [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-400"
+          [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-400
+          [&_img]:cursor-move [&_video]:cursor-move
+          [&_[draggable=true]]:outline-2 [&_[draggable=true]:hover]:outline [&_[draggable=true]:hover]:outline-[#FF6600]/40 [&_[draggable=true]:hover]:outline-dashed"
         style={{ 
           fontFamily: "'Manrope', sans-serif",
           fontSize: "16px",

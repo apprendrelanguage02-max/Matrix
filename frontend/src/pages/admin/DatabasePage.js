@@ -827,6 +827,8 @@ export default function DatabasePage() {
     api.get("/admin/notifications/count")
       .then(r => setPendingCount(r.data.pending_count))
       .catch(() => {});
+    // Mark all notifications as seen when entering the page
+    api.put("/admin/notifications/mark-seen").catch(() => {});
   }, []);
 
   const refreshStats = () => {

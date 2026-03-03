@@ -819,7 +819,8 @@ async def delete_article(article_id: str, current_user: dict = Depends(require_a
     article = await db.articles.find_one({"id": article_id}, {"_id": 0})
     if not article:
         raise HTTPException(status_code=404, detail="Article introuvable")
-    if article["author_id"] != current_user["id"]:
+    # Admin can delete any article, others can only delete their own
+    if current_user.get("role") != "admin" and article["author_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Non autorisé")
     await db.articles.delete_one({"id": article_id})
     return {"message": "Article supprimé"}
@@ -956,7 +957,8 @@ async def delete_property(property_id: str, current_user: dict = Depends(require
     prop = await db.properties.find_one({"id": property_id}, {"_id": 0})
     if not prop:
         raise HTTPException(status_code=404, detail="Annonce introuvable")
-    if current_user.get("role") != "auteur" and prop["author_id"] != current_user["id"]:
+    # Admin can delete any property, others can only delete their own
+    if current_user.get("role") != "admin" and prop["author_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Vous ne pouvez supprimer que vos propres annonces")
     await db.properties.delete_one({"id": property_id})
     return {"ok": True}
@@ -1644,9 +1646,9 @@ async def export_payments_csv(current_user: dict = Depends(require_admin)):
 
 @api_router.get("/admin/notifications/count")
 async def get_notification_count(current_user: dict = Depends(require_admin)):
-    """Get count of pending notifications."""
-    pending = await db.admin_notifications.count_documents({"status": "pending"})
-    return {"pending_count": pending}
+    """Get count of unseen pending notifications."""
+    unseen_pending = await db.admin_notifications.count_documents({"status": "pending", "seen": {"$ne": True}})
+    return {"pending_count": unseen_pending}
 
 
 @api_router.get("/admin/notifications", response_model=PaginatedNotifications)
@@ -1710,6 +1712,15 @@ async def process_role_request(
             {"$set": {"status": "approved", "processed_at": now}}
         )
         role_label = "Auteur" if notification["requested_role"] == "auteur" else "Agent immobilier"
+        # Create user notification
+        await db.user_notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": notification["user_id"],
+            "type": "role_approved",
+            "message": f"Votre demande de rôle {role_label} a été approuvée par le groupe MatrixNews. Vous avez maintenant accès à toutes les fonctionnalités.",
+            "is_read": False,
+            "created_at": now
+        })
         return {"ok": True, "message": f"Rôle {role_label} approuvé pour {notification['user_username']}"}
     else:
         # Reject: keep as visiteur but activate account
@@ -1721,7 +1732,54 @@ async def process_role_request(
             {"id": notification_id},
             {"$set": {"status": "rejected", "processed_at": now}}
         )
+        # Create user notification
+        await db.user_notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": notification["user_id"],
+            "type": "role_rejected",
+            "message": f"Votre demande de rôle professionnel a été refusée par le groupe MatrixNews. Vous conservez votre accès en tant que visiteur.",
+            "is_read": False,
+            "created_at": now
+        })
         return {"ok": True, "message": f"Demande de rôle rejetée pour {notification['user_username']}"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# USER NOTIFICATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@api_router.get("/my-notifications")
+async def get_my_notifications(current_user: dict = Depends(get_current_user)):
+    """Get notifications for the current user."""
+    notifs = await db.user_notifications.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    unread = sum(1 for n in notifs if not n.get("is_read"))
+    return {"notifications": notifs, "unread_count": unread}
+
+
+@api_router.put("/my-notifications/read-all")
+async def mark_all_notifications_read(current_user: dict = Depends(get_current_user)):
+    """Mark all notifications as read for current user."""
+    await db.user_notifications.update_many(
+        {"user_id": current_user["id"], "is_read": False},
+        {"$set": {"is_read": True}}
+    )
+    return {"ok": True}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADMIN MARK NOTIFICATIONS SEEN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@api_router.put("/admin/notifications/mark-seen")
+async def admin_mark_notifications_seen(current_user: dict = Depends(require_admin)):
+    """Mark admin notifications as seen (resets badge count without changing status)."""
+    await db.admin_notifications.update_many(
+        {"seen": {"$ne": True}},
+        {"$set": {"seen": True}}
+    )
+    return {"ok": True}
 
 
 app.include_router(api_router)

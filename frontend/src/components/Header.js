@@ -226,8 +226,15 @@ export default function Header({ onSearch, searchValue }) {
                 )}
                 {/* Admin notification bell */}
                 {user.role === "admin" && (
-                  <Link
-                    to="/admin/database"
+                  <button
+                    onClick={() => {
+                      // Mark notifications as seen (reset badge)
+                      if (pendingCount > 0) {
+                        api.put("/admin/notifications/mark-seen").catch(() => {});
+                        setPendingCount(0);
+                      }
+                      navigate("/admin/database");
+                    }}
                     data-testid="admin-notification-bell"
                     className="relative p-1.5 text-zinc-400 hover:text-[#FF6600] transition-colors"
                     title="Demandes en attente"
@@ -238,26 +245,33 @@ export default function Header({ onSearch, searchValue }) {
                         {pendingCount}
                       </span>
                     )}
-                  </Link>
+                  </button>
                 )}
-                {/* Avatar + Dropdown */}
+                {/* Avatar → go to profile */}
+                <button
+                  onClick={() => navigate("/profil")}
+                  data-testid="profile-avatar-btn"
+                  title={`Profil de ${user.username}`}
+                  className="flex items-center group"
+                >
+                  <div
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 transition-all duration-200 select-none ring-transparent group-hover:ring-[#FF6600]"
+                    style={{ backgroundColor: user.avatar_url ? "transparent" : bg, color: "#fff" }}
+                  >
+                    {user.avatar_url
+                      ? <img src={user.avatar_url} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover" onError={(e) => { e.target.style.display="none"; }} />
+                      : getInitials(user.username)
+                    }
+                  </div>
+                </button>
+                {/* Dropdown menu */}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen((v) => !v)}
-                    data-testid="profile-avatar-btn"
-                    title={`Profil de ${user.username}`}
-                    className="flex items-center gap-1 group"
+                    data-testid="profile-dropdown-btn"
+                    className="flex items-center group"
                   >
-                    <div
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-['Oswald'] text-sm font-bold ring-2 transition-all duration-200 select-none ${dropdownOpen ? "ring-[#FF6600]" : "ring-transparent group-hover:ring-[#FF6600]"}`}
-                      style={{ backgroundColor: user.avatar_url ? "transparent" : bg, color: "#fff" }}
-                    >
-                      {user.avatar_url
-                        ? <img src={user.avatar_url} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover" onError={(e) => { e.target.style.display="none"; }} />
-                        : getInitials(user.username)
-                      }
-                    </div>
-                    <ChevronDown className={`hidden sm:block w-3 h-3 text-zinc-500 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
                   </button>
                   {dropdownOpen && <ProfileDropdown user={user} onClose={() => setDropdownOpen(false)} />}
                 </div>

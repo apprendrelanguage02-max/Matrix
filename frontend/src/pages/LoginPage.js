@@ -58,7 +58,7 @@ export default function LoginPage() {
       
       // Check if user has pending status (requested professional role)
       if (userData.status === "pending") {
-        toast.info("Votre demande de rôle professionnel est en cours de validation par l'administrateur.");
+        toast.info("Votre demande de rôle professionnel est en cours de validation par le groupe MatrixNews.");
         navigate("/profil");
       } else if ((form.role === "agent") && tab === "register") {
         toast.success("Compte créé avec succès !");
@@ -254,7 +254,7 @@ export default function LoginPage() {
                   </div>
                   {(form.role === "auteur" || form.role === "agent") && (
                     <p className="text-xs text-amber-600 mt-2 font-['Manrope']">
-                      Les comptes Auteur et Agent nécessitent une validation par l'administrateur.
+                      Les comptes Auteur et Agent nécessitent une validation par le groupe MatrixNews.
                     </p>
                   )}
                 </div>

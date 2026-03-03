@@ -1,7 +1,9 @@
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
-import { LogOut, User, Mail, Shield, Calendar, ArrowLeft, Clock } from "lucide-react";
+import api from "../lib/api";
+import { LogOut, User, Mail, Shield, Calendar, ArrowLeft, Clock, CheckCircle, XCircle, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 function formatDate(isoString) {
@@ -33,6 +35,21 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const color = getAvatarColor(user?.username);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      api.get("/my-notifications")
+        .then(r => {
+          setNotifications(r.data.notifications || []);
+          // Mark all as read when viewing profile
+          if (r.data.unread_count > 0) {
+            api.put("/my-notifications/read-all").catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -85,10 +102,38 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-sm font-semibold text-amber-800 font-['Manrope']">Compte en attente de validation</p>
                   <p className="text-xs text-amber-600 font-['Manrope'] mt-1">
-                    Votre demande de rôle professionnel est en cours d'examen par l'administrateur. 
+                    Votre demande de rôle professionnel est en cours d'examen par le groupe MatrixNews. 
                     Vous recevrez un accès complet une fois approuvé.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* User notifications (approval/rejection) */}
+            {notifications.length > 0 && (
+              <div className="space-y-2 mb-6" data-testid="user-notifications">
+                {notifications.map(n => (
+                  <div
+                    key={n.id}
+                    data-testid={`user-notif-${n.id}`}
+                    className={`px-4 py-3 flex items-start gap-3 border ${
+                      n.type === "role_approved" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+                    }`}
+                  >
+                    {n.type === "role_approved" 
+                      ? <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      : <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    }
+                    <div>
+                      <p className={`text-sm font-semibold font-['Manrope'] ${n.type === "role_approved" ? "text-green-800" : "text-red-800"}`}>
+                        {n.type === "role_approved" ? "Demande approuvée" : "Demande refusée"}
+                      </p>
+                      <p className={`text-xs font-['Manrope'] mt-1 ${n.type === "role_approved" ? "text-green-600" : "text-red-600"}`}>
+                        {n.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
