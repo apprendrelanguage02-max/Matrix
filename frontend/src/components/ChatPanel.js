@@ -34,6 +34,12 @@ export default function ChatPanel({ type, recipientId, recipientName, propertyId
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Hide ChatHelp when this panel is open
+  useEffect(() => {
+    document.body.dataset.chatOpen = "true";
+    return () => { delete document.body.dataset.chatOpen; };
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);

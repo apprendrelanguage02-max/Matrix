@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircle, X, Send, HelpCircle } from "lucide-react";
 
 const FAQ_ITEMS = [
@@ -28,6 +28,23 @@ export default function ChatHelp() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [message, setMessage] = useState("");
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
+
+  // Listen for ChatPanel open/close
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setChatPanelOpen(document.body.dataset.chatOpen === "true");
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["data-chat-open"] });
+    // Also check periodically as dataset changes don't trigger attributeFilter
+    const interval = setInterval(() => {
+      setChatPanelOpen(document.body.dataset.chatOpen === "true");
+    }, 300);
+    return () => { observer.disconnect(); clearInterval(interval); };
+  }, []);
+
+  // Hide entirely when ChatPanel is open
+  if (chatPanelOpen) return null;
 
   const handleSendMessage = (e) => {
     e.preventDefault();
