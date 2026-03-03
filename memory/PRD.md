@@ -70,6 +70,14 @@ Application web full-stack combinant un media d'actualites et une marketplace im
 - Logo Nimba sur les pages de categories
 - Menu profil admin reorganise
 
+### Editeur de Texte Enrichi (WYSIWYG) - Mars 2026
+- Editeur type Word integre dans les 3 formulaires (articles, annonces, procedures)
+- Fonctionnalites: Undo/Redo, Titres H1-H3, Gras/Italique/Souligne/Barre
+- Taille de police, couleur du texte, alignement (gauche/centre/droite/justifie)
+- Listes a puces et numerotees, citations, separateurs, encadres
+- Insertion de liens hypertexte et upload d'images
+- Rendu HTML correct dans les pages de detail
+
 ## API Routes
 
 ### Auth
@@ -124,7 +132,6 @@ Application web full-stack combinant un media d'actualites et une marketplace im
 ## Backlog
 
 ### P1 - Priorite Haute
-- Editeur de Texte Enrichi (WYSIWYG) pour articles, annonces et procedures
 - Refactoring backend: decomposer server.py en modules
 
 ### P2 - Priorite Moyenne
