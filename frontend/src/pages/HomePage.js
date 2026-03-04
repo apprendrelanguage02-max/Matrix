@@ -60,7 +60,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white font-['Manrope']">
-      <Header onSearch={setSearch} searchValue={search} />
+      <Header />
 
       {/* Hero */}
       <section className="bg-black py-8 sm:py-14 md:py-20">

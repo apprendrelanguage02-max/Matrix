@@ -42,6 +42,23 @@ class ConnectionManager:
     def is_online(self, user_id: str) -> bool:
         return user_id in self.active and len(self.active[user_id]) > 0
 
+    async def broadcast_all(self, data: dict):
+        """Broadcast a message to all connected users."""
+        dead_entries = []
+        for user_id, sockets in self.active.items():
+            dead = []
+            for ws in sockets:
+                try:
+                    await ws.send_json(data)
+                except Exception:
+                    dead.append(ws)
+            for ws in dead:
+                sockets.remove(ws)
+            if not sockets:
+                dead_entries.append(user_id)
+        for uid in dead_entries:
+            del self.active[uid]
+
 
 manager = ConnectionManager()
 

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 const WebSocketContext = createContext(null);
 
 export function WebSocketProvider({ children }) {
-  const { token, logout, refreshUser } = useAuth();
+  const { token, user, logout, refreshUser } = useAuth();
   const wsRef = useRef(null);
   const subscribersRef = useRef(new Set());
   const reconnectTimerRef = useRef(null);
@@ -33,10 +33,18 @@ export function WebSocketProvider({ children }) {
         // ── Role update (approve / reject) ──────────────────────────────
         if (data.type === "role_update") {
           if (data.action === "approved") {
-            toast.success(data.message || "Votre rôle a été mis à jour !");
-            refreshUser(); // Re-fetch user from DB → updates role in context
+            toast.success(data.message || "Votre role a ete mis a jour !");
+            refreshUser().then(() => {
+              // Redirect based on new role
+              const role = data.role;
+              if (role === "agent") {
+                window.location.href = "/immobilier";
+              } else if (role === "auteur") {
+                window.location.href = "/admin";
+              }
+            });
           } else if (data.action === "rejected") {
-            toast.error(data.message || "Votre demande a été refusée. Accès révoqué.");
+            toast.error(data.message || "Votre demande a ete refusee. Acces revoque.");
             setTimeout(() => {
               logout();
               window.location.href = "/connexion";
@@ -54,7 +62,7 @@ export function WebSocketProvider({ children }) {
           setOnlineUsers((prev) => ({ ...prev, [data.user_id]: data.online }));
         }
 
-        // Dispatch to all subscribers (ChatPanel, etc.)
+        // Dispatch to all subscribers (ChatPanel, Header, pages, etc.)
         subscribersRef.current.forEach((handler) => {
           try { handler(data); } catch {}
         });

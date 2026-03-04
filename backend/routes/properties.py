@@ -7,8 +7,8 @@ from models.property import (
 )
 from middleware.auth import get_current_user, require_agent
 from utils import sanitize, sanitize_html, sanitize_url
+from routes.messages import manager
 import uuid
-from datetime import datetime, timezone
 from datetime import datetime, timezone
 
 router = APIRouter(tags=["properties"])
@@ -106,6 +106,7 @@ async def create_property(data: PropertyCreate, current_user: dict = Depends(req
     await db.properties.insert_one(prop)
     prop["author_username"] = current_user.get("username", "")
     del prop["_id"]
+    await manager.broadcast_all({"type": "content_update", "content_type": "property", "action": "created"})
     return prop
 
 
@@ -131,6 +132,7 @@ async def update_property(property_id: str, data: PropertyUpdate, current_user: 
     prop.update(updates)
     author = await db.users.find_one({"id": prop.get("author_id", "")}, {"_id": 0, "username": 1})
     prop["author_username"] = author["username"] if author else ""
+    await manager.broadcast_all({"type": "content_update", "content_type": "property", "action": "updated"})
     return prop
 
 

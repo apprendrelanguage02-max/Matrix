@@ -69,7 +69,6 @@ export default function ArticleDetailPage() {
           className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors duration-200 mb-10"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour aux actualités
         </Link>
 
         {loading && (
@@ -81,7 +80,7 @@ export default function ArticleDetailPage() {
         {error && (
           <div className="text-center py-24" data-testid="article-error">
             <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">{error}</p>
-            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold underline">Retour à l'accueil</Link>
+            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold underline">&larr;</Link>
           </div>
         )}
 

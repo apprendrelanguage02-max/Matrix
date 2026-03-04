@@ -60,7 +60,7 @@ export default function ImmobilierPage() {
 
   const goToPage = (p) => handleFilters({ ...filters, page: p });
 
-  const canPublish = user?.role === "agent" || user?.role === "auteur";
+  const canPublish = user?.role === "agent" || user?.role === "admin";
 
   return (
     <div className="min-h-screen bg-zinc-50 font-['Manrope']">

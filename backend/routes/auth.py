@@ -7,6 +7,7 @@ from models.user import (
 )
 from middleware.auth import get_current_user
 from utils import sanitize, sanitize_url
+from routes.messages import manager
 import bcrypt
 import uuid
 import jwt
@@ -166,6 +167,13 @@ async def register(data: UserRegister):
             "created_at": created_at,
             "processed_at": ""
         })
+        # Real-time: notify admin(s) of new role request
+        admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(10)
+        for adm in admins:
+            await manager.send_to_user(adm["id"], {
+                "type": "new_role_request",
+                "message": f"Nouvelle demande de rôle {role_label} de {sanitize(data.username)}",
+            })
 
     token = create_token(user_id)
     return TokenResponse(

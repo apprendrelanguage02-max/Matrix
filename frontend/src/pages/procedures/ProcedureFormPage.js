@@ -158,7 +158,7 @@ export default function ProcedureFormPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back link */}
         <Link to="/procedures" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-[#FF6600] transition-colors mb-6">
-          <ArrowLeft className="w-4 h-4" /> Retour aux procédures
+          <ArrowLeft className="w-4 h-4" />
         </Link>
         
         <form onSubmit={handleSubmit} className="bg-white border border-zinc-200 p-6 sm:p-8">

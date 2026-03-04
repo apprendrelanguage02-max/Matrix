@@ -13,6 +13,7 @@ from routes.upload import router as upload_router
 from routes.admin import router as admin_router
 from routes.notifications import router as notifications_router
 from routes.messages import router as messages_router
+from database import db
 
 app = FastAPI(title="Matrix News API", version="3.0")
 
@@ -42,6 +43,29 @@ app.include_router(messages_router, prefix=PREFIX)
 @app.get("/api/")
 async def root():
     return {"message": "Matrix News API v3"}
+
+
+# ─── Global Search ─────────────────────────────────────────────────────────────
+from fastapi import Query as Q
+
+@app.get("/api/search")
+async def global_search(q: str = Q("", max_length=200)):
+    if not q.strip():
+        return {"articles": [], "properties": [], "procedures": []}
+    regex = {"$regex": q.strip(), "$options": "i"}
+    articles = await db.articles.find(
+        {"$or": [{"title": regex}, {"content": regex}]}, {"_id": 0, "id": 1, "title": 1, "category": 1, "image_url": 1, "author_name": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    properties = await db.properties.find(
+        {"$or": [{"title": regex}, {"description": regex}, {"city": regex}]}, {"_id": 0, "id": 1, "title": 1, "type": 1, "city": 1, "price": 1, "currency": 1, "images": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    for p in properties:
+        p["image"] = p.get("images", [None])[0] if p.get("images") else None
+        p.pop("images", None)
+    procedures = await db.procedures.find(
+        {"$or": [{"title": regex}, {"content": regex}]}, {"_id": 0, "id": 1, "title": 1, "country": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    return {"articles": articles, "properties": properties, "procedures": procedures}
 
 # ─── Serve uploaded files ──────────────────────────────────────────────────────
 app.mount("/api/media", StaticFiles(directory=str(UPLOAD_DIR)), name="media")

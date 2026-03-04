@@ -45,7 +45,7 @@ function AdminRoute({ children }) {
 function AgentRoute({ children }) {
   const { token, user } = useAuth();
   if (!token) return <Navigate to="/connexion" replace />;
-  if (user?.role !== "agent" && user?.role !== "auteur" && user?.role !== "admin") return <Navigate to="/immobilier" replace />;
+  if (user?.role !== "agent" && user?.role !== "admin") return <Navigate to="/immobilier" replace />;
   return children;
 }
 

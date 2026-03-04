@@ -8,9 +8,9 @@ from models.article import (
 )
 from middleware.auth import get_current_user, require_author
 from utils import sanitize, sanitize_html, sanitize_url
+from routes.messages import manager
 from datetime import datetime, timezone
 import uuid
-from datetime import datetime, timezone
 
 router = APIRouter(tags=["articles"])
 
@@ -132,6 +132,8 @@ async def create_article(data: ArticleCreate, current_user: dict = Depends(requi
     }
     await db.articles.insert_one(article)
     del article["_id"]
+    # Broadcast to all users for real-time updates
+    await manager.broadcast_all({"type": "content_update", "content_type": "article", "action": "created"})
     return ArticleOut(**article)
 
 
@@ -155,6 +157,7 @@ async def update_article(article_id: str, data: ArticleUpdate, current_user: dic
         updates["image_url"] = sanitize_url(data.image_url)
     await db.articles.update_one({"id": article_id}, {"$set": updates})
     updated = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    await manager.broadcast_all({"type": "content_update", "content_type": "article", "action": "updated"})
     return ArticleOut(**updated)
 
 

@@ -129,7 +129,6 @@ export default function SettingsPage() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" />
-          Retour
         </Link>
 
         <h1 className="font-['Oswald'] text-3xl font-bold uppercase tracking-tight text-black mb-8">

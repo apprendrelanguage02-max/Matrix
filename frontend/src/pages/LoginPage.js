@@ -479,7 +479,7 @@ export default function LoginPage() {
 
           <p className="text-center text-xs text-zinc-400 mt-6 font-['Manrope']">
             <Link to="/" className="hover:text-[#FF6600] transition-colors">
-              &larr; Retour à l'accueil
+              &larr;
             </Link>
           </p>
         </div>

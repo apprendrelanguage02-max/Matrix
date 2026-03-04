@@ -116,7 +116,7 @@ export default function PropertyFormPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
         <button onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors mb-8">
-          <ArrowLeft className="w-4 h-4" /> Retour
+          <ArrowLeft className="w-4 h-4" />
         </button>
 
         <h1 className="font-['Oswald'] text-3xl font-bold uppercase tracking-tight text-black mb-8">

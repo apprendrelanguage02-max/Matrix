@@ -68,7 +68,7 @@ export default function ProcedureDetailPage() {
         <div className="max-w-3xl mx-auto px-4 py-20 text-center">
           <p className="font-['Oswald'] text-3xl uppercase text-zinc-300">{error || "Procédure introuvable"}</p>
           <Link to="/procedures" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline">
-            ← Retour aux procédures
+            ← 
           </Link>
         </div>
         <Footer />
@@ -108,7 +108,7 @@ export default function ProcedureDetailPage() {
         {/* Back & Admin actions */}
         <div className="flex items-center justify-between mb-6">
           <Link to="/procedures" className="flex items-center gap-2 text-sm text-zinc-500 hover:text-[#FF6600] transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Retour aux procédures
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           
           {isAdmin && (

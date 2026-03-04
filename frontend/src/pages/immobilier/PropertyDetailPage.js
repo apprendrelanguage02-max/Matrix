@@ -58,7 +58,7 @@ export default function PropertyDetailPage() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-center justify-between mb-6">
           <Link to="/immobilier" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Retour aux annonces
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           {canEdit && (
             <Link to={`/immobilier/modifier/${property.id}`}

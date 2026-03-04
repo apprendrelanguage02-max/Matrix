@@ -105,7 +105,7 @@ export default function CategoryPage() {
         {error && !loading && (
           <div className="text-center py-16 sm:py-24">
             <p className="font-['Oswald'] text-2xl sm:text-3xl uppercase text-zinc-300">{error}</p>
-            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline text-sm sm:text-base">Retour à l'accueil</Link>
+            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline text-sm sm:text-base">&larr;</Link>
           </div>
         )}
 
@@ -113,7 +113,7 @@ export default function CategoryPage() {
           <div className="text-center py-16 sm:py-24" data-testid="empty-category">
             <p className="font-['Oswald'] text-2xl sm:text-3xl uppercase text-zinc-300">Aucun article</p>
             <p className="font-['Manrope'] text-zinc-500 mt-2 text-xs sm:text-sm">Aucun article dans cette catégorie pour l'instant.</p>
-            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline text-sm sm:text-base">Retour à l'accueil</Link>
+            <Link to="/" className="mt-4 inline-block text-[#FF6600] font-bold hover:underline text-sm sm:text-base">&larr;</Link>
           </div>
         )}
 
