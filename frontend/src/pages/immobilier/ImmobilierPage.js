@@ -4,8 +4,10 @@ import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import PropertyCard from "../../components/immobilier/PropertyCard";
 import PropertyFilters from "../../components/immobilier/PropertyFilters";
+import PullToRefresh from "../../components/PullToRefresh";
+import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { Loader2, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
@@ -62,9 +64,25 @@ export default function ImmobilierPage() {
 
   const canPublish = user?.role === "agent" || user?.role === "admin";
 
+  const ws = useWebSocket();
+
+  // Auto-refresh when new property is published
+  useEffect(() => {
+    if (!ws) return;
+    const handler = (data) => {
+      if (data.type === "content_update" && data.content_type === "property") {
+        fetchProperties(filters);
+      }
+    };
+    return ws.subscribe(handler);
+  }, [ws, filters, fetchProperties]);
+
+  const handlePullRefresh = () => fetchProperties(filters);
+
   return (
     <div className="min-h-screen bg-zinc-50 font-['Manrope']">
       <Header />
+      <PullToRefresh onRefresh={handlePullRefresh}>
 
       {/* Hero */}
       <section className="bg-black py-8 sm:py-12 md:py-16">
@@ -99,12 +117,19 @@ export default function ImmobilierPage() {
           <p className="text-xs sm:text-sm text-zinc-500">
             {!loading && <span><strong className="text-black">{total}</strong> annonce{total !== 1 ? "s" : ""}</span>}
           </p>
-          {canPublish && (
-            <Link to="/immobilier/publier"
-              className="flex items-center gap-2 bg-[#FF6600] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:bg-[#CC5200] transition-colors">
-              <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Publier une annonce
+          <div className="flex items-center gap-2">
+            <Link to="/immobilier/carte"
+              data-testid="view-map-btn"
+              className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
+              <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Voir la carte
             </Link>
-          )}
+            {canPublish && (
+              <Link to="/immobilier/publier"
+                className="flex items-center gap-2 bg-[#FF6600] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:bg-[#CC5200] transition-colors">
+                <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Publier une annonce
+              </Link>
+            )}
+          </div>
         </div>
 
         <PropertyFilters filters={filters} onChange={handleFilters} />
@@ -143,6 +168,7 @@ export default function ImmobilierPage() {
           </div>
         )}
       </main>
+      </PullToRefresh>
 
       <Footer />
     </div>

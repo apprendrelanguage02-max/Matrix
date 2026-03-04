@@ -6,6 +6,7 @@ import PaymentModal from "../../components/immobilier/PaymentModal";
 import ChatPanel from "../../components/ChatPanel";
 import { formatPrice } from "../../components/immobilier/PropertyCard";
 import { useAuth } from "../../context/AuthContext";
+import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
 import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video } from "lucide-react";
 import LikeButton from "../../components/LikeButton";
@@ -25,19 +26,32 @@ const STATUS_LABELS = { disponible: "Disponible", reserve: "Réservé", vendu: "
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const { user, token } = useAuth();
+  const ws = useWebSocket();
   const navigate = useNavigate();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [viewCount, setViewCount] = useState(0);
 
   useEffect(() => {
     api.get(`/properties/${id}`)
-      .then(r => { setProperty(r.data); api.post(`/properties/${id}/view`).catch(() => {}); })
+      .then(r => { setProperty(r.data); setViewCount(r.data.views || 0); api.post(`/properties/${id}/view`).catch(() => {}); })
       .catch(() => { toast.error("Annonce introuvable"); navigate("/immobilier"); })
       .finally(() => setLoading(false));
   }, [id]); // eslint-disable-line
+
+  // Real-time view updates
+  useEffect(() => {
+    if (!ws || !id) return;
+    const handler = (data) => {
+      if (data.type === "view_update" && data.content_type === "property" && data.id === id) {
+        setViewCount(data.views);
+      }
+    };
+    return ws.subscribe(handler);
+  }, [ws, id]);
 
   if (loading) return (
     <div className="min-h-screen bg-zinc-50 font-['Manrope']">
@@ -172,7 +186,7 @@ export default function PropertyDetailPage() {
               <h1 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">{property.title}</h1>
               <p className="font-['Oswald'] text-3xl font-bold text-[#FF6600]">{formatPrice(property.price, property.currency)}</p>
               <div className="flex items-center gap-1 text-zinc-400 text-xs mt-2">
-                <Eye className="w-3 h-3" /> <span className="whitespace-nowrap">{property.views} vue{property.views !== 1 ? "s" : ""}</span>
+                <Eye className="w-3 h-3" /> <span className="whitespace-nowrap">{viewCount} vue{viewCount !== 1 ? "s" : ""}</span>
               </div>
               <LikeButton
                 type="property"

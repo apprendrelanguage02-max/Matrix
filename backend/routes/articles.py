@@ -9,6 +9,7 @@ from models.article import (
 from middleware.auth import get_current_user, require_author
 from utils import sanitize, sanitize_html, sanitize_url
 from routes.messages import manager
+from pymongo import ReturnDocument
 from datetime import datetime, timezone
 import uuid
 
@@ -99,7 +100,11 @@ async def get_article(article_id: str):
     article = await db.articles.find_one({"id": article_id}, {"_id": 0})
     if not article:
         raise HTTPException(status_code=404, detail="Article introuvable")
-    await db.articles.update_one({"id": article_id}, {"$inc": {"views": 1}})
+    result = await db.articles.find_one_and_update(
+        {"id": article_id}, {"$inc": {"views": 1}},
+        projection={"_id": 0, "views": 1}, return_document=ReturnDocument.AFTER
+    )
+    await manager.broadcast_all({"type": "view_update", "content_type": "article", "id": article_id, "views": result["views"]})
     return ArticleOut(**article)
 
 
@@ -133,7 +138,7 @@ async def create_article(data: ArticleCreate, current_user: dict = Depends(requi
     await db.articles.insert_one(article)
     del article["_id"]
     # Broadcast to all users for real-time updates
-    await manager.broadcast_all({"type": "content_update", "content_type": "article", "action": "created"})
+    await manager.broadcast_all({"type": "content_update", "content_type": "article", "action": "created", "title": sanitize(data.title)})
     return ArticleOut(**article)
 
 
@@ -207,4 +212,5 @@ async def toggle_article_like(article_id: str, current_user: dict = Depends(get_
             })
 
     updated = await db.articles.find_one({"id": article_id}, {"_id": 0, "likes_count": 1, "liked_by": 1})
+    await manager.broadcast_all({"type": "like_update", "content_type": "article", "id": article_id, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])})
     return {"action": action, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])}

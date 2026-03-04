@@ -53,7 +53,12 @@ export function WebSocketProvider({ children }) {
           return;
         }
 
-        // Handle global state updates
+        // ── Content update (new article/property published) ─────────────
+        if (data.type === "content_update" && data.action === "created") {
+          const label = data.content_type === "article" ? "Nouvel article" : "Nouvelle annonce";
+          toast.info(`${label} : ${data.title || ""}`, { duration: 5000 });
+        }
+
         if (data.type === "unread_update") {
           setUnreadImmo(data.immobilier || 0);
           setUnreadProc(data.procedures || 0);

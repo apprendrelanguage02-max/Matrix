@@ -17,6 +17,7 @@ import PropertyFormPage from "./pages/immobilier/PropertyFormPage";
 import AgentDashboardPage from "./pages/immobilier/AgentDashboardPage";
 import PaymentsAdminPage from "./pages/immobilier/PaymentsAdminPage";
 import DatabasePage from "./pages/admin/DatabasePage";
+import MapPage from "./pages/immobilier/MapPage";
 import ProceduresPage from "./pages/procedures/ProceduresPage";
 import ProcedureDetailPage from "./pages/procedures/ProcedureDetailPage";
 import ProcedureFormPage from "./pages/procedures/ProcedureFormPage";
@@ -71,6 +72,7 @@ function App() {
 
           {/* Immobilier */}
           <Route path="/immobilier" element={<ImmobilierPage />} />
+          <Route path="/immobilier/carte" element={<MapPage />} />
           <Route path="/immobilier/:id" element={<PropertyDetailPage />} />
           <Route path="/immobilier/publier" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />
           <Route path="/immobilier/modifier/:id" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />

@@ -1,25 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
 import api from "../lib/api";
 import { toast } from "sonner";
 
-/**
- * Reusable like button for properties and articles.
- * @param {string} type - "property" | "article"
- * @param {string} id - entity ID
- * @param {number} initialCount - initial likes count
- * @param {string[]} initialLikedBy - array of user IDs who liked
- * @param {string} [className] - extra tailwind classes for the wrapper
- */
 export default function LikeButton({ type, id, initialCount = 0, initialLikedBy = [], className = "" }) {
   const { user } = useAuth();
+  const ws = useWebSocket();
   const [count, setCount] = useState(initialCount);
   const [likedBy, setLikedBy] = useState(initialLikedBy);
   const [loading, setLoading] = useState(false);
   const [burst, setBurst] = useState(false);
 
   const isLiked = user ? likedBy.includes(user.id) : false;
+
+  // Listen for real-time like updates
+  useEffect(() => {
+    if (!ws) return;
+    const handler = (data) => {
+      if (data.type === "like_update" && data.content_type === type && data.id === id) {
+        setCount(data.likes_count);
+        setLikedBy(data.liked_by || []);
+      }
+    };
+    return ws.subscribe(handler);
+  }, [ws, type, id]);
 
   const handleLike = async (e) => {
     e.preventDefault();
@@ -31,7 +37,6 @@ export default function LikeButton({ type, id, initialCount = 0, initialLikedBy 
     }
     if (loading) return;
 
-    // Optimistic update
     const wasLiked = isLiked;
     setLikedBy((prev) =>
       wasLiked ? prev.filter((uid) => uid !== user.id) : [...prev, user.id]
@@ -46,16 +51,14 @@ export default function LikeButton({ type, id, initialCount = 0, initialLikedBy 
         ? `/properties/${id}/like`
         : `/articles/${id}/like`;
       const res = await api.post(endpoint);
-      // Sync with server truth
       setCount(res.data.likes_count);
       setLikedBy(res.data.liked_by);
     } catch {
-      // Rollback on error
       setLikedBy((prev) =>
         wasLiked ? [...prev, user.id] : prev.filter((uid) => uid !== user.id)
       );
       setCount((c) => (wasLiked ? c + 1 : c - 1));
-      toast.error("Erreur, réessayez");
+      toast.error("Erreur, reessayez");
     } finally {
       setLoading(false);
     }

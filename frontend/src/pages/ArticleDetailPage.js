@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
 import { isHtmlContent, renderContent } from "../lib/contentRenderer";
 import { getCategoryColor, slugify } from "../lib/categories";
 import { Loader2, ArrowLeft, Calendar, User, Eye, Tag, Bookmark } from "lucide-react";
@@ -17,19 +18,30 @@ function formatDate(isoString) {
 export default function ArticleDetailPage() {
   const { id } = useParams();
   const { token } = useAuth();
+  const ws = useWebSocket();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [viewCount, setViewCount] = useState(0);
+
+  // Listen for real-time view updates
+  useEffect(() => {
+    if (!ws || !id) return;
+    const handler = (data) => {
+      if (data.type === "view_update" && data.content_type === "article" && data.id === id) {
+        setViewCount(data.views);
+      }
+    };
+    return ws.subscribe(handler);
+  }, [ws, id]);
 
   useEffect(() => {
     api.get(`/articles/${id}`)
       .then((r) => {
         setArticle(r.data);
-        api.post(`/articles/${id}/view`)
-          .then((res) => setArticle((prev) => prev ? { ...prev, views: res.data.views } : prev))
-          .catch(() => {});
+        setViewCount(r.data.views || 0);
         if (token) {
           api.get(`/saved-articles/${id}/status`).then((res) => setIsSaved(res.data.is_saved)).catch(() => {});
         }
@@ -107,7 +119,7 @@ export default function ArticleDetailPage() {
               </span>
               <span className="flex items-center gap-1 text-xs text-[#FF6600] font-['Manrope'] font-bold" data-testid="article-views">
                 <Eye className="w-3 h-3" />
-                {article.views ?? 0} <span className="whitespace-nowrap">vue{(article.views ?? 0) !== 1 ? "s" : ""}</span>
+                {viewCount} <span className="whitespace-nowrap">vue{viewCount !== 1 ? "s" : ""}</span>
               </span>
               <LikeButton
                 type="article"

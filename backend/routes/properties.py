@@ -8,10 +8,42 @@ from models.property import (
 from middleware.auth import get_current_user, require_agent
 from utils import sanitize, sanitize_html, sanitize_url
 from routes.messages import manager
+from pymongo import ReturnDocument
 import uuid
 from datetime import datetime, timezone
 
 router = APIRouter(tags=["properties"])
+
+
+@router.get("/properties/map/markers")
+async def get_map_markers(
+    type: str = Query("", max_length=20),
+    city: str = Query("", max_length=100),
+    status: str = Query("", max_length=20),
+    min_price: float = Query(0, ge=0),
+    max_price: float = Query(0, ge=0),
+):
+    query = {"latitude": {"$ne": None}, "longitude": {"$ne": None}}
+    if type:
+        query["type"] = type
+    if city:
+        query["city"] = {"$regex": city, "$options": "i"}
+    if status:
+        query["status"] = status
+    if min_price > 0:
+        query["price"] = query.get("price", {})
+        query["price"]["$gte"] = min_price
+    if max_price > 0:
+        query["price"] = query.get("price", {})
+        query["price"]["$lte"] = max_price
+    props = await db.properties.find(query, {
+        "_id": 0, "id": 1, "title": 1, "type": 1, "price": 1, "currency": 1,
+        "city": 1, "latitude": 1, "longitude": 1, "images": 1, "status": 1
+    }).to_list(500)
+    for p in props:
+        p["image"] = p.get("images", [None])[0] if p.get("images") else None
+        p.pop("images", None)
+    return props
 
 
 @router.get("/properties", response_model=PaginatedProperties)
@@ -70,7 +102,12 @@ async def get_property(property_id: str):
 
 @router.post("/properties/{property_id}/view")
 async def view_property(property_id: str):
-    await db.properties.update_one({"id": property_id}, {"$inc": {"views": 1}})
+    result = await db.properties.find_one_and_update(
+        {"id": property_id}, {"$inc": {"views": 1}},
+        projection={"_id": 0, "views": 1}, return_document=ReturnDocument.AFTER
+    )
+    if result:
+        await manager.broadcast_all({"type": "view_update", "content_type": "property", "id": property_id, "views": result["views"]})
     return {"ok": True}
 
 
@@ -106,7 +143,7 @@ async def create_property(data: PropertyCreate, current_user: dict = Depends(req
     await db.properties.insert_one(prop)
     prop["author_username"] = current_user.get("username", "")
     del prop["_id"]
-    await manager.broadcast_all({"type": "content_update", "content_type": "property", "action": "created"})
+    await manager.broadcast_all({"type": "content_update", "content_type": "property", "action": "created", "title": sanitize(data.title)})
     return prop
 
 
@@ -190,4 +227,5 @@ async def toggle_property_like(property_id: str, current_user: dict = Depends(ge
             })
 
     updated = await db.properties.find_one({"id": property_id}, {"_id": 0, "likes_count": 1, "liked_by": 1})
+    await manager.broadcast_all({"type": "like_update", "content_type": "property", "id": property_id, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])})
     return {"action": action, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])}

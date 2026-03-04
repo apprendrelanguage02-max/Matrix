@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/layout/Footer";
 import ArticleCard from "../components/ArticleCard";
+import PullToRefresh from "../components/PullToRefresh";
+import { useWebSocket } from "../context/WebSocketContext";
 import api from "../lib/api";
 import { Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -58,9 +60,25 @@ export default function HomePage() {
   const featuredArticle = !search.trim() && page === 1 ? articles[0] : null;
   const gridArticles = featuredArticle ? articles.slice(1) : articles;
 
+  const ws = useWebSocket();
+
+  // Auto-refresh when new article is published
+  useEffect(() => {
+    if (!ws) return;
+    const handler = (data) => {
+      if (data.type === "content_update" && data.content_type === "article") {
+        fetchArticles(page, search);
+      }
+    };
+    return ws.subscribe(handler);
+  }, [ws, page, search, fetchArticles]);
+
+  const handlePullRefresh = () => fetchArticles(page, search);
+
   return (
     <div className="min-h-screen bg-white font-['Manrope']">
       <Header />
+      <PullToRefresh onRefresh={handlePullRefresh}>
 
       {/* Hero */}
       <section className="bg-black py-8 sm:py-14 md:py-20">
@@ -200,6 +218,7 @@ export default function HomePage() {
           </div>
         )}
       </main>
+      </PullToRefresh>
 
       <Footer />
     </div>
