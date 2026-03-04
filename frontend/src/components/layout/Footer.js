@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const { user } = useAuth();
 
   return (
     <footer className="bg-black text-zinc-400 border-t border-zinc-800 font-['Manrope']">
@@ -72,8 +74,10 @@ export default function Footer() {
                 { label: "Vente", to: "/immobilier?type=vente" },
                 { label: "Achat", to: "/immobilier?type=achat" },
                 { label: "Location", to: "/immobilier?type=location" },
-                { label: "Publier une annonce", to: "/immobilier/publier" },
-                { label: "Mes annonces", to: "/mes-annonces" },
+                ...((user?.role === "agent" || user?.role === "admin") ? [
+                  { label: "Publier une annonce", to: "/immobilier/publier" },
+                  { label: "Mes annonces", to: "/mes-annonces" },
+                ] : []),
               ].map(({ label, to }) => (
                 <li key={to}>
                   <Link to={to} className="hover:text-[#FF6600] hover:translate-x-1 inline-block transition-all duration-150">
