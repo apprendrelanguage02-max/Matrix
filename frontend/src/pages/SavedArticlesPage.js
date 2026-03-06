@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/layout/Footer";
-import ArticleCard from "../components/ArticleCard";
-import PropertyCard from "../components/immobilier/PropertyCard";
 import api from "../lib/api";
 import { toast } from "sonner";
 import { Loader2, Bookmark, ArrowLeft, FileText, Home, Newspaper, Trash2, Calendar, Eye, ArrowRight } from "lucide-react";
@@ -42,7 +40,7 @@ export default function SavedArticlesPage() {
 
   const unsaveArticle = async (articleId) => {
     try {
-      await api.delete(`/saved-articles/${articleId}`);
+      await api.post(`/saved-articles/${articleId}`);
       setArticles(prev => prev.filter(s => s.article_id !== articleId));
       toast.success("Retire des favoris.");
     } catch { toast.error("Erreur"); }
@@ -126,11 +124,25 @@ export default function SavedArticlesPage() {
                   </h2>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" data-testid="saved-articles-list">
-                  {articles.map(s => s.article ? (
-                    <div key={s.id} className="relative group/saved">
-                      <ArticleCard article={s.article} />
+                  {articles.map(s => (
+                    <div key={s.id} className="bg-white border border-zinc-200 hover:border-[#FF6600] transition-all group relative">
+                      <button onClick={() => unsaveArticle(s.article_id)} data-testid={`unsave-article-${s.article_id}`}
+                        className="absolute top-2 right-2 z-10 p-1.5 bg-[#FF6600] text-white rounded-full shadow-md hover:bg-red-600 transition-colors">
+                        <Bookmark className="w-3.5 h-3.5 fill-white" />
+                      </button>
+                      {s.image_url ? (
+                        <div className="aspect-video overflow-hidden"><img src={s.image_url} alt={s.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>
+                      ) : (
+                        <div className="aspect-video bg-zinc-900 flex items-center justify-center"><Newspaper className="w-8 h-8 text-zinc-600" /></div>
+                      )}
+                      <div className="p-3">
+                        {s.category && <span className="text-[10px] font-bold uppercase text-[#FF6600]">{s.category}</span>}
+                        <h3 className="font-['Oswald'] text-sm font-bold uppercase text-black line-clamp-2 mt-1">{s.title}</h3>
+                        {s.author_name && <p className="text-[10px] text-zinc-500 mt-1">Par {s.author_name}</p>}
+                        <Link to={`/article/${s.article_id}`} className="mt-2 block text-center bg-black text-white text-[10px] font-bold uppercase py-1.5 hover:bg-[#FF6600] transition-colors">Lire</Link>
+                      </div>
                     </div>
-                  ) : null)}
+                  ))}
                 </div>
               </section>
             )}

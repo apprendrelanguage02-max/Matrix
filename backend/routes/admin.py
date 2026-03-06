@@ -459,3 +459,42 @@ async def delete_role_request(notification_id: str, current_user: dict = Depends
         raise HTTPException(status_code=404, detail="Demande introuvable")
     await db.admin_notifications.delete_one({"id": notification_id})
     return {"ok": True, "message": "Demande supprimée"}
+
+
+# ─── Price Per m² Management ────────────────────────────────────────────────────
+
+@router.get("/price-references")
+async def get_all_price_references(current_user: dict = Depends(require_admin)):
+    refs = await db.price_references.find({}, {"_id": 0}).sort("city", 1).to_list(500)
+    return refs
+
+
+@router.post("/price-references")
+async def set_price_reference(data: dict, current_user: dict = Depends(require_admin)):
+    city = data.get("city", "")
+    commune = data.get("commune", "")
+    quartier = data.get("quartier", "")
+    price_per_sqm = data.get("price_per_sqm", 0)
+    if not city or price_per_sqm <= 0:
+        raise HTTPException(status_code=400, detail="Ville et prix au m2 requis")
+    # Upsert
+    key = {"city": city, "commune": commune, "quartier": quartier}
+    from datetime import datetime, timezone
+    await db.price_references.update_one(key, {"$set": {
+        **key,
+        "price_per_sqm": float(price_per_sqm),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": current_user["id"],
+    }}, upsert=True)
+    return {"ok": True}
+
+
+@router.delete("/price-references")
+async def delete_price_reference(city: str = Query(""), commune: str = Query(""), quartier: str = Query(""), current_user: dict = Depends(require_admin)):
+    key = {"city": city}
+    if commune:
+        key["commune"] = commune
+    if quartier:
+        key["quartier"] = quartier
+    await db.price_references.delete_one(key)
+    return {"ok": True}

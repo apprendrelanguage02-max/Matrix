@@ -1,171 +1,196 @@
 <analysis>**original_problem_statement:**
-L'utilisateur a fourni deux documents de type PRD (Product Requirements Document) très détaillés pour faire évoluer l'application, ainsi qu'un rapport de bug critique.
+L'utilisateur a signalé plusieurs bugs critiques et demandé de nouvelles fonctionnalités après une série d'implémentations majeures.
 
-**1. Bug Critique (Priorité Maximale)**
-*   **Problème :** Le contenu des articles créés avec le nouvel éditeur Newsroom ne s'affiche pas sur la page publique de l'article. Seul le titre est visible, mais pas le sous-titre, l'image principale, les paragraphes, les citations, ou les autres blocs de contenu.
-*   **Objectif :** Corriger la page de détail de l'article pour qu'elle puisse correctement interpréter et afficher la nouvelle structure de contenu basée sur des blocs (texte, image, citation, etc.) qui est maintenant stockée en base de données.
+**Bugs et Régressions (Priorité Haute)**
+1.  **Publication d'Annonces Échouée :** La publication d'annonces immobilières échoue avec une erreur React/Pydantic, affichant une page d'erreur au lieu de publier l'annonce.
+2.  **Gestion des Favoris Cassée :**
+    *   Le bouton Favoris pour les articles ne fonctionne pas ; les articles ne sont pas ajoutés à la page Sauvegardes.
+    *   Retirer un article des favoris échoue visuellement (le message de succès apparaît, mais l'article reste dans la liste).
+    *   Sur la page de détail d'une annonce, il y a deux icônes de cœur (une pour les likes, une pour les favoris). C'est confus.
+3.  **Page Admin Demandes Inaccessible :** La section pour gérer les demandes de rôle dans le dashboard admin affiche une erreur de chargement.
+4.  **Page d'Estimation Blanche :** La page d'estimation de prix est complètement blanche et inutilisable.
+5.  **Perte de Données à la Mise à Jour :** L'utilisateur signale que la mise à jour (édition) d'annonces ou de procédures entraîne la perte des données existantes.
 
-**2. Évolutions Majeures de la Section Immobilière**
-*   **Standardisation des devises :** Utiliser le GNF comme devise principale et afficher des conversions automatiques en USD et EUR.
-*   **Cartes d'annonces enrichies :** Afficher plus d'informations sur les cartes : Quartier, Surface (m²), Chambres, Salles de bain, Type de bien.
-*   **Carte interactive améliorée :**
-    *   Ajouter des clusters pour regrouper les annonces proches.
-    *   Intégrer des filtres directement sur la carte (Vente, Location, etc.).
-    *   Afficher un aperçu de l'annonce au clic sur un marqueur.
-*   **Simplification de la publication :** Créer un formulaire de publication rapide (moins de 60 secondes) avec des champs avancés optionnels.
-*   **Profils Agents Immobiliers :** Créer une page de profil public pour chaque agent avec ses informations et la liste de ses annonces.
-*   **Système de favoris :** Connecter le bouton cœur à une page Mes favoris où l'utilisateur retrouve les annonces sauvegardées.
-*   **Système de notifications :** Alerter les utilisateurs quand une nouvelle annonce correspond à leurs critères de recherche.
-*   **Fonctionnalités avancées :** Estimation automatique de prix, recherche par quartier, visites vidéo, badges de vérification, et une heatmap des prix.
-
-**3. Évolutions Majeures du Dashboard Auteur (Newsroom)**
-*(Note : Cette fonctionnalité a été implémentée mais pas encore entièrement testée et présente le bug critique ci-dessus.)*
-*   **Objectif :** Transformer le CMS en une plateforme média professionnelle.
-*   **Fonctionnalités clés :** Refonte de l'interface (couleurs, typographie), dashboard structuré avec une barre latérale, éditeur d'articles basé sur des blocs modulaires (texte, image, vidéo, citation), en-tête d'article structuré (titre, sous-titre, catégorie, tags), panneau de contrôle latéral avec SEO et indicateurs (temps de lecture, etc.), sauvegarde automatique, et prévisualisation.
+**Nouvelles Fonctionnalités & Améliorations (Priorité Haute)**
+1.  **Système d'Estimation Avancé :**
+    *   Sur la page d'estimation, remplacer les champs de texte par des menus déroulants en cascade pour Commune puis Quartier, couvrant toute la Guinée.
+    *   Créer un panneau d'administration où l'admin peut définir et gérer le prix au mètre carré pour chaque quartier/commune.
+    *   Le calcul de l'estimation doit se baser sur ces prix définis par l'admin.
+2.  **Améliorations de l'UX :**
+    *   L'icône pour les favoris doit être une icône de bookmark (signet), pas un cœur, pour la différencier des likes.
+    *   Supprimer le bouton Favoris en haut de la page immobilière. L'accès doit se faire uniquement via le menu de l'avatar (Sauvegardes).
 
 **User's preferred language**: Français
 
 **what currently exists?**
-L'application est une plateforme full-stack robuste avec un backend FastAPI et un frontend React. Elle inclut désormais :
-*   Un système d'authentification complet avec OTP par email et une gestion avancée des rôles.
-*   Un dashboard administrateur fonctionnel avec gestion des demandes en temps réel.
-*   Des fonctionnalités temps réel étendues : notifications, mise à jour des compteurs (vues, likes), et apparition de nouveau contenu sans rafraîchissement.
-*   Une nouvelle section Newsroom pour les auteurs, avec un dashboard professionnel et un éditeur d'articles basé sur des blocs. **(Implémenté mais buggé et non testé)**.
-*   Une page de carte interactive (Leaflet) affichant les annonces immobilières.
-*   Un système de pull-to-refresh sur mobile.
+L'application est une plateforme full-stack (React/FastAPI/MongoDB) avec un système d'authentification (OTP), un dashboard admin, des fonctionnalités temps réel (WebSockets), une section Newsroom avec un éditeur d'articles par blocs, et une section immobilière complète avec une carte interactive, des profils d'agents, et un système de favoris unifié. De nombreux bugs signalés par l'utilisateur ont été corrigés, notamment des problèmes de publication, des soucis de z-index sur la carte, et la suppression des références à emergent.sh.
 
 **Last working item**:
-    - Last item agent was working: L'agent enquêtait sur un bug critique où le contenu des articles (créé via le nouvel éditeur de blocs Newsroom) ne s'affichait pas sur la page de détail publique. L'agent a correctement identifié que la page  tente de rendre un tableau JSON structuré comme une simple chaîne de caractères, ce qui cause l'échec de l'affichage.
+    - Last item agent was working: L'agent travaillait à la correction d'un lot important de bugs et à l'implémentation de la nouvelle fonctionnalité d'estimation de prix, tous signalés par l'utilisateur. Le travail a été décomposé en plusieurs parties :
+        1.  **Estimation & Prix Admin (Backend)**: Création de fichiers de données pour les communes/quartiers de Guinée, mise en place des modèles et des routes API pour que l'admin gère les prix au m² et pour que le frontend récupère les localités.
+        2.  **Estimation (Frontend)**: Début de la refonte de  pour inclure les menus déroulants.
+        3.  **Favoris Articles (Frontend/Backend)**: Identification du bug (utilisation d'une route  inexistante au lieu d'un  de bascule) et début de la correction sur  et .
+        4.  **Admin Demandes**: Identification du bug (modèle  incomplet) et correction dans .
+        Le backend a été modifié et redémarré avec succès, mais le travail sur le frontend était en cours et non testé.
     - Status: IN PROGRESS
     - Agent Testing Done: N
     - Which testing method agent to use? both
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Le contenu des articles ne s'affiche pas sur la page publique (P0)
-  - Issue 2: La nouvelle fonctionnalité Newsroom n'a pas été testée (P0)
+  - Issue 1: L'estimation de prix est cassée et la page est blanche (P0)
+  - Issue 2: Le système de favoris pour les articles est cassé (sauvegarde et suppression) (P0)
+  - Issue 3: La page Admin Demandes ne charge pas (P1)
+  - Issue 4: Perte de données lors de l'édition des annonces et procédures (P1)
+  - Issue 5: La publication d'annonce échoue avec une erreur de validation (P0) - *Note : L'agent a corrigé des problèmes de publication similaires, mais l'utilisateur en a signalé un nouveau qui a été traité mais nécessite une validation finale.*
 
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: L'agent a analysé les fichiers ,  (backend) et  (modèle frontend). Le diagnostic est que  doit être modifié pour parser le tableau  et rendre dynamiquement des composants React différents pour chaque type de bloc (paragraphe, image, citation, etc.).
+     - Attempted fixes: L'agent a créé le backend nécessaire (API pour les localités et la gestion des prix). Il a commencé à réécrire la page .
      - Next debug checklist: 
-        1.  Modifier .
-        2.  Créer une fonction ou un composant renderer qui prend le tableau .
-        3.  À l'intérieur de ce renderer, mapper le tableau et utiliser une instruction  sur .
-        4.  Pour chaque  (, , , , etc.), retourner le composant React approprié avec le contenu du bloc (, , etc.).
-        5.  Assurer un style correct pour chaque bloc rendu.
-     - Why fix this issue and what will be achieved with the fix? C'est un bug bloquant qui rend la fonctionnalité principale de publication d'articles inutilisable. Le corriger permettra d'afficher correctement les articles formatés et de valider le nouvel éditeur.
+        1. Terminer l'implémentation de  pour afficher les menus déroulants en cascade (communes puis quartiers).
+        2. Implémenter la logique pour appeler l'API d'estimation avec les données sélectionnées et afficher le résultat.
+        3. Terminer l'interface  dans  pour permettre à l'admin de gérer les prix.
+        4. Tester l'ensemble du flux.
+     - Why fix this issue and what will be achieved with the fix? La fonctionnalité d'estimation est une demande clé de l'utilisateur. La corriger fournira un outil de valeur aux utilisateurs du site.
      - Status:  IN PROGRESS
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? both
      - Blocked on other issue: Non
+
   - Issue 2: 
-     - Attempted fixes: L'agent a terminé toute l'implémentation du backend et du frontend pour la refonte Newsroom. Cependant, l'utilisateur a signalé le bug critique (Issue 1) avant que les tests ne puissent être lancés.
+     - Attempted fixes: L'agent a identifié que le frontend utilisait une mauvaise méthode HTTP (DELETE au lieu de POST) et que le rendu des articles sauvegardés était incorrect. Des corrections ont été appliquées sur  et .
      - Next debug checklist:
-        1.  Une fois l'Issue 1 résolue, lancer le .
-        2.  Le plan de test doit valider : la création d'un article avec plusieurs blocs, la sauvegarde en brouillon, la publication, la mise à jour, la fonctionnalité de prévisualisation, les indicateurs SEO, et la navigation dans le nouveau dashboard.
-     - Why fix this issue and what will be achieved with the fix? Cela assurera la stabilité et la fiabilité d'une fonctionnalité majeure et complexe de l'application. Ignorer ces tests expose à de nombreux autres bugs potentiels.
-     - Status:  NOT STARTED
-     - Is recurring issue? N
+        1.  Tester la sauvegarde d'un article depuis la carte d'article ().
+        2.  Vérifier que l'article apparaît dans la page Sauvegardes.
+        3.  Tester la suppression de l'article depuis la page Sauvegardes et vérifier qu'il disparaît visuellement.
+     - Why fix this issue and what will be achieved with the fix? Cela unifiera l'expérience des favoris sur l'ensemble du site (annonces, articles, procédures).
+     - Status:  IN PROGRESS
+     - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: Issue 1
+     - Blocked on other issue: Non
+
+  - Issue 3: 
+     - Attempted fixes: L'agent a ajouté les champs  et  au modèle Pydantic  dans .
+     - Next debug checklist:
+        1.  Se connecter en tant qu'administrateur ().
+        2.  Accéder au dashboard admin, puis à l'onglet Base de données -> Demandes.
+        3.  Vérifier que la liste des demandes s'affiche sans erreur.
+     - Why fix this issue and what will be achieved with the fix? Le dashboard admin est essentiel pour la modération et la gestion du site.
+     - Status:  IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? backend
+     - Blocked on other issue: Non
+
+  - Issue 4: 
+     - Attempted fixes: Aucun.
+     - Next debug checklist:
+        1.  Reproduire le bug : créer une annonce, puis l'éditer et sauvegarder. Vérifier si les données ont été perdues.
+        2.  Inspecter la charge utile (payload) envoyée par le formulaire d'édition au backend.
+        3.  Comparer avec le modèle Pydantic pour s'assurer qu'il n'y a pas de champs en trop ou manquants, similaire au bug de création précédemment corrigé.
+        4.  Ajuster le composant du formulaire d'édition pour ne conserver que les données de l'annonce lors du pré-remplissage et de l'envoi.
+     - Why fix this issue and what will be achieved with the fix? La perte de données est un bug critique qui dégrade la confiance des utilisateurs et rend la gestion de contenu impossible.
+     - Status:  NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on other issue: Non
 
 **In progress Task List**:
-  - Task 1: Résoudre le bug d'affichage du contenu des articles. (P0)
-
+  - Task 1: Finaliser le système d'estimation de prix (P0)
+  
  Task Detail:
   - Task 1: 
-     - Where to resume: Il faut commencer l'implémentation de la logique de rendu dans  en se basant sur la checklist de l'Issue 1.
-     - What will be achieved with this? Les articles publiés seront visibles par le public, avec tout leur formatage (images, citations, etc.).
+     - Where to resume: Le backend est prêt. Le travail doit reprendre sur le frontend :  (menus déroulants, appel API) et  (interface de gestion des prix).
+     - What will be achieved with this? Une page d'estimation fonctionnelle et une interface admin pour la gestion des prix.
      - Status:  IN PROGRESS
      - Should Test frontend/backend/both after fix? both
      - Blocked on something: Non
 
 **Upcoming and Future Tasks**
 Upcoming Tasks:
-*   **Test de la fonctionnalité Newsroom (P0)**: Juste après la résolution du bug d'affichage.
-*   **Refonte de la section immobilière (P1)**: Implémenter les demandes du second PRD.
-    *   Standardisation des devises (GNF).
-    *   Amélioration des cartes d'annonces (plus d'infos).
-    *   Amélioration de la carte interactive (clusters, filtres).
-    *   Page Mes favoris.
-    *   Profils publics pour les agents.
-    *   Simplification du flux de publication.
+*   **Correction de la perte de données à l'édition (P1)**: Voir Issue 4.
+*   **Tests de régression complets (P1)**: Une fois le lot de corrections actuel terminé, lancer un test complet pour s'assurer que rien d'autre n'a été cassé.
 
 Future Tasks:
-*   Système de notifications pour les recherches immobilières.
-*   Outil d'estimation de prix.
-*   Recherche par quartier.
-*   Intégration de visites vidéo.
-*   Badges de vérification anti-arnaque.
-*   Heatmap des prix immobiliers.
+*   Système de notifications pour les nouvelles annonces correspondant à une recherche.
+*   Intégration de visites vidéo dans les annonces (le champ  existe mais n'est pas exploité).
+*   Badges de vérification anti-arnaque pour les annonces.
+*   Heatmap des prix immobiliers sur la carte.
 
 **Completed work in this session**
-- **Refonte Complète du Dashboard Admin**: Correction des téléchargements CSV, ajout de la suppression de demandes, et fiabilisation des mises à jour en temps réel (approbation/rejet). L'ensemble a été validé par des tests automatisés.
-- **Améliorations Majeures de l'UX en Temps Réel**:
-    - Implémentation d'une barre de recherche globale.
-    - Ajout de notifications temps réel (cloche) pour les nouvelles demandes de rôle.
-    - Ajout de notifications toast pour les nouveaux articles/annonces.
-    - Mise à jour instantanée des compteurs de vues et de likes.
-- **Amélioration de l'UI**:
-    - Le menu utilisateur s'ouvre maintenant en cliquant sur l'avatar.
-    - Les boutons Retour ont été remplacés par des icônes dynamiques.
-- **Correction de Sécurité Critique**: Les utilisateurs Auteur ne peuvent plus publier d'annonces immobilières.
-- **Nouvelles Fonctionnalités**:
-    - Ajout d'une page de carte interactive (Leaflet) pour les annonces.
-    - Ajout d'une fonctionnalité Pull-to-refresh sur mobile.
-- **Implémentation de la Refonte Newsroom**: Création d'un dashboard de rédaction professionnel avec un éditeur d'articles basé sur des blocs. *(Fonctionnalité implémentée mais non testée et buggée)*.
+- **Correction Critique (Newsroom)**: Affichage du contenu des articles créés avec l'éditeur par blocs.
+- **Validation (Newsroom)**: Suite de tests complète (frontend/backend) pour valider l'ensemble de la fonctionnalité Newsroom.
+- **Implémentation Massive (Immobilier)**: Ajout des profils d'agents, amélioration des cartes, carte avec clusters, standardisation des devises, et système de favoris.
+- **Correction de Bugs (Signalés par l'utilisateur)**:
+    - Correction de multiples erreurs de publication d'annonces.
+    - Correction du z-index de la carte interactive qui passait au-dessus du header.
+    - Remplacement du favicon par le logo de l'application.
+    - Suppression de toutes les références à emergent.sh dans le code.
+    - Unification du système de favoris avec des boutons sur les cartes d'annonces/procédures.
+    - Remplacement de l'icône cœur par bookmark pour les favoris afin d'éviter la confusion avec les likes.
+    - Nettoyage de l'interface en supprimant les liens de favoris redondants.
 
 **Earlier issues found/mentioned but not fixed**
-   - Issue 1: Le rate limiting sur l'endpoint de login retourne un code d'erreur 520 au lieu du 429 attendu.
-     - Debug checklist: Problème connu lié à l'infrastructure. Faible priorité.
-     - Should Test frontend/backend/both after fix: backend
-     - Is recurring issue? Y
+   - Issue 1: Le rate limiting sur l'API de login retourne un code d'erreur 520 au lieu de 429. (Faible priorité).
+   - Issue 2: La perte de données lors de l'**édition** d'annonces/procédures a été signalée mais pas encore traitée (maintenant dans la liste des problèmes en cours).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, WebSockets (pour les notifications et mises à jour en temps réel), MongoDB, Pydantic, JWT.
-- **Frontend**: React, React Context (pour WebSocket et Auth), Leaflet (pour la carte), Sonner (pour les toasts), TailwindCSS.
-- **Éditeur de Blocs**: Une logique personnalisée a été créée pour gérer le contenu des articles sous forme de tableau d'objets JSON, chaque objet représentant un bloc (paragraphe, image, etc.).
-
-**key DB schema**
-  - **articles**: 
+- **Backend**: FastAPI, MongoDB, WebSockets, Pydantic (utilisé pour la validation des données et cause de plusieurs bugs de formulaire).
+- **Frontend**: React, React Context, Leaflet, TailwindCSS.
+- **Nouvelle Logique**:
+    - Menus déroulants en cascade (Commune -> Quartier).
+    - Modèle de prix géré par l'administrateur pour alimenter un calcul d'estimation.
+    - Système de favoris unifié avec une route  unique fonctionnant comme un interrupteur (toggle).
 
 **All files of reference**
-- **Pour le bug critique (Issue 1)**:
-    - : Le fichier à modifier pour implémenter le rendu des blocs.
-    - : Pour comprendre la structure de données des blocs.
-- **Pour les tests (Issue 2)**:
-    - : Tout le dossier contient les composants de la nouvelle fonctionnalité à tester.
-- **Pour les prochaines tâches (Immobilier)**:
-    - 
-    - 
-    - 
-    - 
+- **Pour les tâches en cours**:
+    - : À finaliser pour l'estimation.
+    - : À finaliser pour la gestion des prix.
+    - : À tester pour la correction des favoris.
+    - : À tester pour l'affichage et la suppression des favoris.
+    - : À tester pour la correction de la page Demandes.
+    - : À inspecter pour le bug de perte de données à l'édition.
 
 **Critical Info for New Agent**
-- **Priorité Absolue**: L'utilisateur a explicitement demandé de corriger le bug d'affichage des articles et d'enchaîner sur les fonctionnalités immobilières. **NE COMMENCEZ RIEN D'AUTRE AVANT D'AVOIR CORRIGÉ CE BUG**.
-- **Risque Élevé**: L'ensemble de la fonctionnalité Newsroom est une boîte noire. Elle a été codée en un seul bloc sans tests intermédiaires. Après avoir corrigé le bug d'affichage, une campagne de tests complète est impérative (Issue 2). Attendez-vous à trouver d'autres problèmes.
-- **Flux de travail recommandé**:
-    1.  Corriger le bug d'affichage dans .
-    2.  Informer l'utilisateur de la correction et lancer immédiatement les tests automatisés pour l'ensemble de la fonctionnalité Newsroom.
-    3.  Une fois la Newsroom stabilisée, présenter un plan d'action pour les fonctionnalités immobilières demandées.
+- **Priorité Absolue**: Les tâches en cours sont toutes des régressions ou des bugs critiques signalés par l'utilisateur. Il faut les terminer et les valider avant toute autre chose. L'ordre de priorité est : .
+- **Prochaine Étape Critique**: Juste après avoir résolu le lot actuel, le bug de perte de données à l'édition () doit être la priorité suivante.
+- **Frontend en cours de modification**: Le backend pour les nouvelles fonctionnalités (estimation, prix) semble être en place, mais le frontend est à mi-chemin. Il faudra finaliser les composants  et  et les tester de bout en bout.
+- **Tester, Tester, Tester**: L'utilisateur trouve rapidement les bugs. Chaque correction doit être suivie d'un test spécifique pour valider le correctif, puis d'un test de régression plus large avant de finir la tâche.
+
+**Last 10 User Messages and any pending HUMAN messages** 
+1.  **Utilisateur (Très récent)**: Signale un grand nombre de problèmes : page d'estimation blanche, demande de filtres commune/quartier, demande d'un admin pour les prix/m², favoris des articles cassés, perte de données à l'édition des annonces/procédures, page Demandes admin cassée. (**EN COURS**)
+2.  **Agent**: A commencé le diagnostic et la correction de ce lot de problèmes.
+3.  **Utilisateur**: Signale que la publication d'annonces échoue toujours, qu'il y a deux icônes de cœur sur la page de détail, que la légende de la carte doit aussi passer sous le header, et que le lien Favoris doit être enlevé du haut de la page immo pour n'être que dans le menu avatar. (**RÉSOLU**)
+4.  **Agent**: A corrigé ce lot de problèmes.
+5.  **Utilisateur**: Signale une erreur à la publication, un mauvais placement des favoris, un problème de z-index sur la carte, une perte de données à la mise à jour, demande de changer le favicon et de supprimer les mentions emergent. (**RÉSOLU**)
+6.  **Agent**: A implémenté une énorme liste de fonctionnalités pour l'immobilier et a lancé les tests.
+7.  **Utilisateur**: Fait P1 et ensuite tu fais Futur/Backlog. (**ACCUSÉ DE RÉCEPTION**)
+8.  **Agent**: A terminé la correction du bug Newsroom et a présenté le plan pour les fonctionnalités immobilières.
+9.  **Utilisateur**: oui (approuvant le plan initial). (**ACCUSÉ DE RÉCEPTION**)
+10. **Agent**: A présenté le plan initial pour corriger le bug critique de la Newsroom et ensuite s'attaquer aux fonctionnalités immobilières.
 
 **Project Health Check:**
-- **Broken**: La fonctionnalité de base de l'application (afficher un article) est cassée pour les nouveaux articles. C'est la plus haute priorité. L'énorme fonctionnalité Newsroom est instable et non testée.
-- **Mocked**: Les fonctionnalités avancées de l'immobilier (estimation de prix, etc.) n'existent pas.
+- **Broken**:
+    - La fonctionnalité d'estimation est inutilisable (page blanche).
+    - La gestion des favoris pour les articles est cassée.
+    - Une partie cruciale du dashboard admin (Demandes) est inaccessible.
+    - La modification des annonces/procédures peut entraîner une perte de données.
+- **Mocked**: Les fonctionnalités avancées (notifications de recherche, heatmap, visites vidéo) sont prévues mais non implémentées.
 
 **3rd Party Integrations**
 - **Resend**: Pour les emails OTP.
 - **Leaflet & React-Leaflet**: Pour la carte interactive.
 
 **Testing status**
-  - Testing agent used after significant changes: NO (L'agent a été interrompu juste avant de lancer les tests pour la fonctionnalité Newsroom).
+  - Testing agent used after significant changes: YES (utilisé pour valider la fonctionnalité Newsroom et la refonte immobilière initiale, mais pas après les dernières corrections de bugs).
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: []
-  - Known regressions: L'affichage du contenu des articles est cassé.
+  - Known regressions: Perte de données à l'édition, favoris d'articles cassés, page admin Demandes cassée, page d'estimation cassée.
 
-**What agent forgot to execute**
-- L'agent a implémenté une fonctionnalité extrêmement complexe (le Newsroom) en un seul bloc sans la tester, ce qui a conduit directement au bug critique actuel et à un état instable de l'application. Il a été interrompu par l'utilisateur juste avant de pouvoir lancer les tests pour cette partie.</analysis>
+**Credentials to test flow:**
+- **Admin/Super Admin**:  (le mot de passe est connu de l'environnement de l'agent)
+- **Agent Immobilier**: 
+- **Utilisateur Auteur**: </analysis>

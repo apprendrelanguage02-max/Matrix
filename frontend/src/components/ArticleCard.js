@@ -33,15 +33,10 @@ export default function ArticleCard({ article, featured = false }) {
     if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
     setSavingLoading(true);
     try {
-      if (isSaved) {
-        await api.delete(`/saved-articles/${article.id}`);
-        setIsSaved(false);
-        toast.success("Sauvegarde retirée.");
-      } else {
-        await api.post(`/saved-articles/${article.id}`);
-        setIsSaved(true);
-        toast.success("Article sauvegardé !");
-      }
+      const res = await api.post(`/saved-articles/${article.id}`);
+      const nowSaved = res.data.action === "saved";
+      setIsSaved(nowSaved);
+      toast.success(nowSaved ? "Article sauvegarde !" : "Sauvegarde retiree.");
     } catch (err) {
       toast.error(err.response?.data?.detail || "Erreur.");
     } finally {

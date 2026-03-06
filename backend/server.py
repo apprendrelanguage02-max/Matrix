@@ -45,6 +45,39 @@ async def root():
     return {"message": "Matrix News API v3"}
 
 
+# ─── Guinea Locations (Public) ─────────────────────────────────────────────────
+from data.guinea_locations import GUINEA_LOCATIONS, get_cities, get_communes, get_quartiers
+from fastapi import Query as FQ
+
+@app.get("/api/locations/cities")
+async def list_cities():
+    return get_cities()
+
+@app.get("/api/locations/communes")
+async def list_communes(city: str = FQ("")):
+    return get_communes(city)
+
+@app.get("/api/locations/quartiers")
+async def list_quartiers(city: str = FQ(""), commune: str = FQ("")):
+    return get_quartiers(city, commune)
+
+@app.get("/api/locations/all")
+async def all_locations():
+    return GUINEA_LOCATIONS
+
+@app.get("/api/price-references/public")
+async def public_price_references(city: str = FQ(""), commune: str = FQ(""), quartier: str = FQ("")):
+    query = {}
+    if city:
+        query["city"] = city
+    if commune:
+        query["commune"] = commune
+    if quartier:
+        query["quartier"] = quartier
+    refs = await db.price_references.find(query, {"_id": 0}).to_list(200)
+    return refs
+
+
 # ─── Global Search ─────────────────────────────────────────────────────────────
 from fastapi import Query as Q
 

@@ -101,13 +101,49 @@ async def get_heatmap_data():
 @router.get("/properties/estimate")
 async def estimate_price(
     city: str = Query(..., min_length=2),
+    commune: str = Query(""),
     neighborhood: str = Query(""),
     property_category: str = Query("autre"),
     bedrooms: int = Query(0, ge=0),
     surface_area: float = Query(0, ge=0),
 ):
-    """Estimate price based on similar properties in the area."""
+    """Estimate price based on admin-set price references + similar properties."""
+    # First check if admin has set price references
+    ref_query = {"city": city}
+    if commune:
+        ref_query["commune"] = commune
+    if neighborhood:
+        ref_query["quartier"] = neighborhood
+
+    # Try most specific match first (city+commune+quartier), then city+commune, then city
+    ref = None
+    if neighborhood and commune:
+        ref = await db.price_references.find_one({"city": city, "commune": commune, "quartier": neighborhood}, {"_id": 0})
+    if not ref and commune:
+        ref = await db.price_references.find_one({"city": city, "commune": commune, "quartier": ""}, {"_id": 0})
+    if not ref:
+        ref = await db.price_references.find_one({"city": city, "commune": "", "quartier": ""}, {"_id": 0})
+
+    if ref and ref.get("price_per_sqm", 0) > 0:
+        price_per_sqm = ref["price_per_sqm"]
+        # Use admin price reference for estimation
+        area = surface_area if surface_area > 0 else 200  # default 200m²
+        estimated = round(price_per_sqm * area)
+        return {
+            "estimated_price": estimated,
+            "price_per_sqm": price_per_sqm,
+            "surface_used": area,
+            "sample_count": 0,
+            "confidence": "high",
+            "source": "reference",
+            "price_range": {"min": round(estimated * 0.85), "max": round(estimated * 1.15)},
+            "price_converted": convert_price(estimated),
+        }
+
+    # Fallback to similar properties analysis
     query = {"city": {"$regex": city, "$options": "i"}, "status": "disponible"}
+    if commune:
+        query["neighborhood"] = {"$regex": commune, "$options": "i"}
     if neighborhood:
         query["neighborhood"] = {"$regex": neighborhood, "$options": "i"}
     if property_category and property_category != "autre":
@@ -118,12 +154,11 @@ async def estimate_price(
     similar = await db.properties.find(query, {"_id": 0, "price": 1, "surface_area": 1, "bedrooms": 1}).to_list(50)
 
     if not similar:
-        # Fallback: broader search just by city
         query = {"city": {"$regex": city, "$options": "i"}, "status": "disponible"}
         similar = await db.properties.find(query, {"_id": 0, "price": 1, "surface_area": 1}).to_list(50)
 
     if not similar:
-        return {"estimated_price": 0, "sample_count": 0, "confidence": "low", "price_range": {"min": 0, "max": 0}}
+        return {"estimated_price": 0, "sample_count": 0, "confidence": "low", "source": "none", "price_range": {"min": 0, "max": 0}}
 
     prices = [p["price"] for p in similar]
     avg = sum(prices) / len(prices)
@@ -134,6 +169,7 @@ async def estimate_price(
         "estimated_price": round(avg),
         "sample_count": len(similar),
         "confidence": confidence,
+        "source": "similar",
         "price_range": {"min": round(min_p), "max": round(max_p)},
         "price_converted": convert_price(round(avg)),
     }

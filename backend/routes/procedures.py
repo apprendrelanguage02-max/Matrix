@@ -153,21 +153,21 @@ async def delete_procedure(procedure_id: str, current_user: dict = Depends(requi
 
 @router.post("/saved-procedures/{procedure_id}")
 async def toggle_save_procedure(procedure_id: str, current_user: dict = Depends(get_current_user)):
-    proc = await db.procedures.find_one({"id": procedure_id}, {"_id": 0, "title": 1, "image_url": 1, "subcategory_name": 1})
+    proc = await db.procedures.find_one({"id": procedure_id}, {"_id": 0, "title": 1, "image_url": 1, "subcategory": 1})
     if not proc:
         raise HTTPException(status_code=404, detail="Procedure introuvable")
     existing = await db.saved_procedures.find_one({"user_id": current_user["id"], "procedure_id": procedure_id})
     if existing:
         await db.saved_procedures.delete_one({"user_id": current_user["id"], "procedure_id": procedure_id})
         return {"action": "unsaved"}
-    from datetime import datetime, timezone
+    subcat = get_subcategory_info(proc.get("subcategory", ""))
     await db.saved_procedures.insert_one({
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
         "procedure_id": procedure_id,
         "title": proc.get("title", ""),
         "image_url": proc.get("image_url", ""),
-        "subcategory_name": proc.get("subcategory_name", ""),
+        "subcategory_name": subcat.get("name", ""),
         "saved_at": datetime.now(timezone.utc).isoformat(),
     })
     return {"action": "saved"}

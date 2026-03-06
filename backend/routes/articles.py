@@ -329,10 +329,10 @@ async def toggle_like(article_id: str, current_user: dict = Depends(get_current_
         action = "liked"
         await db.articles.update_one({"id": article_id}, {"$push": {"liked_by": user_id}, "$inc": {"likes_count": 1}})
         if article["author_id"] != user_id:
-            await db.admin_notifications.insert_one({
+            await db.user_notifications.insert_one({
                 "id": str(uuid.uuid4()), "type": "like", "user_id": article["author_id"],
                 "message": f"{current_user['username']} a aime votre article \"{article['title']}\"",
-                "status": "info", "created_at": datetime.now(timezone.utc).isoformat()
+                "is_read": False, "created_at": datetime.now(timezone.utc).isoformat()
             })
     updated = await db.articles.find_one({"id": article_id}, {"_id": 0, "likes_count": 1, "liked_by": 1})
     await manager.broadcast_all({"type": "like_update", "content_type": "article", "id": article_id, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])})
