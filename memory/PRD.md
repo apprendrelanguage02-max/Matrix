@@ -1,91 +1,75 @@
-# Matrix News / GIMO - PRD
+# Matrix News / GIMO - Product Requirements Document
 
-## Produit
-Application media et immobilier pour la Guinee. Plateforme full-stack avec actualites, annonces immobilieres, procedures administratives, et messagerie en temps reel.
+## Original Problem Statement
+Platform de news et immobilier guineenne avec un backend FastAPI et un frontend React. L'application inclut:
+- Systeme d'authentification avec OTP email et gestion des roles (admin, auteur, agent, visiteur)
+- Dashboard administrateur avec gestion des demandes en temps reel
+- Section "Newsroom" avec editeur d'articles base sur des blocs modulaires
+- Section immobiliere avec carte interactive (Leaflet)
+- Notifications temps reel via WebSocket
+- Systeme de favoris/sauvegarde d'articles
 
-## Stack Technique
-- **Frontend**: React + TailwindCSS + Shadcn/UI + Leaflet (carte interactive)
-- **Backend**: FastAPI + MongoDB
-- **Temps reel**: WebSocket natif (unique par utilisateur via WebSocketProvider)
-- **Email**: Resend (mode dev/test)
-- **Auth**: JWT + OTP par email
+## Tech Stack
+- **Backend**: FastAPI, MongoDB (Motor), Pydantic, JWT, WebSockets, bcrypt
+- **Frontend**: React, TailwindCSS, Shadcn/UI, Leaflet, Sonner, Lucide icons
+- **3rd Party**: Resend (emails OTP), Leaflet/React-Leaflet (cartes)
 
-## Roles et Acces
-- **Admin**: Acces complet (articles + annonces + dashboard admin + carte)
-- **Auteur**: Articles uniquement (creer, modifier, supprimer ses articles)
-- **Agent immobilier**: Annonces uniquement (publier, modifier ses annonces)
-- **Visiteur**: Lecture seule, pas de publication
+## User Personas
+1. **Visiteur** - Consulte articles et annonces
+2. **Auteur** - Cree/publie des articles via Newsroom
+3. **Agent Immobilier** - Publie des annonces immobilieres
+4. **Admin** - Gere utilisateurs, demandes de role, contenu
 
-## Fonctionnalites Implementees
+## Core Features Implemented
+- [x] Authentification complete (OTP email, JWT, roles)
+- [x] Dashboard admin (gestion demandes, CSV, suppression, temps reel)
+- [x] Newsroom / Editeur d'articles base sur blocs (text, image, video, quote, alert, table)
+- [x] Page de detail article avec rendu des blocs (BUG CORRIGE - Feb 2026)
+- [x] Carte interactive immobiliere (Leaflet)
+- [x] Notifications temps reel (WebSocket)
+- [x] Recherche globale
+- [x] Pull-to-refresh mobile
+- [x] Systeme de favoris/sauvegarde articles
+- [x] Compteurs temps reel (vues, likes)
 
-### Authentification
-- Login/Register JWT + OTP email (Resend mode dev)
-- Roles: admin, auteur, agent, visiteur
-- Utilisateurs rejetes bloques au login (HTTP 403)
+## P0 - Done
+- [x] Bug critique: Affichage contenu articles (blocs) sur page publique - CORRIGE et TESTE (Feb 2026)
+- [x] Test complet Newsroom - VALIDE (iteration 20)
 
-### Dashboard Admin
-- 5 onglets: Demandes, Utilisateurs, Articles, Annonces, Paiements
-- CRUD complet, filtres, pagination, CSV authentifie
-- Approbation/rejet temps reel via WebSocket + suppression demandes
+## P1 - Upcoming (Refonte Immobilier)
+- [ ] Standardisation devises (GNF + conversions USD/EUR)
+- [ ] Amelioration cartes d'annonces (quartier, surface, chambres, type de bien)
+- [ ] Carte interactive amelioree (clusters, filtres, apercu au clic)
+- [ ] Page "Mes favoris" immobilier
+- [ ] Profils publics agents immobiliers
+- [ ] Simplification formulaire publication
 
-### Temps Reel (Mars 2026)
-- WebSocket centralise via WebSocketProvider (subscribe pattern)
-- Notification cloche admin en temps reel (new_role_request)
-- Toast notifications quand nouvel article/annonce publie (content_update)
-- Compteurs vues en temps reel via view_update broadcast
-- Compteurs likes en temps reel via like_update broadcast
-- Broadcast articles/annonces a tous les utilisateurs connectes
-- Redirection auto apres approbation: agent->/immobilier, auteur->/admin
-- Auto-refresh listes quand nouveau contenu publie
+## P2 - Future/Backlog
+- [ ] Systeme de notifications recherches immobilieres
+- [ ] Outil estimation de prix
+- [ ] Recherche par quartier
+- [ ] Visites video
+- [ ] Badges verification "anti-arnaque"
+- [ ] Heatmap prix immobiliers
 
-### Carte Interactive Leaflet (Mars 2026)
-- Page separee /immobilier/carte avec carte plein ecran
-- Marqueurs colores par type (Achat=orange, Vente=vert, Location=bleu)
-- Filtres: type, ville, statut, prix min/max
-- Popup avec image, titre, prix, bouton "Voir l'annonce"
-- Legende des couleurs
-- Endpoint /api/properties/map/markers
+## Known Issues
+- Rate limiting login retourne 520 au lieu de 429 (infra, low priority)
+- Console warning React hydration (span in select) - cosmetic only
 
-### Recherche Globale
-- Endpoint /api/search (articles, annonces, procedures)
-- Barre de recherche Header (desktop + mobile) avec debounce 300ms
-
-### UI/UX
-- Avatar click ouvre menu deroulant avec Profil
-- Boutons retour dynamiques (icone seule)
-- Pull-to-refresh mobile (spinner animation)
-- Footer conditionnel (liens annonces agents/admins uniquement)
-- Systeme de likes avec compteurs temps reel
-- Suppression de conversations
-
-### Sections
-- News: Articles par categories
-- Immobilier: Annonces + carte + filtres + paiements simules
-- Procedures: Guide administratif par pays
-
-## API Endpoints Cles
-- /api/search?q= : Recherche globale
-- /api/properties/map/markers : Marqueurs carte
-- /api/admin/notifications : Demandes de role
-- /api/admin/export/* : Exports CSV
-- /ws/chat?token= : WebSocket temps reel
-
-## Backlog
-
-### P1
-- Finalisation Resend (verification domaine production)
-- OTP par telephone (Twilio/SMS)
-- Mode brouillon articles
-
-### P2
-- Paiements reels (Orange Money)
-- Notifications push
-- Ameliorer le chat
-
-### P3
-- Inscription publique agents
-- Modele economique (abonnements)
-- PWA / mode hors ligne
-
-## Credentials Test
-- Admin: matrixguinea@gmail.com / strongpassword123
+## Architecture
+```
+/app/
+├── backend/
+│   ├── routes/ (auth, articles, properties, procedures, payments, upload, admin, notifications, messages)
+│   ├── models/ (user, article)
+│   ├── middleware/ (auth)
+│   ├── config.py, database.py, server.py, utils.py
+│   └── tests/
+└── frontend/
+    ├── src/
+    │   ├── components/ (BlockEditor, Header, LikeButton, ArticleCard, immobilier/, layout/, ui/)
+    │   ├── context/ (AuthContext, WebSocketContext)
+    │   ├── pages/ (Home, ArticleDetail, ArticleForm, Dashboard, immobilier/, admin/, procedures/)
+    │   └── lib/ (api, categories, contentRenderer, utils)
+    └── ...
+```
