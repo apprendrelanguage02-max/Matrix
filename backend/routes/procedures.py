@@ -5,7 +5,7 @@ from models.procedure import (
     ProcedureCreate, ProcedureUpdate, ProcedureOut,
     PaginatedProcedures, PROCEDURE_SUBCATEGORIES
 )
-from middleware.auth import require_admin
+from middleware.auth import require_admin, get_current_user
 from utils import sanitize, sanitize_html, sanitize_url
 import uuid
 from datetime import datetime, timezone
@@ -146,3 +146,46 @@ async def delete_procedure(procedure_id: str, current_user: dict = Depends(requi
 
     await db.procedures.delete_one({"id": procedure_id})
     return {"ok": True, "message": "Procédure supprimée"}
+
+
+
+# ─── Saved Procedures ──────────────────────────────────────────────────────────
+
+@router.post("/saved-procedures/{procedure_id}")
+async def toggle_save_procedure(procedure_id: str, current_user: dict = Depends(get_current_user)):
+    proc = await db.procedures.find_one({"id": procedure_id}, {"_id": 0, "title": 1, "image_url": 1, "subcategory_name": 1})
+    if not proc:
+        raise HTTPException(status_code=404, detail="Procedure introuvable")
+    existing = await db.saved_procedures.find_one({"user_id": current_user["id"], "procedure_id": procedure_id})
+    if existing:
+        await db.saved_procedures.delete_one({"user_id": current_user["id"], "procedure_id": procedure_id})
+        return {"action": "unsaved"}
+    from datetime import datetime, timezone
+    await db.saved_procedures.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "procedure_id": procedure_id,
+        "title": proc.get("title", ""),
+        "image_url": proc.get("image_url", ""),
+        "subcategory_name": proc.get("subcategory_name", ""),
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"action": "saved"}
+
+
+@router.get("/saved-procedures/{procedure_id}/status")
+async def get_saved_procedure_status(procedure_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.saved_procedures.find_one({"user_id": current_user["id"], "procedure_id": procedure_id})
+    return {"is_saved": existing is not None}
+
+
+@router.get("/saved-procedures")
+async def get_saved_procedures(current_user: dict = Depends(get_current_user)):
+    saved = await db.saved_procedures.find({"user_id": current_user["id"]}, {"_id": 0}).sort("saved_at", -1).to_list(100)
+    return saved
+
+
+@router.delete("/saved-procedures/{procedure_id}")
+async def delete_saved_procedure(procedure_id: str, current_user: dict = Depends(get_current_user)):
+    await db.saved_procedures.delete_one({"user_id": current_user["id"], "procedure_id": procedure_id})
+    return {"ok": True}

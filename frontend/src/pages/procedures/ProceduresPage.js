@@ -3,10 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import api from "../../lib/api";
-import { Loader2, ChevronLeft, ChevronRight, FileText, Calendar, Eye, ArrowRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, FileText, Calendar, Eye, ArrowRight, Bookmark } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
-const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
+const LOGO = "/nimba-logo.png";
 
 function formatDate(iso) {
   if (!iso) return "";
@@ -14,10 +15,37 @@ function formatDate(iso) {
 }
 
 function ProcedureCard({ procedure }) {
+  const { token } = useAuth();
   const excerpt = procedure.content?.replace(/<[^>]+>/g, "").slice(0, 150) + "...";
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get(`/saved-procedures/${procedure.id}/status`).then(r => setIsSaved(r.data.is_saved)).catch(() => {});
+  }, [procedure.id, token]);
+
+  const toggleSave = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    try {
+      const res = await api.post(`/saved-procedures/${procedure.id}`);
+      setIsSaved(res.data.action === "saved");
+      toast.success(res.data.action === "saved" ? "Ajoute aux favoris !" : "Retire des favoris.");
+    } catch { toast.error("Erreur"); }
+  };
   
   return (
-    <div className="bg-white border border-zinc-200 hover:border-[#FF6600] hover:shadow-lg transition-all duration-200 flex flex-col group">
+    <div className="bg-white border border-zinc-200 hover:border-[#FF6600] hover:shadow-lg transition-all duration-200 flex flex-col group relative">
+      {/* Save/Favorite button */}
+      {token && (
+        <button onClick={toggleSave} data-testid={`save-procedure-${procedure.id}`}
+          className={`absolute top-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200 ${
+            isSaved ? "bg-[#FF6600] text-white shadow-md" : "bg-black/60 text-white hover:bg-[#FF6600]"
+          }`}>
+          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-white" : ""}`} />
+        </button>
+      )}
       {/* Image */}
       {procedure.image_url ? (
         <div className="aspect-video bg-zinc-100 overflow-hidden">

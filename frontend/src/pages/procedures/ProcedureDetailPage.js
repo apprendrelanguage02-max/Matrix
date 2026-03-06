@@ -8,7 +8,7 @@ import { Loader2, Calendar, Eye, ArrowLeft, Edit, Trash2, User, MessageSquare } 
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
-const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
+const LOGO = "/nimba-logo.png";
 
 function formatDate(iso) {
   if (!iso) return "";

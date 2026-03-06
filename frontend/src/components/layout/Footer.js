@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
+const LOGO = "/nimba-logo.png";
 
 export default function Footer() {
   const year = new Date().getFullYear();

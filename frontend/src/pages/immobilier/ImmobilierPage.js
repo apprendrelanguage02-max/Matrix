@@ -10,7 +10,7 @@ import api from "../../lib/api";
 import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Heart, Calculator, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
+const LOGO = "/nimba-logo.png";
 
 export default function ImmobilierPage() {
   const { user } = useAuth();
@@ -130,7 +130,7 @@ export default function ImmobilierPage() {
               <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Voir la carte
             </Link>
             {user && (
-              <Link to="/immobilier/favoris"
+              <Link to="/sauvegardes"
                 data-testid="view-favorites-btn"
                 className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
                 <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Favoris

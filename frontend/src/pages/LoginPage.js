@@ -167,7 +167,7 @@ export default function LoginPage() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mb-10 group">
           <img
-            src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
+            src="/nimba-logo.png"
             alt="Matrix News Logo"
             className="w-9 h-9 object-contain"
           />

@@ -198,7 +198,7 @@ export default function DashboardPage() {
       {/* Topbar */}
       <header className="bg-black text-white h-14 flex items-center px-4 sm:px-6 gap-4 sticky top-0 z-50 shadow-lg" data-testid="dashboard-topbar">
         <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
-          <img src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png" alt="Logo" className="w-7 h-7 object-contain rounded-sm" />
+          <img src="/nimba-logo.png" alt="Logo" className="w-7 h-7 object-contain rounded-sm" />
           <span className="hidden sm:inline font-['Oswald'] text-lg font-bold tracking-widest uppercase group-hover:text-[#FF6600] transition-colors">Newsroom</span>
         </Link>
 

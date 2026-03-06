@@ -309,7 +309,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" data-testid="header-logo">
             <img
-              src="https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png"
+              src="/nimba-logo.png"
               alt="Matrix News Logo"
               className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-sm"
             />

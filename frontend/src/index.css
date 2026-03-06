@@ -15,9 +15,16 @@ body {
 
 * { box-sizing: border-box; }
 
-/* ── Hide Emergent badge ─────────────────── */
-#emergent-badge {
-    display: none !important;
+/* ── Leaflet z-index fix (map must stay below header/menu) ── */
+.leaflet-container {
+    z-index: 1 !important;
+}
+.leaflet-pane {
+    z-index: 2 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 5 !important;
 }
 
 /* ── Scrollbar hide utility ─────────────────── */

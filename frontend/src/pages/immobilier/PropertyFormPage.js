@@ -46,7 +46,29 @@ export default function PropertyFormPage() {
       api.get(`/properties/${id}`)
         .then(r => {
           const p = r.data;
-          setForm({ ...p, price: String(p.price), latitude: p.latitude || "", longitude: p.longitude || "" });
+          setForm({
+            title: p.title || "",
+            type: p.type || "vente",
+            price: String(p.price || ""),
+            currency: p.currency || "GNF",
+            description: p.description || "",
+            city: p.city || "Conakry",
+            neighborhood: p.neighborhood || "",
+            address: p.address || "",
+            latitude: p.latitude || "",
+            longitude: p.longitude || "",
+            seller_name: p.seller_name || "",
+            seller_phone: p.seller_phone || "",
+            seller_email: p.seller_email || "",
+            seller_whatsapp: p.seller_whatsapp || "",
+            images: p.images || [],
+            video_url: p.video_url || "",
+            status: p.status || "disponible",
+            property_category: p.property_category || "autre",
+            bedrooms: p.bedrooms || "",
+            bathrooms: p.bathrooms || "",
+            surface_area: p.surface_area || "",
+          });
         })
         .catch(() => { toast.error("Annonce introuvable"); navigate("/immobilier"); });
     }
@@ -86,22 +108,36 @@ export default function PropertyFormPage() {
     }
     setSaving(true);
     try {
+      // Only send fields the API expects — strip enriched/computed fields
       const payload = {
-        ...form,
+        title: form.title,
+        type: form.type,
         price: parseFloat(form.price),
+        currency: form.currency || "GNF",
+        description: form.description || "Aucune description.",
+        city: form.city,
+        neighborhood: form.neighborhood || "",
+        address: form.address || "",
         latitude: form.latitude ? parseFloat(form.latitude) : null,
         longitude: form.longitude ? parseFloat(form.longitude) : null,
-        description: form.description || "Aucune description.",
+        seller_name: form.seller_name,
+        seller_phone: form.seller_phone,
+        seller_email: form.seller_email || "",
+        seller_whatsapp: form.seller_whatsapp || "",
+        images: form.images || [],
+        video_url: form.video_url || "",
+        property_category: form.property_category || "autre",
         bedrooms: form.bedrooms ? parseInt(form.bedrooms) : 0,
         bathrooms: form.bathrooms ? parseInt(form.bathrooms) : 0,
         surface_area: form.surface_area ? parseFloat(form.surface_area) : 0,
       };
       if (isEdit) {
+        payload.status = form.status || "disponible";
         await api.put(`/properties/${id}`, payload);
-        toast.success("Annonce mise à jour !");
+        toast.success("Annonce mise a jour !");
       } else {
         const res = await api.post("/properties", payload);
-        toast.success("Annonce publiée !");
+        toast.success("Annonce publiee !");
         navigate(`/immobilier/${res.data.id}`);
         return;
       }

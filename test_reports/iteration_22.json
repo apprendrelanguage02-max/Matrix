@@ -1,0 +1,79 @@
+{
+  "summary": "Iteration 22 Bug Fixes Testing Complete - All backend and frontend features working correctly. Tested: 1) Property creation/update with clean payload (no extra fields), 2) Saved procedures endpoints, 3) Bookmark buttons on property and procedure cards, 4) Map z-index fix (header stays on top), 5) Unified favorites page with tabs, 6) Favicon shows Nimba logo, 7) No emergent references in source code.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": {
+    "backend_api": [
+      "POST /api/properties - Creates property with clean payload (no extra fields like id, author_id, price_converted)",
+      "PUT /api/properties/:id - Updates property with clean payload",
+      "POST /api/properties requires agent role (author gets 403)",
+      "POST /api/properties without auth returns 401/403",
+      "POST /api/saved-procedures/:id - Toggles save status (auth required)",
+      "GET /api/saved-procedures/:id/status - Returns is_saved boolean (auth required)",
+      "GET /api/saved-procedures - Returns list of saved procedures (auth required)",
+      "POST /api/saved-procedures/:id for nonexistent procedure returns 404",
+      "POST /api/saved-properties/:id - Toggles save status (auth required)",
+      "GET /api/saved-properties/:id/status - Returns is_saved boolean",
+      "GET /api/properties - Returns list with filters working"
+    ],
+    "frontend_ui": [
+      "Homepage loads with Nimba logo in header",
+      "Favicon set to favicon.ico (Nimba logo)",
+      "/immobilier page shows Estimation button when not logged in",
+      "/immobilier page hides Favoris/Alertes buttons when not logged in",
+      "/immobilier page shows Favoris/Alertes buttons when logged in",
+      "/immobilier page shows save/bookmark buttons on property cards when logged in",
+      "/immobilier/carte map z-index is 1, header z-index is 50 - header stays on top",
+      "/sauvegardes (favorites) page shows 4 tabs: Tout, Articles, Annonces, Procedures",
+      "/procedures page shows bookmark buttons on procedure cards when logged in",
+      "/immobilier/publier form loads correctly for agent user with all fields",
+      "No 'emergent' or 'emergentagent' references found in frontend source code"
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration22_bugfixes.py",
+    "/app/test_reports/pytest/pytest_results_iter22.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PropertyFormPage.js correctly builds clean payload with only expected fields (title, type, price, currency, etc.) - no spreading of form state that included computed fields",
+    "PropertyCard.js and ProcedureCard.js correctly implement save toggle with useState/useEffect pattern for logged-in users",
+    "index.css correctly sets .leaflet-container z-index: 1 to keep map below header",
+    "SavedArticlesPage.js properly unified as favorites page with TABS constant for all content types",
+    "index.html cleaned of all emergent references - only posthog analytics and tailwind CDN (for iframe) remain"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration22_bugfixes.py"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 passed)",
+    "frontend": "100% (all features working)"
+  },
+  "test_credentials": {
+    "test_agent": {
+      "email": "testagent@test.com",
+      "password": "TestAgent123!",
+      "role": "agent"
+    },
+    "test_author": {
+      "email": "testauthor@test.com",
+      "password": "TestAuthor123!",
+      "role": "auteur"
+    }
+  },
+  "seed_data_creation": "No permanent seed data created - all TEST_ prefixed properties cleaned up after tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 22 validated all bug fixes: 1) PropertyFormPage sends clean payload without computed fields - fixed Pydantic validation errors, 2) Bookmark buttons appear on PropertyCard and ProcedureCard when user logged in, 3) Map z-index set to 1 via CSS override in index.css, 4) Favicon uses nimba-logo.png from /public folder, 5) SavedArticlesPage renamed conceptually to unified favorites page with tabs for articles/properties/procedures, 6) All emergent references removed from index.html and source code.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}

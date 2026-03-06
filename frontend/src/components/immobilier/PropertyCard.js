@@ -1,5 +1,9 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Eye, Phone, Bed, Bath, Maximize, Home, Heart, ShieldCheck } from "lucide-react";
+import { MapPin, Eye, Phone, Bed, Bath, Maximize, Home, Heart, ShieldCheck, Bookmark } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../lib/api";
+import { toast } from "sonner";
 import LikeButton from "../LikeButton";
 
 const TYPE_CONFIG = {
@@ -20,7 +24,7 @@ const CATEGORY_LABELS = {
   duplex: "Duplex", autre: "Autre",
 };
 
-const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
+const LOGO = "/nimba-logo.png";
 
 export function formatPrice(price, currency = "GNF") {
   if (currency === "GNF") return new Intl.NumberFormat("fr-FR").format(price) + " GNF";
@@ -33,13 +37,40 @@ export function formatPriceConverted(converted) {
 }
 
 export default function PropertyCard({ property }) {
+  const { token } = useAuth();
   const typeConf = TYPE_CONFIG[property.type] || TYPE_CONFIG.vente;
   const statusConf = STATUS_CONFIG[property.status];
   const img = property.images?.[0];
   const catLabel = CATEGORY_LABELS[property.property_category] || "";
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get(`/saved-properties/${property.id}/status`).then(r => setIsSaved(r.data.is_saved)).catch(() => {});
+  }, [property.id, token]);
+
+  const toggleSave = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    try {
+      const res = await api.post(`/saved-properties/${property.id}`);
+      setIsSaved(res.data.action === "saved");
+      toast.success(res.data.action === "saved" ? "Ajoute aux favoris !" : "Retire des favoris.");
+    } catch { toast.error("Erreur"); }
+  };
 
   return (
-    <div className="bg-white border border-zinc-200 hover:border-[#FF6600] hover:shadow-lg transition-all duration-200 flex flex-col group" data-testid="property-card">
+    <div className="bg-white border border-zinc-200 hover:border-[#FF6600] hover:shadow-lg transition-all duration-200 flex flex-col group relative" data-testid="property-card">
+      {/* Save/Favorite button */}
+      {token && (
+        <button onClick={toggleSave} data-testid={`save-property-${property.id}`}
+          className={`absolute top-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200 ${
+            isSaved ? "bg-[#FF6600] text-white shadow-md" : "bg-black/60 text-white hover:bg-[#FF6600]"
+          }`}>
+          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-white" : ""}`} />
+        </button>
+      )}
       {/* Image */}
       <div className="relative aspect-[4/3] bg-zinc-100 overflow-hidden">
         {img ? (

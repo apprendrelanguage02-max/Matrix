@@ -18,7 +18,6 @@ import AgentDashboardPage from "./pages/immobilier/AgentDashboardPage";
 import PaymentsAdminPage from "./pages/immobilier/PaymentsAdminPage";
 import DatabasePage from "./pages/admin/DatabasePage";
 import MapPage from "./pages/immobilier/MapPage";
-import FavoritesPage from "./pages/immobilier/FavoritesPage";
 import AgentProfilePage from "./pages/immobilier/AgentProfilePage";
 import SearchAlertsPage from "./pages/immobilier/SearchAlertsPage";
 import PriceEstimatePage from "./pages/immobilier/PriceEstimatePage";
@@ -77,7 +76,7 @@ function App() {
           {/* Immobilier */}
           <Route path="/immobilier" element={<ImmobilierPage />} />
           <Route path="/immobilier/carte" element={<MapPage />} />
-          <Route path="/immobilier/favoris" element={<PrivateRoute><FavoritesPage /></PrivateRoute>} />
+          <Route path="/immobilier/favoris" element={<PrivateRoute><SavedArticlesPage /></PrivateRoute>} />
           <Route path="/immobilier/alertes" element={<PrivateRoute><SearchAlertsPage /></PrivateRoute>} />
           <Route path="/immobilier/estimation" element={<PriceEstimatePage />} />
           <Route path="/immobilier/:id" element={<PropertyDetailPage />} />
