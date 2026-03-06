@@ -1,94 +1,54 @@
 # Matrix News / GIMO - Product Requirements Document
 
 ## Original Problem Statement
-Plateforme de news et immobilier guineenne avec un backend FastAPI et un frontend React. L'application inclut:
-- Systeme d'authentification avec OTP email et gestion des roles (admin, auteur, agent, visiteur)
-- Dashboard administrateur avec gestion des demandes en temps reel
-- Section "Newsroom" avec editeur d'articles base sur des blocs modulaires
-- Section immobiliere complete avec carte interactive, favoris, profils agents, alertes, estimation
-- Notifications temps reel via WebSocket
-- Systeme de favoris/sauvegarde
+Plateforme de news et immobilier guineenne avec backend FastAPI et frontend React.
 
 ## Tech Stack
 - **Backend**: FastAPI, MongoDB (Motor), Pydantic, JWT, WebSockets, bcrypt
-- **Frontend**: React 19, TailwindCSS, Shadcn/UI, Leaflet, react-leaflet-cluster, Sonner, Lucide icons
-- **3rd Party**: Resend (emails OTP), Leaflet/React-Leaflet (cartes), react-leaflet-cluster (clusters)
-
-## User Personas
-1. **Visiteur** - Consulte articles et annonces, estimation de prix
-2. **Auteur** - Cree/publie des articles via Newsroom
-3. **Agent Immobilier** - Publie des annonces immobilieres
-4. **Admin** - Gere utilisateurs, demandes de role, contenu
+- **Frontend**: React 19, TailwindCSS, Shadcn/UI, Leaflet, react-leaflet-cluster, Sonner, Lucide
+- **3rd Party**: Resend (emails OTP), Leaflet/React-Leaflet (cartes)
 
 ## Core Features Implemented
-
-### Authentification & Admin
-- [x] Auth complete (OTP email, JWT, roles)
-- [x] Dashboard admin (gestion demandes, CSV, suppression, temps reel)
-
-### Newsroom / Articles
-- [x] Editeur d'articles base sur blocs (text, image, video, quote, alert, table)
-- [x] Page de detail article avec rendu des blocs (BUG CORRIGE - Feb 2026)
-- [x] Recherche globale
-- [x] Systeme de favoris/sauvegarde articles
-- [x] Compteurs temps reel (vues, likes)
-
-### Immobilier (P1 - COMPLETE - Mar 2026)
-- [x] Standardisation devises (GNF + conversions USD/EUR)
-- [x] Cartes d'annonces enrichies (quartier, surface, chambres, salles de bain, type de bien, badge verifie)
-- [x] Carte interactive amelioree (clusters MarkerCluster, filtres integres, apercu au clic sur marqueur)
-- [x] Recherche par quartier (filtre + endpoint /neighborhoods)
-- [x] Page "Mes favoris" (/immobilier/favoris)
-- [x] Profils publics agents (/agent/:agentId avec stats)
-- [x] Simplification du formulaire de publication (champs categorie, chambres, SDB, surface)
-- [x] Formulaire de publication avec nouveaux champs
-
-### Future Features (COMPLETE - Mar 2026)
-- [x] Systeme de notifications recherches (alertes /immobilier/alertes)
-- [x] Outil estimation de prix (/immobilier/estimation avec fourchette + fiabilite)
-- [x] Badges de verification "anti-arnaque" (champ is_verified + badge ShieldCheck)
-- [x] Heatmap des prix immobiliers (endpoint /properties/heatmap)
-
-### UX Temps Reel
-- [x] Notifications temps reel (WebSocket)
-- [x] Pull-to-refresh mobile
-- [x] Toasts pour nouveaux articles/annonces
-- [x] Mise a jour instantanee vues/likes
+- [x] Auth complete (OTP email, JWT, roles: admin/auteur/agent/visiteur)
+- [x] Dashboard admin (demandes, CSV, suppression, temps reel)
+- [x] Newsroom / Editeur d'articles base sur blocs (text, image, video, quote, alert, table)
+- [x] Page detail article avec rendu blocs
+- [x] Section immobiliere complete (devises GNF/USD/EUR, cartes enrichies, clusters, filtres, popups)
+- [x] Favoris unifies (articles + annonces + procedures) avec onglets
+- [x] Boutons de sauvegarde directement sur les cartes (articles, annonces, procedures)
+- [x] Profils publics agents avec stats
+- [x] Alertes de recherche immobiliere (notifications auto)
+- [x] Estimation de prix (fourchette + fiabilite)
+- [x] Badges verification anti-arnaque
+- [x] Carte interactive (clusters, filtres, z-index corrige)
+- [x] Favicon Nimba logo
+- [x] Code nettoye de toute reference emergent
+- [x] Formulaire publication annonces corrige (payload propre)
+- [x] Notifications temps reel, recherche globale, pull-to-refresh
 
 ## Architecture
 ```
 /app/
 ├── backend/
-│   ├── routes/
-│   │   ├── admin.py, auth.py
-│   │   ├── articles.py (CRUD + blocs + autosave + stats)
-│   │   ├── properties.py (CRUD + map/markers + neighborhoods + heatmap + estimate + saved + alerts + agents)
-│   │   ├── messages.py (WebSocket + notifications)
-│   │   └── server.py (recherche globale)
-│   ├── models/ (user, article, property)
+│   ├── routes/ (auth, articles, properties, procedures, admin, messages, notifications, upload, payments, server)
+│   ├── models/ (user, article, property, procedure)
 │   ├── middleware/ (auth)
 │   └── config.py, database.py, utils.py
 └── frontend/
     ├── src/
-    │   ├── components/
-    │   │   ├── immobilier/ (PropertyCard, PropertyFilters, PropertyMap)
-    │   │   ├── BlockEditor.js, Header.js, LikeButton.js
-    │   │   └── ui/ (shadcn)
+    │   ├── components/ (BlockEditor, Header, LikeButton, ArticleCard, ChatHelp, immobilier/, layout/, ui/)
     │   ├── context/ (AuthContext, WebSocketContext)
-    │   ├── pages/
-    │   │   ├── immobilier/ (ImmobilierPage, PropertyDetailPage, PropertyFormPage, MapPage, FavoritesPage, AgentProfilePage, SearchAlertsPage, PriceEstimatePage, AgentDashboardPage)
-    │   │   └── ArticleDetailPage, ArticleFormPage, etc.
+    │   ├── pages/ (Home, ArticleDetail, ArticleForm, Dashboard, SavedArticles(unified), immobilier/*, procedures/*, admin/*)
     │   └── lib/ (api, categories, contentRenderer, utils)
-    └── ...
+    └── public/ (nimba-logo.png, favicon.ico, nimba-192.png)
 ```
 
 ## Known Issues
 - Rate limiting login retourne 520 au lieu de 429 (infra, low priority)
-- React hydration warning: span in select (dev tooling only, no production impact)
 
-## Remaining / Enhancement Ideas
-- [ ] Visites video (integration video player avancee)
-- [ ] Dashboard analytics avance pour agents
-- [ ] Systeme de messagerie interne agent-client
-- [ ] Partage social des articles et annonces
-- [ ] SEO optimization (meta tags dynamiques)
+## Enhancement Ideas
+- [ ] Visites video
+- [ ] Dashboard analytics agents
+- [ ] Messagerie interne agent-client
+- [ ] Partage social articles/annonces
+- [ ] SEO meta tags dynamiques
