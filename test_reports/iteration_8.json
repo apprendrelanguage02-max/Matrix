@@ -55,7 +55,7 @@
     "media_upload": [
       "ArticleFormPage - Cover image upload input exists (data-testid=cover-image-upload)",
       "Title input, category select, submit button present",
-      "Upload returns URL in format: https://gimo-approval-flow.preview.emergentagent.com/api/media/images/{filename}"
+      "Upload returns URL in format: https://content-parser-12.preview.emergentagent.com/api/media/images/{filename}"
     ]
   },
   "test_report_links": [

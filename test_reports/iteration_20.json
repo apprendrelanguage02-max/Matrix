@@ -1,0 +1,83 @@
+{
+  "summary": "Iteration 20: Tested Newsroom Block Editor bug fix - article.blocks rendering correctly on public detail page. 18/19 backend tests passed (1 skipped). All frontend block types (text, quote, alert, table) rendering correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ArticleFormPage", "issues": ["Minor console warning: <span> cannot be child of <option>/<select> - React hydration warning, does not affect functionality"]}
+    ]
+  },
+  "passed_tests": {
+    "backend_api": [
+      "GET /api/articles - Returns articles with blocks array",
+      "POST /api/articles - Creates article with blocks (text, quote, image, alert, table types)",
+      "PUT /api/articles/:id - Updates article blocks",
+      "PUT /api/articles/:id/autosave - Works with blocks, returns {ok: true, saved_at}",
+      "GET /api/my-articles - Returns author's articles list",
+      "GET /api/my-articles/stats - Returns correct stats (total, published, drafts, scheduled, views, likes)",
+      "Article creation with SEO fields (slug, meta_title, meta_description)",
+      "Article creation with breaking news flag",
+      "Draft article creation - published_at is null",
+      "Published article - published_at is set",
+      "Scheduled article - scheduled_at preserved",
+      "Word count and reading time computed from blocks"
+    ],
+    "frontend_ui": [
+      "Article detail page renders text blocks as HTML content with formatting",
+      "Article detail page renders quote blocks with text and author",
+      "Article detail page renders alert blocks (info=blue, warning=yellow, success=green)",
+      "Article detail page renders table blocks with headers and rows",
+      "Article detail page shows subtitle field (data-testid='article-subtitle')",
+      "Article detail page shows tags (data-testid='article-tags')",
+      "Article detail page shows reading time (data-testid='article-reading-time')",
+      "Article detail page falls back to legacy HTML content for old articles",
+      "Article form page (editor) loads correctly at /admin/nouvelle",
+      "Block editor shows all 6 block types: text, image, video, quote, alert, table",
+      "Block picker opens and closes correctly",
+      "Text block rich editor has formatting toolbar (Bold, Italic, Underline, Alignment, Lists, Link)",
+      "Existing article c0f6db40-d6ac-45cd-b2a5-b975b5f020a5 renders text and quote blocks correctly"
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration20_newsroom.py",
+    "/app/test_reports/pytest/pytest_results_iter20.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BlockRenderer component in ArticleDetailPage.js correctly checks article.blocks first before falling back to legacy content",
+    "All 6 block types (text, image, video, quote, alert, table) have dedicated render functions with proper data-testid attributes",
+    "Alert block styling correctly maps type (info/warning/success) to colors (blue/yellow/green)",
+    "Table block renders headers and rows with proper styling",
+    "BlockEditor.js properly handles all block types with corresponding edit components"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration20_newsroom.py (fixed invalid category names: Economie→Économie, Culture→Actualité, Sante→Sport, International→Politique, Environnement→Technologie)"
+  ],
+  "success_rate": {
+    "backend": "95% (18/19 passed, 1 skipped - auteur role test skipped due to registration flow)",
+    "frontend": "100% (all block types rendering correctly)"
+  },
+  "test_credentials": {
+    "test_author": {
+      "email": "testauthor@test.com",
+      "password": "TestAuthor123!",
+      "role": "auteur"
+    },
+    "admin": {
+      "email": "matrixguinea@gmail.com",
+      "password": "strongpassword123"
+    }
+  },
+  "seed_data_creation": "TEST_ prefixed articles created during pytest run and cleaned up after tests. Created test article with all 6 block types for frontend verification - deleted after test.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 20 validated critical bug fix: ArticleDetailPage.js now renders article.blocks array instead of empty content string. BlockRenderer component handles all 6 block types with proper styling. Valid categories are: ['Actualité', 'Politique', 'Sport', 'Technologie', 'Économie']. Test author credentials: testauthor@test.com / TestAuthor123!",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}

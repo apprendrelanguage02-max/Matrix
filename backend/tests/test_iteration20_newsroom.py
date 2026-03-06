@@ -132,7 +132,7 @@ class TestArticleCreation:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={
                 "title": f"TEST_Draft_Blocks_{suffix}",
-                "category": "Economie",
+                "category": "Économie",
                 "status": "draft",
                 "blocks": [
                     {"id": "b1", "type": "text", "data": {"content": "Paragraph text"}},
@@ -272,7 +272,7 @@ class TestArticleUpdate:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={
                 "title": f"TEST_ToPublish_{suffix}",
-                "category": "Culture",
+                "category": "Actualité",
                 "status": "draft",
                 "blocks": [{"id": "b1", "type": "text", "data": {"content": "Will be published"}}]
             }
@@ -319,7 +319,7 @@ class TestAutosaveEndpoint:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={
                 "title": f"TEST_Autosave_{suffix}",
-                "category": "Sante",
+                "category": "Sport",
                 "status": "draft",
                 "blocks": [{"id": "b1", "type": "text", "data": {"content": "Original"}}]
             }
@@ -448,7 +448,7 @@ class TestScheduledArticles:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={
                 "title": f"TEST_Scheduled_{suffix}",
-                "category": "International",
+                "category": "Politique",
                 "status": "scheduled",
                 "scheduled_at": "2026-12-31T10:00:00",
                 "blocks": [{"id": "b1", "type": "text", "data": {"content": "Scheduled content"}}]
@@ -475,7 +475,7 @@ class TestWordCountAndReadingTime:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={
                 "title": f"TEST_WordCount_{suffix}",
-                "category": "Environnement",
+                "category": "Technologie",
                 "status": "draft",
                 "blocks": [
                     {"id": "b1", "type": "text", "data": {"content": "This is a test paragraph with ten words in it."}},

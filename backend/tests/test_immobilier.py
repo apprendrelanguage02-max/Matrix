@@ -10,7 +10,7 @@ import time
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://gimo-approval-flow.preview.emergentagent.com"
+    BASE_URL = "https://content-parser-12.preview.emergentagent.com"
 
 # Test credentials
 ADMIN_EMAIL = "admin@example.com"

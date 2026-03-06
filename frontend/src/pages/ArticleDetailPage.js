@@ -6,9 +6,136 @@ import { useAuth } from "../context/AuthContext";
 import { useWebSocket } from "../context/WebSocketContext";
 import { isHtmlContent, renderContent } from "../lib/contentRenderer";
 import { getCategoryColor, slugify } from "../lib/categories";
-import { Loader2, ArrowLeft, Calendar, User, Eye, Tag, Bookmark } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, User, Eye, Tag, Bookmark, AlertTriangle, Info, CheckCircle } from "lucide-react";
 import LikeButton from "../components/LikeButton";
 import { toast } from "sonner";
+
+// ─── Block Renderers for structured content ────────────────────────────────
+function BlockRenderer({ blocks }) {
+  if (!blocks || !blocks.length) return null;
+  return (
+    <div className="space-y-6" data-testid="article-blocks">
+      {blocks.map((block, i) => (
+        <RenderBlock key={block.id || i} block={block} />
+      ))}
+    </div>
+  );
+}
+
+function RenderBlock({ block }) {
+  const { type, data } = block;
+  switch (type) {
+    case "text":
+      return data?.content ? (
+        <div
+          className="prose prose-lg max-w-none prose-zinc prose-headings:font-['Oswald'] prose-headings:uppercase prose-a:text-[#FF6600] prose-a:no-underline hover:prose-a:underline"
+          data-testid="block-text"
+          dangerouslySetInnerHTML={{ __html: data.content }}
+        />
+      ) : null;
+    case "image":
+      return data?.url ? (
+        <figure className="my-4" data-testid="block-image">
+          <div className="overflow-hidden rounded-lg">
+            <img
+              src={data.url}
+              alt={data.alt || data.caption || ""}
+              loading="lazy"
+              className="w-full object-cover max-h-[520px]"
+              onError={(e) => { e.target.style.display = "none"; }}
+            />
+          </div>
+          {data.caption && (
+            <figcaption className="mt-2 text-center text-sm text-zinc-500 italic font-['Manrope']">
+              {data.caption}
+            </figcaption>
+          )}
+        </figure>
+      ) : null;
+    case "video": {
+      const getEmbedUrl = (url) => {
+        if (!url) return "";
+        const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+        if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+        return url;
+      };
+      return data?.url ? (
+        <div className="my-4" data-testid="block-video">
+          <div className="aspect-video rounded-lg overflow-hidden bg-black">
+            <iframe
+              src={getEmbedUrl(data.url)}
+              className="w-full h-full"
+              frameBorder="0"
+              allowFullScreen
+              title="Video"
+            />
+          </div>
+          {data.caption && (
+            <p className="mt-2 text-center text-sm text-zinc-500 italic font-['Manrope']">
+              {data.caption}
+            </p>
+          )}
+        </div>
+      ) : null;
+    }
+    case "quote":
+      return data?.text ? (
+        <blockquote className="border-l-4 border-[#FF6600] bg-orange-50/50 px-6 py-4 my-4 rounded-r-lg" data-testid="block-quote">
+          <p className="text-lg font-['Georgia'] italic text-zinc-700 leading-relaxed">
+            {data.text}
+          </p>
+          {data.author && (
+            <footer className="mt-2 text-sm font-bold text-orange-700 font-['Manrope']">
+              — {data.author}
+            </footer>
+          )}
+        </blockquote>
+      ) : null;
+    case "alert": {
+      const alertStyles = {
+        info: { border: "border-blue-400", bg: "bg-blue-50", text: "text-blue-800", Icon: Info },
+        warning: { border: "border-yellow-400", bg: "bg-yellow-50", text: "text-yellow-800", Icon: AlertTriangle },
+        success: { border: "border-green-400", bg: "bg-green-50", text: "text-green-800", Icon: CheckCircle },
+      };
+      const style = alertStyles[data?.type] || alertStyles.info;
+      return data?.content ? (
+        <div className={`border-l-4 ${style.border} ${style.bg} px-5 py-4 my-4 rounded-r-lg flex items-start gap-3`} data-testid="block-alert">
+          <style.Icon className={`w-5 h-5 ${style.text} flex-shrink-0 mt-0.5`} />
+          <p className={`text-sm ${style.text} leading-relaxed font-['Manrope']`}>{data.content}</p>
+        </div>
+      ) : null;
+    }
+    case "table":
+      return (data?.headers?.length) ? (
+        <div className="my-4 overflow-x-auto border border-zinc-200 rounded-lg" data-testid="block-table">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-zinc-50 border-b border-zinc-200">
+                {data.headers.map((h, i) => (
+                  <th key={i} className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-600 border-r border-zinc-200 last:border-r-0">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(data.rows || []).map((row, ri) => (
+                <tr key={ri} className="border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50/50">
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="px-4 py-2.5 text-zinc-700 border-r border-zinc-100 last:border-r-0">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null;
+    default:
+      return null;
+  }
+}
 
 function formatDate(isoString) {
   const d = new Date(isoString);
@@ -146,16 +273,25 @@ export default function ArticleDetailPage() {
             </div>
 
             {/* Title */}
-            <h1 className="font-['Oswald'] text-4xl md:text-5xl font-bold uppercase tracking-tighter text-black leading-tight mb-8">
+            <h1 className="font-['Oswald'] text-4xl md:text-5xl font-bold uppercase tracking-tighter text-black leading-tight mb-4">
               {article.title}
             </h1>
+
+            {/* Subtitle */}
+            {article.subtitle && (
+              <p className="text-lg md:text-xl text-zinc-500 font-['Manrope'] leading-relaxed mb-8" data-testid="article-subtitle">
+                {article.subtitle}
+              </p>
+            )}
+
+            {!article.subtitle && <div className="mb-8" />}
 
             {/* Cover image */}
             {article.image_url && (
               <div className="mb-8 overflow-hidden rounded-lg">
                 <img
                   src={article.image_url}
-                  alt={article.title}
+                  alt={article.image_alt || article.title}
                   data-testid="article-image"
                   loading="lazy"
                   className="w-full object-cover max-h-[480px]"
@@ -166,8 +302,12 @@ export default function ArticleDetailPage() {
 
             <div className="h-0.5 w-12 bg-[#FF6600] mb-8" />
 
-            {/* Content — HTML (Quill) or legacy [img:url] */}
-            {isHtmlContent(article.content) ? (
+            {/* Content — Blocks (new editor) or HTML (legacy Quill) or [img:url] */}
+            {article.blocks && article.blocks.length > 0 ? (
+              <div className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed" data-testid="article-content">
+                <BlockRenderer blocks={article.blocks} />
+              </div>
+            ) : isHtmlContent(article.content) ? (
               <div
                 className="article-content"
                 data-testid="article-content"
@@ -177,6 +317,24 @@ export default function ArticleDetailPage() {
               <div className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed" data-testid="article-content">
                 {renderContent(article.content)}
               </div>
+            )}
+
+            {/* Tags */}
+            {article.tags && article.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-10 pt-6 border-t border-zinc-100" data-testid="article-tags">
+                {article.tags.map(tag => (
+                  <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-zinc-100 text-xs font-bold text-zinc-600 font-['Manrope'] rounded">
+                    <Tag className="w-2.5 h-2.5" /> {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Reading time */}
+            {article.reading_time > 0 && (
+              <p className="mt-4 text-xs text-zinc-400 font-['Manrope']" data-testid="article-reading-time">
+                Temps de lecture : {article.reading_time} min
+              </p>
             )}
           </article>
         )}
