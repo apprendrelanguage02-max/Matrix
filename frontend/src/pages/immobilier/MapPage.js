@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import api from "../../lib/api";
-import { Loader2, ArrowLeft, MapPin, Filter, X } from "lucide-react";
-import { formatPrice } from "../../components/immobilier/PropertyCard";
+import { Loader2, ArrowLeft, MapPin, Filter, X, Bed, Maximize } from "lucide-react";
+import { formatPrice, formatPriceConverted } from "../../components/immobilier/PropertyCard";
 import "leaflet/dist/leaflet.css";
 
 // Fix leaflet default icon issue
@@ -17,11 +18,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-const TYPE_COLORS = {
-  achat: "#FF6600",
-  vente: "#16a34a",
-  location: "#0ea5e9",
-};
+const TYPE_COLORS = { achat: "#FF6600", vente: "#16a34a", location: "#0ea5e9" };
 
 function createCustomIcon(type) {
   const color = TYPE_COLORS[type] || "#FF6600";
@@ -55,16 +52,12 @@ export default function MapPage() {
   const [markers, setMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ type: "", city: "", status: "", min_price: "", max_price: "" });
+  const [filters, setFilters] = useState({ type: "", city: "", status: "", min_price: "", max_price: "", neighborhood: "", property_category: "" });
 
   const fetchMarkers = useCallback(() => {
     setLoading(true);
     const params = {};
-    if (filters.type) params.type = filters.type;
-    if (filters.city) params.city = filters.city;
-    if (filters.status) params.status = filters.status;
-    if (filters.min_price) params.min_price = filters.min_price;
-    if (filters.max_price) params.max_price = filters.max_price;
+    Object.entries(filters).forEach(([k, v]) => { if (v) params[k] = v; });
     api.get("/properties/map/markers", { params })
       .then(r => setMarkers(r.data))
       .catch(() => setMarkers([]))
@@ -73,8 +66,8 @@ export default function MapPage() {
 
   useEffect(() => { fetchMarkers(); }, [fetchMarkers]);
 
-  const clearFilters = () => setFilters({ type: "", city: "", status: "", min_price: "", max_price: "" });
-  const hasFilters = filters.type || filters.city || filters.status || filters.min_price || filters.max_price;
+  const clearFilters = () => setFilters({ type: "", city: "", status: "", min_price: "", max_price: "", neighborhood: "", property_category: "" });
+  const hasFilters = Object.values(filters).some(Boolean);
 
   return (
     <div className="min-h-screen bg-zinc-50 font-['Manrope'] flex flex-col">
@@ -95,20 +88,15 @@ export default function MapPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setShowFilters(v => !v)}
-            data-testid="toggle-filters-btn"
+          <button onClick={() => setShowFilters(v => !v)} data-testid="toggle-filters-btn"
             className={`flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wider border transition-colors ${
               showFilters || hasFilters ? "bg-[#FF6600] border-[#FF6600] text-white" : "border-zinc-300 text-zinc-600 hover:border-[#FF6600] hover:text-[#FF6600]"
-            }`}
-          >
-            <Filter className="w-4 h-4" />
-            Filtres
+            }`}>
+            <Filter className="w-4 h-4" /> Filtres
             {hasFilters && <span className="bg-white text-[#FF6600] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">!</span>}
           </button>
         </div>
 
-        {/* Filters panel */}
         {showFilters && (
           <div className="max-w-7xl mx-auto mt-3 p-4 bg-zinc-50 border border-zinc-200 rounded-lg" data-testid="map-filters-panel">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -118,13 +106,13 @@ export default function MapPage() {
               </select>
               <input value={filters.city} onChange={e => setFilters(f => ({...f, city: e.target.value}))} placeholder="Ville..." data-testid="map-filter-city"
                 className="px-3 py-2 border border-zinc-300 text-sm focus:outline-none focus:border-[#FF6600]" />
+              <input value={filters.neighborhood} onChange={e => setFilters(f => ({...f, neighborhood: e.target.value}))} placeholder="Quartier..." data-testid="map-filter-neighborhood"
+                className="px-3 py-2 border border-zinc-300 text-sm focus:outline-none focus:border-[#FF6600]" />
               <select value={filters.status} onChange={e => setFilters(f => ({...f, status: e.target.value}))} data-testid="map-filter-status"
                 className="px-3 py-2 border border-zinc-300 text-sm focus:outline-none focus:border-[#FF6600] bg-white">
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
               <input type="number" value={filters.min_price} onChange={e => setFilters(f => ({...f, min_price: e.target.value}))} placeholder="Prix min" data-testid="map-filter-min"
-                className="px-3 py-2 border border-zinc-300 text-sm focus:outline-none focus:border-[#FF6600]" />
-              <input type="number" value={filters.max_price} onChange={e => setFilters(f => ({...f, max_price: e.target.value}))} placeholder="Prix max" data-testid="map-filter-max"
                 className="px-3 py-2 border border-zinc-300 text-sm focus:outline-none focus:border-[#FF6600]" />
             </div>
             {hasFilters && (
@@ -143,41 +131,51 @@ export default function MapPage() {
             <Loader2 className="w-8 h-8 animate-spin text-[#FF6600]" />
           </div>
         )}
-        <MapContainer
-          center={GUINEA_CENTER}
-          zoom={7}
-          className="w-full h-full"
-          style={{ height: "100%", minHeight: "calc(100vh - 200px)" }}
-          scrollWheelZoom={true}
-        >
+        <MapContainer center={GUINEA_CENTER} zoom={7} className="w-full h-full"
+          style={{ height: "100%", minHeight: "calc(100vh - 200px)" }} scrollWheelZoom={true}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {markers.map(m => (
-            m.latitude && m.longitude && (
-              <Marker key={m.id} position={[m.latitude, m.longitude]} icon={createCustomIcon(m.type)}>
-                <Popup>
-                  <div className="min-w-[200px]">
-                    {m.image && <img src={m.image} alt="" className="w-full h-24 object-cover rounded mb-2" />}
-                    <p className="font-bold text-sm mb-1">{m.title}</p>
-                    <p className="text-xs text-zinc-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> {m.city}</p>
-                    <p className="text-sm font-bold text-[#FF6600] mt-1">{formatPrice(m.price, m.currency)}</p>
-                    <span className={`inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 ${
-                      m.type === "achat" ? "bg-orange-100 text-orange-700" :
-                      m.type === "vente" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                    }`}>{m.type}</span>
-                    <button
-                      onClick={() => navigate(`/immobilier/${m.id}`)}
-                      className="mt-2 w-full bg-[#FF6600] text-white text-xs font-bold py-1.5 hover:bg-[#CC5200] transition-colors"
-                    >
-                      Voir l'annonce
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            )
-          ))}
+          <MarkerClusterGroup chunkedLoading maxClusterRadius={60}
+            iconCreateFunction={(cluster) => {
+              const count = cluster.getChildCount();
+              return L.divIcon({
+                html: `<div style="background:#FF6600;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);">${count}</div>`,
+                className: "custom-cluster",
+                iconSize: [36, 36],
+              });
+            }}>
+            {markers.map(m => (
+              m.latitude && m.longitude && (
+                <Marker key={m.id} position={[m.latitude, m.longitude]} icon={createCustomIcon(m.type)}>
+                  <Popup>
+                    <div className="min-w-[220px] max-w-[260px]" data-testid="map-popup">
+                      {m.image && <img src={m.image} alt="" className="w-full h-28 object-cover rounded mb-2" />}
+                      <p className="font-bold text-sm mb-1 line-clamp-2">{m.title}</p>
+                      <p className="text-xs text-zinc-500 flex items-center gap-1 mb-1"><MapPin className="w-3 h-3" /> {m.city}{m.neighborhood ? ` - ${m.neighborhood}` : ""}</p>
+                      <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
+                        {m.bedrooms > 0 && <span className="flex items-center gap-0.5"><Bed className="w-3 h-3" /> {m.bedrooms}</span>}
+                        {m.surface_area > 0 && <span className="flex items-center gap-0.5"><Maximize className="w-3 h-3" /> {m.surface_area}m²</span>}
+                      </div>
+                      <p className="text-sm font-bold text-[#FF6600] mt-1">{formatPrice(m.price, m.currency)}</p>
+                      {m.price_converted?.usd > 0 && (
+                        <p className="text-[10px] text-zinc-400">{formatPriceConverted(m.price_converted)}</p>
+                      )}
+                      <span className={`inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 ${
+                        m.type === "achat" ? "bg-orange-100 text-orange-700" :
+                        m.type === "vente" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                      }`}>{m.type}</span>
+                      <button onClick={() => navigate(`/immobilier/${m.id}`)} data-testid="popup-view-btn"
+                        className="mt-2 w-full bg-[#FF6600] text-white text-xs font-bold py-1.5 hover:bg-[#CC5200] transition-colors">
+                        Voir l'annonce
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              )
+            ))}
+          </MarkerClusterGroup>
         </MapContainer>
 
         {/* Legend */}

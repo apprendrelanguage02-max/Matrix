@@ -36,6 +36,7 @@ export default function PropertyFormPage() {
     latitude: "", longitude: "",
     seller_name: user?.username || "", seller_phone: "", seller_email: user?.email || "", seller_whatsapp: "",
     images: [], video_url: "", status: "disponible",
+    property_category: "autre", bedrooms: "", bathrooms: "", surface_area: "",
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -91,6 +92,9 @@ export default function PropertyFormPage() {
         latitude: form.latitude ? parseFloat(form.latitude) : null,
         longitude: form.longitude ? parseFloat(form.longitude) : null,
         description: form.description || "Aucune description.",
+        bedrooms: form.bedrooms ? parseInt(form.bedrooms) : 0,
+        bathrooms: form.bathrooms ? parseInt(form.bathrooms) : 0,
+        surface_area: form.surface_area ? parseFloat(form.surface_area) : 0,
       };
       if (isEdit) {
         await api.put(`/properties/${id}`, payload);
@@ -157,11 +161,32 @@ export default function PropertyFormPage() {
                   <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1.5">Devise</label>
                   <select name="currency" value={form.currency} onChange={set}
                     className="w-full border border-zinc-300 px-3 py-2.5 text-sm font-['Manrope'] focus:outline-none focus:border-[#FF6600]">
-                    <option value="GNF">GNF — Franc guinéen</option>
+                    <option value="GNF">GNF — Franc guineen</option>
                     <option value="USD">USD — Dollar</option>
                     <option value="EUR">EUR — Euro</option>
                   </select>
                 </div>
+              </div>
+              {/* Property details */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1.5">Categorie</label>
+                  <select name="property_category" value={form.property_category} onChange={set}
+                    className="w-full border border-zinc-300 px-3 py-2.5 text-sm font-['Manrope'] focus:outline-none focus:border-[#FF6600]">
+                    <option value="autre">Non specifie</option>
+                    <option value="villa">Villa</option>
+                    <option value="appartement">Appartement</option>
+                    <option value="terrain">Terrain</option>
+                    <option value="bureau">Bureau</option>
+                    <option value="commerce">Commerce</option>
+                    <option value="maison">Maison</option>
+                    <option value="studio">Studio</option>
+                    <option value="duplex">Duplex</option>
+                  </select>
+                </div>
+                <Field label="Chambres" name="bedrooms" value={form.bedrooms} onChange={set} type="number" placeholder="0" />
+                <Field label="Salles de bain" name="bathrooms" value={form.bathrooms} onChange={set} type="number" placeholder="0" />
+                <Field label="Surface (m²)" name="surface_area" value={form.surface_area} onChange={set} type="number" placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1.5">Description</label>

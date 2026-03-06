@@ -1,0 +1,92 @@
+{
+  "summary": "Iteration 21: Tested Immobilier Refonte (P1 features) - All 24 backend tests passed, all frontend pages working correctly. Features tested: enriched property data (price_converted, property_category, bedrooms, bathrooms, surface_area), map with clustered markers, neighborhoods endpoint, heatmap data, price estimation with currency conversion, saved properties (favorites), search alerts, and agent profiles.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Multiple pages with select elements", "issues": ["React hydration warning: <span> cannot be child of <option>/<select> - caused by dev tooling injection, does not affect production functionality"]}
+    ]
+  },
+  "passed_tests": {
+    "backend_api": [
+      "GET /api/properties - Returns enriched data with price_converted, property_category, bedrooms, bathrooms, surface_area",
+      "GET /api/properties?neighborhood=X - Filters by neighborhood",
+      "GET /api/properties?property_category=villa - Filters by category",
+      "GET /api/properties?bedrooms=2 - Filters by minimum bedrooms",
+      "GET /api/properties/{id} - Returns enriched single property",
+      "GET /api/properties/map/markers - Returns markers with lat/lng and supports filters",
+      "GET /api/properties/neighborhoods - Returns distinct neighborhoods",
+      "GET /api/properties/neighborhoods?city=X - Filters neighborhoods by city",
+      "GET /api/properties/heatmap - Returns lat/lng/price/intensity data",
+      "GET /api/properties/estimate?city=Conakry - Returns estimation with price_converted",
+      "GET /api/properties/estimate with filters (property_category, bedrooms)",
+      "GET /api/properties/estimate without city - Returns 422 validation error",
+      "GET /api/saved-properties - Requires auth (returns 403 without token)",
+      "GET /api/saved-properties - Returns user's saved properties",
+      "POST /api/saved-properties/{id} - Toggles save status",
+      "GET /api/saved-properties/{id}/status - Returns is_saved boolean",
+      "GET /api/search-alerts - Requires auth",
+      "POST /api/search-alerts - Creates alert with city, neighborhood, type, price range, property_category, min_bedrooms",
+      "GET /api/search-alerts - Returns user's alerts",
+      "DELETE /api/search-alerts/{id} - Deletes alert",
+      "GET /api/agents/{id}/profile - Returns agent info with stats (total_properties, available_properties, total_views)",
+      "GET /api/agents/{id}/properties - Returns agent's available properties with enriched data",
+      "GET /api/agents/{invalid_id}/profile - Returns 404"
+    ],
+    "frontend_ui": [
+      "ImmobilierPage loads with property cards showing price, title, location, property_category, bedrooms, surface_area",
+      "ImmobilierPage action buttons: Carte, Favoris (auth), Estimation, Alertes (auth)",
+      "PropertyFilters component has neighborhood, property_category, bedrooms filters",
+      "MapPage loads with Leaflet map and MarkerClusterGroup",
+      "MapPage has filter panel with type, city, neighborhood, status, price filters",
+      "PriceEstimatePage loads with form (city, quartier, type_de_bien, chambres, surface)",
+      "PriceEstimatePage shows estimation result with price_converted (~$12 / 11 EUR)",
+      "AgentProfilePage shows agent name, role, stats (annonces, disponibles, vues totales)",
+      "FavoritesPage shows saved properties list (requires auth)",
+      "SearchAlertsPage shows alerts list and create alert form (requires auth)",
+      "PropertyDetailPage shows title, price, save button, agent profile link",
+      "PropertyDetailPage shows verified badge, category, bedrooms, bathrooms, surface_area when available"
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_immobilier_refonte.py",
+    "/app/test_reports/pytest/pytest_results_iter21.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PropertyCard.js exports formatPrice and formatPriceConverted functions that are properly imported by other components (MapPage, FavoritesPage, PriceEstimatePage, PropertyDetailPage)",
+    "Price conversion only applies to GNF currency properties - the existing test property is in USD so price_converted won't show USD/EUR equivalent",
+    "All new endpoints follow proper auth patterns - saved-properties and search-alerts require get_current_user",
+    "Agent profile lookup correctly filters by role in ('agent', 'admin') with stats aggregation",
+    "Search alerts max limit of 10 per user is enforced with proper error message"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_immobilier_refonte.py"
+  ],
+  "success_rate": {
+    "backend": "100% (24/24 passed)",
+    "frontend": "100% (all pages and features working)"
+  },
+  "test_credentials": {
+    "test_author": {
+      "email": "testauthor@test.com",
+      "password": "TestAuthor123!",
+      "role": "auteur"
+    },
+    "admin_id": "acc21120-fe47-4e5f-a910-10dab816f9cb",
+    "agent_id": "3ca91c7c-7400-4c1d-8529-8269973019a4",
+    "existing_property_id": "438115d8-e44d-4559-9c1d-abc0663827ef"
+  },
+  "seed_data_creation": "TEST_ prefixed search alerts created during pytest run and cleaned up after tests.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 21 validated all P1 Immobilier Refonte features. The test property in DB is in USD currency (100,000 USD) so price_converted will not show USD/EUR equivalents (conversion only applies to GNF). PropertyCard exports formatPrice/formatPriceConverted functions used by multiple components. Agent profiles require role='agent' or 'admin'. Search alerts have max 10 per user limit. All authenticated endpoints return 403 (not 401) when auth header missing.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}

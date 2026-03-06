@@ -7,7 +7,7 @@ import PropertyFilters from "../../components/immobilier/PropertyFilters";
 import PullToRefresh from "../../components/PullToRefresh";
 import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Heart, Calculator, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const LOGO = "https://customer-assets.emergentagent.com/job_2b66c898-0ce0-4fc9-a685-24a9ac754e60/artifacts/p7stxwf9_ChatGPT%20Image%20Feb%2017%2C%202026%2C%2005_57_11%20PM.png";
@@ -24,10 +24,13 @@ export default function ImmobilierPage() {
   const [filters, setFilters] = useState({
     type: searchParams.get("type") || "",
     city: searchParams.get("city") || "",
+    neighborhood: searchParams.get("neighborhood") || "",
     status: searchParams.get("status") || "disponible",
     price_min: "",
     price_max: "",
     sort: "recent",
+    property_category: searchParams.get("category") || "",
+    bedrooms: searchParams.get("bedrooms") || "",
     page: parseInt(searchParams.get("page") || "1", 10),
   });
 
@@ -37,6 +40,9 @@ export default function ImmobilierPage() {
     const params = { page: f.page, limit: 12, status: f.status, sort: f.sort };
     if (f.type) params.type = f.type;
     if (f.city) params.city = f.city;
+    if (f.neighborhood) params.neighborhood = f.neighborhood;
+    if (f.property_category) params.property_category = f.property_category;
+    if (f.bedrooms) params.bedrooms = f.bedrooms;
     if (f.price_min) params.price_min = f.price_min;
     if (f.price_max) params.price_max = f.price_max;
     api.get("/properties", { params })
@@ -123,6 +129,25 @@ export default function ImmobilierPage() {
               className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
               <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Voir la carte
             </Link>
+            {user && (
+              <Link to="/immobilier/favoris"
+                data-testid="view-favorites-btn"
+                className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
+                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Favoris
+              </Link>
+            )}
+            <Link to="/immobilier/estimation"
+              data-testid="view-estimate-btn"
+              className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
+              <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Estimation</span>
+            </Link>
+            {user && (
+              <Link to="/immobilier/alertes"
+                data-testid="view-alerts-btn"
+                className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Alertes</span>
+              </Link>
+            )}
             {canPublish && (
               <Link to="/immobilier/publier"
                 className="flex items-center gap-2 bg-[#FF6600] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:bg-[#CC5200] transition-colors">

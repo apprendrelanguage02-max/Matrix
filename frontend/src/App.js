@@ -18,6 +18,10 @@ import AgentDashboardPage from "./pages/immobilier/AgentDashboardPage";
 import PaymentsAdminPage from "./pages/immobilier/PaymentsAdminPage";
 import DatabasePage from "./pages/admin/DatabasePage";
 import MapPage from "./pages/immobilier/MapPage";
+import FavoritesPage from "./pages/immobilier/FavoritesPage";
+import AgentProfilePage from "./pages/immobilier/AgentProfilePage";
+import SearchAlertsPage from "./pages/immobilier/SearchAlertsPage";
+import PriceEstimatePage from "./pages/immobilier/PriceEstimatePage";
 import ProceduresPage from "./pages/procedures/ProceduresPage";
 import ProcedureDetailPage from "./pages/procedures/ProcedureDetailPage";
 import ProcedureFormPage from "./pages/procedures/ProcedureFormPage";
@@ -73,10 +77,14 @@ function App() {
           {/* Immobilier */}
           <Route path="/immobilier" element={<ImmobilierPage />} />
           <Route path="/immobilier/carte" element={<MapPage />} />
+          <Route path="/immobilier/favoris" element={<PrivateRoute><FavoritesPage /></PrivateRoute>} />
+          <Route path="/immobilier/alertes" element={<PrivateRoute><SearchAlertsPage /></PrivateRoute>} />
+          <Route path="/immobilier/estimation" element={<PriceEstimatePage />} />
           <Route path="/immobilier/:id" element={<PropertyDetailPage />} />
           <Route path="/immobilier/publier" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />
           <Route path="/immobilier/modifier/:id" element={<AgentRoute><PropertyFormPage /></AgentRoute>} />
           <Route path="/mes-annonces" element={<AgentRoute><AgentDashboardPage /></AgentRoute>} />
+          <Route path="/agent/:agentId" element={<AgentProfilePage />} />
 
           {/* Procédures & Démarches */}
           <Route path="/procedures" element={<ProceduresPage />} />

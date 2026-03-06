@@ -4,11 +4,11 @@ import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import PaymentModal from "../../components/immobilier/PaymentModal";
 import ChatPanel from "../../components/ChatPanel";
-import { formatPrice } from "../../components/immobilier/PropertyCard";
+import { formatPrice, formatPriceConverted } from "../../components/immobilier/PropertyCard";
 import { useAuth } from "../../context/AuthContext";
 import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video } from "lucide-react";
+import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video, Bed, Bath, Maximize, Home, ShieldCheck, Heart } from "lucide-react";
 import LikeButton from "../../components/LikeButton";
 import { toast } from "sonner";
 
@@ -34,10 +34,13 @@ export default function PropertyDetailPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [viewCount, setViewCount] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     api.get(`/properties/${id}`)
-      .then(r => { setProperty(r.data); setViewCount(r.data.views || 0); api.post(`/properties/${id}/view`).catch(() => {}); })
+      .then(r => { setProperty(r.data); setViewCount(r.data.views || 0); api.post(`/properties/${id}/view`).catch(() => {});
+        if (token) { api.get(`/saved-properties/${id}/status`).then(res => setIsSaved(res.data.is_saved)).catch(() => {}); }
+      })
       .catch(() => { toast.error("Annonce introuvable"); navigate("/immobilier"); })
       .finally(() => setLoading(false));
   }, [id]); // eslint-disable-line
@@ -182,25 +185,71 @@ export default function PropertyDetailPage() {
                 <span className={`text-xs font-bold uppercase px-2 py-1 rounded font-['Manrope'] ${STATUS_STYLES[property.status] || "bg-zinc-100 text-zinc-600"}`}>
                   {STATUS_LABELS[property.status] || property.status}
                 </span>
+                {property.is_verified && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 bg-green-100 text-green-700 rounded" data-testid="detail-verified-badge">
+                    <ShieldCheck className="w-3 h-3" /> Verifie
+                  </span>
+                )}
               </div>
-              <h1 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">{property.title}</h1>
-              <p className="font-['Oswald'] text-3xl font-bold text-[#FF6600]">{formatPrice(property.price, property.currency)}</p>
-              <div className="flex items-center gap-1 text-zinc-400 text-xs mt-2">
-                <Eye className="w-3 h-3" /> <span className="whitespace-nowrap">{viewCount} vue{viewCount !== 1 ? "s" : ""}</span>
+              <h1 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2" data-testid="detail-title">{property.title}</h1>
+              <p className="font-['Oswald'] text-3xl font-bold text-[#FF6600]" data-testid="detail-price">{formatPrice(property.price, property.currency)}</p>
+              {property.price_converted?.usd > 0 && (
+                <p className="text-xs text-zinc-500 mt-1" data-testid="detail-price-converted">
+                  {formatPriceConverted(property.price_converted)}
+                </p>
+              )}
+
+              {/* Property Specs */}
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-zinc-100">
+                {property.property_category && property.property_category !== "autre" && (
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-600" data-testid="detail-category">
+                    <Home className="w-3.5 h-3.5 text-[#FF6600]" />
+                    <span className="capitalize">{property.property_category}</span>
+                  </div>
+                )}
+                {property.bedrooms > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-600" data-testid="detail-bedrooms">
+                    <Bed className="w-3.5 h-3.5 text-[#FF6600]" />
+                    <span>{property.bedrooms} chambre{property.bedrooms > 1 ? "s" : ""}</span>
+                  </div>
+                )}
+                {property.bathrooms > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-600" data-testid="detail-bathrooms">
+                    <Bath className="w-3.5 h-3.5 text-[#FF6600]" />
+                    <span>{property.bathrooms} salle{property.bathrooms > 1 ? "s" : ""} de bain</span>
+                  </div>
+                )}
+                {property.surface_area > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-600" data-testid="detail-surface">
+                    <Maximize className="w-3.5 h-3.5 text-[#FF6600]" />
+                    <span>{property.surface_area} m²</span>
+                  </div>
+                )}
               </div>
-              <LikeButton
-                type="property"
-                id={property.id}
-                initialCount={property.likes_count || 0}
-                initialLikedBy={property.liked_by || []}
-                className="text-sm"
-              />
+
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-zinc-100">
+                <span className="flex items-center gap-1 text-zinc-400 text-xs">
+                  <Eye className="w-3 h-3" /> {viewCount} vue{viewCount !== 1 ? "s" : ""}
+                </span>
+                <LikeButton type="property" id={property.id} initialCount={property.likes_count || 0} initialLikedBy={property.liked_by || []} className="text-sm" />
+                {token && (
+                  <button onClick={async () => {
+                    try { await api.post(`/saved-properties/${property.id}`); setIsSaved(!isSaved); toast.success(isSaved ? "Retire des favoris" : "Ajoute aux favoris"); } catch { toast.error("Erreur"); }
+                  }} data-testid="detail-save-btn"
+                    className={`ml-auto flex items-center gap-1 px-2 py-1 text-xs font-bold transition-colors ${isSaved ? "text-red-500" : "text-zinc-400 hover:text-red-500"}`}>
+                    <Heart className={`w-4 h-4 ${isSaved ? "fill-red-500" : ""}`} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Seller */}
             <div className="bg-white border border-zinc-200 p-5">
               <h2 className="font-['Oswald'] text-base font-bold uppercase tracking-tight mb-4">Contact vendeur</h2>
-              <p className="font-bold text-black text-sm mb-3 font-['Manrope']">{property.seller_name}</p>
+              <Link to={`/agent/${property.author_id}`} className="font-bold text-black text-sm mb-3 font-['Manrope'] block hover:text-[#FF6600] transition-colors" data-testid="detail-agent-link">
+                {property.seller_name}
+                <span className="text-[10px] text-zinc-400 font-normal ml-2">Voir le profil &rarr;</span>
+              </Link>
               <div className="space-y-2">
                 <a href={`tel:${property.seller_phone}`}
                   className="flex items-center gap-3 w-full bg-[#FF6600] text-white px-4 py-2.5 text-sm font-bold hover:bg-[#CC5200] transition-colors font-['Manrope']">

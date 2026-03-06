@@ -3,17 +3,30 @@ from typing import Optional, List
 from database import db
 from models.property import (
     PropertyCreate, PropertyUpdate, PropertyOut,
-    PaginatedProperties, PROPERTY_TYPES, PROPERTY_STATUSES
+    PaginatedProperties, SavedPropertyOut, SearchAlertCreate, SearchAlertOut,
+    PROPERTY_TYPES, PROPERTY_STATUSES, PROPERTY_CATEGORIES, convert_price
 )
 from middleware.auth import get_current_user, require_agent
 from utils import sanitize, sanitize_html, sanitize_url
 from routes.messages import manager
 from pymongo import ReturnDocument
 import uuid
+import math
 from datetime import datetime, timezone
 
 router = APIRouter(tags=["properties"])
 
+
+def enrich_property(p):
+    """Add price conversion to property dict."""
+    if p.get("currency", "GNF") == "GNF":
+        p["price_converted"] = convert_price(p["price"])
+    else:
+        p["price_converted"] = {"gnf": p["price"], "usd": 0, "eur": 0}
+    return p
+
+
+# ─── Map Markers ────────────────────────────────────────────────────────────────
 
 @router.get("/properties/map/markers")
 async def get_map_markers(
@@ -22,6 +35,8 @@ async def get_map_markers(
     status: str = Query("", max_length=20),
     min_price: float = Query(0, ge=0),
     max_price: float = Query(0, ge=0),
+    neighborhood: str = Query("", max_length=100),
+    property_category: str = Query("", max_length=50),
 ):
     query = {"latitude": {"$ne": None}, "longitude": {"$ne": None}}
     if type:
@@ -30,6 +45,10 @@ async def get_map_markers(
         query["city"] = {"$regex": city, "$options": "i"}
     if status:
         query["status"] = status
+    if neighborhood:
+        query["neighborhood"] = {"$regex": neighborhood, "$options": "i"}
+    if property_category:
+        query["property_category"] = property_category
     if min_price > 0:
         query["price"] = query.get("price", {})
         query["price"]["$gte"] = min_price
@@ -38,21 +57,100 @@ async def get_map_markers(
         query["price"]["$lte"] = max_price
     props = await db.properties.find(query, {
         "_id": 0, "id": 1, "title": 1, "type": 1, "price": 1, "currency": 1,
-        "city": 1, "latitude": 1, "longitude": 1, "images": 1, "status": 1
+        "city": 1, "neighborhood": 1, "latitude": 1, "longitude": 1, "images": 1,
+        "status": 1, "bedrooms": 1, "surface_area": 1, "property_category": 1
     }).to_list(500)
     for p in props:
         p["image"] = p.get("images", [None])[0] if p.get("images") else None
         p.pop("images", None)
+        if p.get("currency", "GNF") == "GNF":
+            p["price_converted"] = convert_price(p["price"])
     return props
 
+
+# ─── Neighborhoods ──────────────────────────────────────────────────────────────
+
+@router.get("/properties/neighborhoods")
+async def get_neighborhoods(city: str = Query("", max_length=100)):
+    """Get distinct neighborhoods, optionally filtered by city."""
+    query = {}
+    if city:
+        query["city"] = {"$regex": city, "$options": "i"}
+    neighborhoods = await db.properties.distinct("neighborhood", query)
+    return [n for n in neighborhoods if n]
+
+
+# ─── Heatmap Data ───────────────────────────────────────────────────────────────
+
+@router.get("/properties/heatmap")
+async def get_heatmap_data():
+    """Return lat/lng/price data for price heatmap."""
+    props = await db.properties.find(
+        {"latitude": {"$ne": None}, "longitude": {"$ne": None}, "status": "disponible"},
+        {"_id": 0, "latitude": 1, "longitude": 1, "price": 1, "currency": 1}
+    ).to_list(1000)
+    return [
+        {"lat": p["latitude"], "lng": p["longitude"], "price": p["price"],
+         "intensity": min(1.0, p["price"] / 5000000000)}
+        for p in props
+    ]
+
+
+# ─── Price Estimation ───────────────────────────────────────────────────────────
+
+@router.get("/properties/estimate")
+async def estimate_price(
+    city: str = Query(..., min_length=2),
+    neighborhood: str = Query(""),
+    property_category: str = Query("autre"),
+    bedrooms: int = Query(0, ge=0),
+    surface_area: float = Query(0, ge=0),
+):
+    """Estimate price based on similar properties in the area."""
+    query = {"city": {"$regex": city, "$options": "i"}, "status": "disponible"}
+    if neighborhood:
+        query["neighborhood"] = {"$regex": neighborhood, "$options": "i"}
+    if property_category and property_category != "autre":
+        query["property_category"] = property_category
+    if bedrooms > 0:
+        query["bedrooms"] = {"$gte": max(0, bedrooms - 1), "$lte": bedrooms + 1}
+
+    similar = await db.properties.find(query, {"_id": 0, "price": 1, "surface_area": 1, "bedrooms": 1}).to_list(50)
+
+    if not similar:
+        # Fallback: broader search just by city
+        query = {"city": {"$regex": city, "$options": "i"}, "status": "disponible"}
+        similar = await db.properties.find(query, {"_id": 0, "price": 1, "surface_area": 1}).to_list(50)
+
+    if not similar:
+        return {"estimated_price": 0, "sample_count": 0, "confidence": "low", "price_range": {"min": 0, "max": 0}}
+
+    prices = [p["price"] for p in similar]
+    avg = sum(prices) / len(prices)
+    min_p, max_p = min(prices), max(prices)
+    confidence = "high" if len(similar) >= 10 else "medium" if len(similar) >= 3 else "low"
+
+    return {
+        "estimated_price": round(avg),
+        "sample_count": len(similar),
+        "confidence": confidence,
+        "price_range": {"min": round(min_p), "max": round(max_p)},
+        "price_converted": convert_price(round(avg)),
+    }
+
+
+# ─── Public List ────────────────────────────────────────────────────────────────
 
 @router.get("/properties", response_model=PaginatedProperties)
 async def get_properties(
     type: Optional[str] = Query(None),
     city: Optional[str] = Query(None),
+    neighborhood: Optional[str] = Query(None),
     status: Optional[str] = Query("disponible"),
     price_min: Optional[float] = Query(None),
     price_max: Optional[float] = Query(None),
+    property_category: Optional[str] = Query(None),
+    bedrooms: Optional[int] = Query(None),
     sort: str = Query("recent"),
     page: int = Query(1, ge=1),
     limit: int = Query(12, ge=1, le=50),
@@ -62,6 +160,12 @@ async def get_properties(
         query["type"] = type
     if city:
         query["city"] = {"$regex": city.strip(), "$options": "i"}
+    if neighborhood:
+        query["neighborhood"] = {"$regex": neighborhood.strip(), "$options": "i"}
+    if property_category and property_category in PROPERTY_CATEGORIES:
+        query["property_category"] = property_category
+    if bedrooms is not None and bedrooms > 0:
+        query["bedrooms"] = {"$gte": bedrooms}
     if status and status in PROPERTY_STATUSES:
         query["status"] = status
     elif status == "all":
@@ -86,9 +190,12 @@ async def get_properties(
     for p in props:
         author = await db.users.find_one({"id": p.get("author_id", "")}, {"_id": 0, "username": 1})
         p["author_username"] = author["username"] if author else ""
+        enrich_property(p)
 
     return PaginatedProperties(properties=props, total=total, pages=max(1, -(-total // limit)))
 
+
+# ─── Single Property ────────────────────────────────────────────────────────────
 
 @router.get("/properties/{property_id}", response_model=PropertyOut)
 async def get_property(property_id: str):
@@ -97,6 +204,7 @@ async def get_property(property_id: str):
         raise HTTPException(status_code=404, detail="Annonce introuvable")
     author = await db.users.find_one({"id": prop.get("author_id", "")}, {"_id": 0, "username": 1})
     prop["author_username"] = author["username"] if author else ""
+    enrich_property(prop)
     return prop
 
 
@@ -110,6 +218,8 @@ async def view_property(property_id: str):
         await manager.broadcast_all({"type": "view_update", "content_type": "property", "id": property_id, "views": result["views"]})
     return {"ok": True}
 
+
+# ─── CRUD ───────────────────────────────────────────────────────────────────────
 
 @router.post("/properties", response_model=PropertyOut)
 async def create_property(data: PropertyCreate, current_user: dict = Depends(require_agent)):
@@ -139,12 +249,62 @@ async def create_property(data: PropertyCreate, current_user: dict = Depends(req
         "views": 0,
         "likes_count": 0,
         "liked_by": [],
+        "property_category": data.property_category,
+        "bedrooms": data.bedrooms,
+        "bathrooms": data.bathrooms,
+        "surface_area": data.surface_area,
+        "is_verified": False,
     }
     await db.properties.insert_one(prop)
     prop["author_username"] = current_user.get("username", "")
     del prop["_id"]
+    enrich_property(prop)
     await manager.broadcast_all({"type": "content_update", "content_type": "property", "action": "created", "title": sanitize(data.title)})
+
+    # Check search alerts
+    await _notify_search_alerts(prop)
+
     return prop
+
+
+async def _notify_search_alerts(prop):
+    """Notify users whose search alerts match this new property."""
+    query = {}
+    alerts = await db.search_alerts.find({}, {"_id": 0}).to_list(500)
+    for alert in alerts:
+        match = True
+        if alert.get("city") and alert["city"].lower() not in prop.get("city", "").lower():
+            match = False
+        if alert.get("neighborhood") and alert["neighborhood"].lower() not in prop.get("neighborhood", "").lower():
+            match = False
+        if alert.get("type") and alert["type"] != prop.get("type"):
+            match = False
+        if alert.get("property_category") and alert["property_category"] != prop.get("property_category"):
+            match = False
+        if alert.get("min_price") and prop["price"] < alert["min_price"]:
+            match = False
+        if alert.get("max_price") and alert["max_price"] > 0 and prop["price"] > alert["max_price"]:
+            match = False
+        if alert.get("min_bedrooms") and prop.get("bedrooms", 0) < alert["min_bedrooms"]:
+            match = False
+
+        if match:
+            now = datetime.now(timezone.utc).isoformat()
+            await db.user_notifications.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": alert["user_id"],
+                "type": "search_alert",
+                "message": f"Nouvelle annonce correspondant a vos criteres : {prop['title']} a {prop['city']}",
+                "is_read": False,
+                "created_at": now,
+                "property_id": prop["id"],
+            })
+            await db.search_alerts.update_one({"id": alert["id"]}, {"$set": {"last_notified": now}})
+            await manager.send_to_user(alert["user_id"], {
+                "type": "search_alert",
+                "message": f"Nouvelle annonce : {prop['title']}",
+                "property_id": prop["id"],
+            })
 
 
 @router.put("/properties/{property_id}", response_model=PropertyOut)
@@ -169,6 +329,7 @@ async def update_property(property_id: str, data: PropertyUpdate, current_user: 
     prop.update(updates)
     author = await db.users.find_one({"id": prop.get("author_id", "")}, {"_id": 0, "username": 1})
     prop["author_username"] = author["username"] if author else ""
+    enrich_property(prop)
     await manager.broadcast_all({"type": "content_update", "content_type": "property", "action": "updated"})
     return prop
 
@@ -181,16 +342,150 @@ async def delete_property(property_id: str, current_user: dict = Depends(require
     if current_user.get("role") != "admin" and prop["author_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Vous ne pouvez supprimer que vos propres annonces")
     await db.properties.delete_one({"id": property_id})
+    await db.saved_properties.delete_many({"property_id": property_id})
     return {"ok": True}
 
+
+# ─── My Properties ──────────────────────────────────────────────────────────────
 
 @router.get("/my-properties", response_model=List[PropertyOut])
 async def get_my_properties(current_user: dict = Depends(require_agent)):
     props = await db.properties.find({"author_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
     for p in props:
         p["author_username"] = current_user.get("username", "")
+        enrich_property(p)
     return props
 
+
+# ─── Saved / Favorites ─────────────────────────────────────────────────────────
+
+@router.post("/saved-properties/{property_id}")
+async def toggle_save_property(property_id: str, current_user: dict = Depends(get_current_user)):
+    prop = await db.properties.find_one({"id": property_id}, {
+        "_id": 0, "title": 1, "type": 1, "price": 1, "currency": 1,
+        "city": 1, "neighborhood": 1, "images": 1, "bedrooms": 1, "surface_area": 1
+    })
+    if not prop:
+        raise HTTPException(status_code=404, detail="Annonce introuvable")
+    existing = await db.saved_properties.find_one({"user_id": current_user["id"], "property_id": property_id})
+    if existing:
+        await db.saved_properties.delete_one({"user_id": current_user["id"], "property_id": property_id})
+        return {"action": "unsaved"}
+    await db.saved_properties.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "property_id": property_id,
+        "title": prop.get("title", ""),
+        "type": prop.get("type", ""),
+        "price": prop.get("price", 0),
+        "currency": prop.get("currency", "GNF"),
+        "city": prop.get("city", ""),
+        "neighborhood": prop.get("neighborhood", ""),
+        "image_url": prop.get("images", [None])[0] if prop.get("images") else None,
+        "bedrooms": prop.get("bedrooms", 0),
+        "surface_area": prop.get("surface_area", 0),
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"action": "saved"}
+
+
+@router.get("/saved-properties/{property_id}/status")
+async def get_saved_property_status(property_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.saved_properties.find_one({"user_id": current_user["id"], "property_id": property_id})
+    return {"is_saved": existing is not None}
+
+
+@router.get("/saved-properties", response_model=List[SavedPropertyOut])
+async def get_saved_properties(current_user: dict = Depends(get_current_user)):
+    saved = await db.saved_properties.find({"user_id": current_user["id"]}, {"_id": 0}).sort("saved_at", -1).to_list(100)
+    return [SavedPropertyOut(**s) for s in saved]
+
+
+# ─── Search Alerts ──────────────────────────────────────────────────────────────
+
+@router.post("/search-alerts", response_model=SearchAlertOut)
+async def create_search_alert(data: SearchAlertCreate, current_user: dict = Depends(get_current_user)):
+    count = await db.search_alerts.count_documents({"user_id": current_user["id"]})
+    if count >= 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 alertes de recherche.")
+    now = datetime.now(timezone.utc).isoformat()
+    alert = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "city": sanitize(data.city),
+        "neighborhood": sanitize(data.neighborhood),
+        "type": data.type if data.type in PROPERTY_TYPES else "",
+        "min_price": data.min_price,
+        "max_price": data.max_price,
+        "property_category": data.property_category if data.property_category in PROPERTY_CATEGORIES else "",
+        "min_bedrooms": data.min_bedrooms,
+        "created_at": now,
+        "last_notified": None,
+    }
+    await db.search_alerts.insert_one(alert)
+    del alert["_id"]
+    return SearchAlertOut(**alert)
+
+
+@router.get("/search-alerts", response_model=List[SearchAlertOut])
+async def get_search_alerts(current_user: dict = Depends(get_current_user)):
+    alerts = await db.search_alerts.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(10)
+    return [SearchAlertOut(**a) for a in alerts]
+
+
+@router.delete("/search-alerts/{alert_id}")
+async def delete_search_alert(alert_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.search_alerts.delete_one({"id": alert_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Alerte introuvable")
+    return {"ok": True}
+
+
+# ─── Agent Profile ──────────────────────────────────────────────────────────────
+
+@router.get("/agents/{agent_id}/profile")
+async def get_agent_profile(agent_id: str):
+    user = await db.users.find_one({"id": agent_id}, {"_id": 0, "hashed_password": 0})
+    if not user or user.get("role") not in ("agent", "admin"):
+        raise HTTPException(status_code=404, detail="Agent introuvable")
+    # Count properties
+    total_props = await db.properties.count_documents({"author_id": agent_id})
+    available_props = await db.properties.count_documents({"author_id": agent_id, "status": "disponible"})
+    total_views = 0
+    async for p in db.properties.find({"author_id": agent_id}, {"_id": 0, "views": 1}):
+        total_views += p.get("views", 0)
+    return {
+        "id": user["id"],
+        "username": user.get("username", ""),
+        "email": user.get("email", ""),
+        "role": user.get("role", ""),
+        "created_at": user.get("created_at", ""),
+        "bio": user.get("bio", ""),
+        "phone": user.get("phone", ""),
+        "avatar_url": user.get("avatar_url", ""),
+        "stats": {
+            "total_properties": total_props,
+            "available_properties": available_props,
+            "total_views": total_views,
+        }
+    }
+
+
+@router.get("/agents/{agent_id}/properties", response_model=List[PropertyOut])
+async def get_agent_properties(agent_id: str):
+    user = await db.users.find_one({"id": agent_id}, {"_id": 0, "id": 1, "role": 1, "username": 1})
+    if not user or user.get("role") not in ("agent", "admin"):
+        raise HTTPException(status_code=404, detail="Agent introuvable")
+    props = await db.properties.find(
+        {"author_id": agent_id, "status": "disponible"}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    for p in props:
+        p["author_username"] = user.get("username", "")
+        enrich_property(p)
+    return props
+
+
+# ─── Likes ──────────────────────────────────────────────────────────────────────
 
 @router.post("/properties/{property_id}/like")
 async def toggle_property_like(property_id: str, current_user: dict = Depends(get_current_user)):
@@ -214,14 +509,12 @@ async def toggle_property_like(property_id: str, current_user: dict = Depends(ge
             {"$addToSet": {"liked_by": user_id}, "$inc": {"likes_count": 1}}
         )
         action = "like"
-        # Notify property owner (not self-like)
         if prop.get("author_id") and prop["author_id"] != user_id:
-            import uuid as _uuid
             await db.user_notifications.insert_one({
-                "id": str(_uuid.uuid4()),
+                "id": str(uuid.uuid4()),
                 "user_id": prop["author_id"],
                 "type": "property_like",
-                "message": f"{current_user.get('username', 'Un utilisateur')} a aimé votre annonce \"{prop.get('title', '')}\"",
+                "message": f"{current_user.get('username', 'Un utilisateur')} a aime votre annonce \"{prop.get('title', '')}\"",
                 "is_read": False,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             })
