@@ -8,7 +8,7 @@ import { formatPrice, formatPriceConverted } from "../../components/immobilier/P
 import { useAuth } from "../../context/AuthContext";
 import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video, Bed, Bath, Maximize, Home, ShieldCheck, Heart } from "lucide-react";
+import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video, Bed, Bath, Maximize, Home, ShieldCheck, Heart, Bookmark } from "lucide-react";
 import LikeButton from "../../components/LikeButton";
 import { toast } from "sonner";
 
@@ -236,8 +236,8 @@ export default function PropertyDetailPage() {
                   <button onClick={async () => {
                     try { await api.post(`/saved-properties/${property.id}`); setIsSaved(!isSaved); toast.success(isSaved ? "Retire des favoris" : "Ajoute aux favoris"); } catch { toast.error("Erreur"); }
                   }} data-testid="detail-save-btn"
-                    className={`ml-auto flex items-center gap-1 px-2 py-1 text-xs font-bold transition-colors ${isSaved ? "text-red-500" : "text-zinc-400 hover:text-red-500"}`}>
-                    <Heart className={`w-4 h-4 ${isSaved ? "fill-red-500" : ""}`} />
+                    className={`ml-auto flex items-center gap-1 px-2 py-1 text-xs font-bold transition-colors ${isSaved ? "text-[#FF6600]" : "text-zinc-400 hover:text-[#FF6600]"}`}>
+                    <Bookmark className={`w-4 h-4 ${isSaved ? "fill-[#FF6600]" : ""}`} />
                   </button>
                 )}
               </div>

@@ -76,7 +76,6 @@ function App() {
           {/* Immobilier */}
           <Route path="/immobilier" element={<ImmobilierPage />} />
           <Route path="/immobilier/carte" element={<MapPage />} />
-          <Route path="/immobilier/favoris" element={<PrivateRoute><SavedArticlesPage /></PrivateRoute>} />
           <Route path="/immobilier/alertes" element={<PrivateRoute><SearchAlertsPage /></PrivateRoute>} />
           <Route path="/immobilier/estimation" element={<PriceEstimatePage />} />
           <Route path="/immobilier/:id" element={<PropertyDetailPage />} />

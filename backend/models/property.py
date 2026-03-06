@@ -24,14 +24,14 @@ class PropertyCreate(BaseModel):
     type: str
     price: float = Field(gt=0)
     currency: str = "GNF"
-    description: str = Field(min_length=10, max_length=20000)
+    description: str = Field(min_length=3, max_length=20000)
     city: str = Field(min_length=2, max_length=100)
     neighborhood: str = ""
     address: str = ""
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     seller_name: str = Field(min_length=2, max_length=100)
-    seller_phone: str = Field(min_length=8, max_length=25)
+    seller_phone: str = Field(min_length=3, max_length=25)
     seller_email: str = ""
     seller_whatsapp: str = ""
     images: List[str] = []

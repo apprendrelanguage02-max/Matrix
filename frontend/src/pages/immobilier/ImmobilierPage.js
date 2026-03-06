@@ -7,7 +7,7 @@ import PropertyFilters from "../../components/immobilier/PropertyFilters";
 import PullToRefresh from "../../components/PullToRefresh";
 import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Heart, Calculator, Bell } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Calculator, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const LOGO = "/nimba-logo.png";
@@ -129,13 +129,6 @@ export default function ImmobilierPage() {
               className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
               <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Voir la carte
             </Link>
-            {user && (
-              <Link to="/sauvegardes"
-                data-testid="view-favorites-btn"
-                className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
-                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Favoris
-              </Link>
-            )}
             <Link to="/immobilier/estimation"
               data-testid="view-estimate-btn"
               className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">

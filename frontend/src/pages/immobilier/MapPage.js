@@ -179,7 +179,7 @@ export default function MapPage() {
         </MapContainer>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur-sm border border-zinc-200 rounded-lg px-3 py-2 shadow-lg">
+        <div className="absolute bottom-4 left-4 z-[2] bg-white/95 backdrop-blur-sm border border-zinc-200 rounded-lg px-3 py-2 shadow-lg">
           <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Legende</p>
           <div className="flex items-center gap-3">
             {Object.entries(TYPE_COLORS).map(([type, color]) => (

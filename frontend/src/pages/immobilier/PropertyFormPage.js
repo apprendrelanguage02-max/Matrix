@@ -112,7 +112,7 @@ export default function PropertyFormPage() {
       const payload = {
         title: form.title,
         type: form.type,
-        price: parseFloat(form.price),
+        price: parseFloat(form.price) || 0,
         currency: form.currency || "GNF",
         description: form.description || "Aucune description.",
         city: form.city,
@@ -143,7 +143,14 @@ export default function PropertyFormPage() {
       }
       navigate(`/immobilier/${id}`);
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Erreur lors de la sauvegarde.");
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        // Pydantic validation errors — show first message
+        const msg = detail.map(d => d.msg || d.message || "Erreur").join(", ");
+        toast.error(msg);
+      } else {
+        toast.error(typeof detail === "string" ? detail : "Erreur lors de la sauvegarde.");
+      }
     } finally {
       setSaving(false);
     }
