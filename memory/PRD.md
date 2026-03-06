@@ -1,34 +1,55 @@
-# Matrix News / GIMO - Product Requirements Document
+# Matrix News / GIMO — PRD
 
 ## Original Problem Statement
-Plateforme de news et immobilier guineenne avec backend FastAPI et frontend React.
-
-## Tech Stack
-- **Backend**: FastAPI, MongoDB (Motor), Pydantic, JWT, WebSockets, bcrypt
-- **Frontend**: React 19, TailwindCSS, Shadcn/UI, Leaflet, react-leaflet-cluster, Sonner, Lucide
-- **3rd Party**: Resend (emails OTP), Leaflet/React-Leaflet (cartes)
-
-## Core Features - All Implemented
-- [x] Auth complete (OTP email, JWT, roles)
-- [x] Dashboard admin (demandes, CSV, temps reel)
-- [x] Newsroom / Editeur blocs (text, image, video, quote, alert, table)
-- [x] Section immobiliere complete (devises GNF/USD/EUR, clusters carte, filtres, estimation prix, alertes recherche)
-- [x] Favoris unifies (articles + annonces + procedures) avec onglets et boutons Bookmark sur chaque carte
-- [x] Profils publics agents avec stats
-- [x] Badges verification, heatmap prix, recherche quartier
-- [x] Favicon Nimba, code nettoye de references emergent
-- [x] Formulaire publication annonces corrige (payload propre, gestion erreurs Pydantic)
-- [x] Z-index carte corrige (passe sous header et menu)
-- [x] Notifications temps reel, recherche globale, pull-to-refresh
+Plateforme média full-stack en Guinée (React/FastAPI/MongoDB) avec:
+- Newsroom (articles, éditeur par blocs, catégories)
+- Section Immobilier (annonces, carte interactive, profils agents, estimation de prix)
+- Section Procédures administratives
+- Dashboard Admin complet
+- Système de favoris unifié (articles, annonces, procédures)
+- Authentification OTP + système de rôles (admin, auteur, agent, visiteur)
 
 ## Architecture
 ```
-/app/backend/ - routes/ (auth, articles, properties, procedures, admin, messages), models/, middleware/
-/app/frontend/ - components/ (immobilier/, layout/, ui/), pages/ (immobilier/*, procedures/*, admin/*), context/, lib/
+/app/
+├── backend/          # FastAPI + MongoDB
+│   ├── data/         # guinea_locations.py (communes/quartiers)
+│   ├── models/       # Pydantic models
+│   ├── routes/       # API routes (admin, articles, properties, procedures, etc.)
+│   └── server.py     # App entry point
+└── frontend/         # React + TailwindCSS
+    └── src/
+        ├── components/  # Reusable UI components
+        ├── pages/       # Page-level components
+        ├── context/     # Auth & WebSocket contexts
+        └── lib/         # API client, utilities
 ```
 
-## Known Issues
-- Rate limiting login retourne 520 au lieu de 429 (infra, low priority)
+## What's Been Implemented
+- Full Newsroom with block editor, categories, article CRUD
+- Full Immobilier section with property CRUD, map (Leaflet), agent profiles
+- Price estimation with cascading dropdowns (Ville > Commune > Quartier)
+- Admin dashboard: users, articles, properties, payments, role requests, price references
+- Unified favorites system (bookmark icon) for articles, properties, procedures
+- WebSocket real-time updates (likes, views, notifications)
+- OTP-based registration with Resend email
+- Search alerts for properties
+- CSV exports for admin data
 
-## Enhancement Ideas
-- [ ] Visites video, Dashboard analytics agents, Messagerie interne, Partage social, SEO meta tags
+## Completed Bug Fixes (March 2026)
+- Fixed: Price estimation page was blank → Now working with cascading dropdowns
+- Fixed: Article favorites broken → Save/unsave toggle works correctly
+- Fixed: Admin "Demandes" page inaccessible → RequestsTab loads correctly
+- Fixed: Property edit data loss → PUT endpoint preserves all fields
+- Fixed: Article like notifications going to wrong collection
+- Fixed: Saved procedures missing subcategory_name
+
+## 3rd Party Integrations
+- Resend: OTP emails
+- Leaflet/React-Leaflet: Interactive map
+- bcrypt: Password hashing
+- JWT: Authentication tokens
+
+## Test Credentials
+- Admin: matrixguinea@gmail.com / admin123
+- Agent: gui002@gmail.com / agent123
