@@ -80,6 +80,52 @@ async def get_neighborhoods(city: str = Query("", max_length=100)):
     return [n for n in neighborhoods if n]
 
 
+# ─── Nearby Properties ──────────────────────────────────────────────────────────
+
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+@router.get("/properties/nearby")
+async def get_nearby_properties(
+    lat: float = Query(...), lng: float = Query(...),
+    radius_km: float = Query(5, ge=1, le=50),
+    type: str = Query("", max_length=20),
+    limit: int = Query(50, ge=1, le=100),
+):
+    # Rough bounding box to pre-filter (1 degree ~ 111km)
+    delta = radius_km / 111.0
+    query = {
+        "latitude": {"$gte": lat - delta, "$lte": lat + delta, "$ne": None},
+        "longitude": {"$gte": lng - delta, "$lte": lng + delta, "$ne": None},
+        "status": "disponible",
+    }
+    if type:
+        query["type"] = type
+    candidates = await db.properties.find(query, {
+        "_id": 0, "id": 1, "title": 1, "type": 1, "price": 1, "currency": 1,
+        "city": 1, "neighborhood": 1, "latitude": 1, "longitude": 1, "images": 1,
+        "status": 1, "bedrooms": 1, "bathrooms": 1, "surface_area": 1,
+        "property_category": 1, "address": 1, "seller_name": 1,
+    }).to_list(500)
+    results = []
+    for p in candidates:
+        dist = haversine_km(lat, lng, p["latitude"], p["longitude"])
+        if dist <= radius_km:
+            p["distance_km"] = round(dist, 2)
+            p["image"] = p.get("images", [None])[0] if p.get("images") else None
+            p.pop("images", None)
+            if p.get("currency", "GNF") == "GNF":
+                p["price_converted"] = convert_price(p["price"])
+            results.append(p)
+    results.sort(key=lambda x: x["distance_km"])
+    return {"properties": results[:limit], "total": len(results), "radius_km": radius_km, "center": {"lat": lat, "lng": lng}}
+
+
 # ─── Heatmap Data ───────────────────────────────────────────────────────────────
 
 @router.get("/properties/heatmap")

@@ -7,7 +7,7 @@ import PropertyFilters from "../../components/immobilier/PropertyFilters";
 import PullToRefresh from "../../components/PullToRefresh";
 import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Calculator, Bell } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Calculator, Bell, Navigation } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const LOGO = "/nimba-logo.png";
@@ -123,11 +123,16 @@ export default function ImmobilierPage() {
           <p className="text-xs sm:text-sm text-zinc-500">
             {!loading && <span><strong className="text-black">{total}</strong> annonce{total !== 1 ? "s" : ""}</span>}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/immobilier/carte?nearby=1"
+              data-testid="nearby-btn"
+              className="flex items-center gap-2 bg-[#FF6600] text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:bg-[#CC5200] transition-colors shadow-sm">
+              <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden xs:inline">Biens autour de moi</span><span className="xs:hidden">Autour de moi</span>
+            </Link>
             <Link to="/immobilier/carte"
               data-testid="view-map-btn"
               className="flex items-center gap-2 border border-zinc-300 text-zinc-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
-              <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Voir la carte
+              <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Carte
             </Link>
             <Link to="/immobilier/estimation"
               data-testid="view-estimate-btn"
