@@ -44,6 +44,14 @@ Plateforme média full-stack en Guinée (React/FastAPI/MongoDB) avec:
 - Fixed: Article like notifications going to wrong collection
 - Fixed: Saved procedures missing subcategory_name
 
+## Feature: "Voir les biens autour de moi" (March 2026)
+- Backend: `/api/properties/nearby` endpoint with haversine distance calculation, bounding box pre-filter
+- Frontend MapPage: Geolocation button, blue user position dot with pulse animation, configurable radius circle (1/5/10/20 km)
+- Frontend MapPage: Nearby results section below map with property cards showing distance
+- Frontend ImmobilierPage: "Autour de moi" button linking to map with auto-trigger
+- Mobile-first responsive design
+- Radius selector, exit nearby mode, smooth fly-to animation
+
 ## 3rd Party Integrations
 - Resend: OTP emails
 - Leaflet/React-Leaflet: Interactive map

@@ -6,6 +6,7 @@
 - [x] Admin role requests page
 - [x] Property creation/edit without data loss
 - [x] Admin price references management
+- [x] "Voir les biens autour de moi" - Geolocation feature
 
 ## P1 — Next Up
 - [ ] Tests de régression complets après toutes les corrections
