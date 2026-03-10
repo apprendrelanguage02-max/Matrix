@@ -1,4 +1,5 @@
 import os
+import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
@@ -85,7 +86,10 @@ from fastapi import Query as Q
 async def global_search(q: str = Q("", max_length=200)):
     if not q.strip():
         return {"articles": [], "properties": [], "procedures": []}
-    regex = {"$regex": q.strip(), "$options": "i"}
+    # Escape user input so malformed patterns (e.g. "[") do not crash Mongo regex parsing.
+    # We still keep case-insensitive substring search semantics via the "i" option.
+    safe_query = re.escape(q.strip())
+    regex = {"$regex": safe_query, "$options": "i"}
     articles = await db.articles.find(
         {"$or": [{"title": regex}, {"content": regex}]}, {"_id": 0, "id": 1, "title": 1, "category": 1, "image_url": 1, "author_name": 1, "created_at": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
