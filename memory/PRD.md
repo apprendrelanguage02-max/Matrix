@@ -46,6 +46,10 @@ Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, u
 - [x] **Auth Gate** sur pages detail immobilier et procedures (Mars 2026)
 - [x] **Correction telechargement fichiers** procedures (Mars 2026)
 
+- [x] **Bug fix: Menu avatar scrollable sur mobile** (Mars 2026)
+- [x] **Bug fix: Fleche menu avatar alignee** (Mars 2026)
+- [x] **Bug fix: Dashboard procedures responsive mobile** (Mars 2026)
+
 ## Pending / Backlog
 - [ ] Systeme de notifications pour nouvelles annonces
 - [ ] Visites video natives dans les annonces
