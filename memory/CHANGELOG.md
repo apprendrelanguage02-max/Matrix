@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-03-12 — Feature: Admin Procedures Module (Phase 1+2)
+- **Backend**: Full procedure CRUD with steps, quick actions, version history, cloud file storage
+- **Backend**: Chat actions CRUD, reference data APIs (categories, countries, languages)
+- **Backend**: Stats endpoint with aggregation by category/country
+- **Frontend**: Admin dashboard with dark theme sidebar, stats cards, procedure list with flags
+- **Frontend**: Procedure builder with 5 sections, drag & drop steps (@dnd-kit), cloud file upload
+- **Cloud Storage**: Integrated via emergentintegrations for PDF/document uploads
+- Testing: 100% pass (24/24 backend, all frontend flows verified)
+
 ## 2026-03-07 — Feature: "Voir les biens autour de moi"
 - Added backend `/api/properties/nearby` with haversine distance calculation
 - Added geolocation button with blue user position dot + pulse animation

@@ -44,6 +44,25 @@ Plateforme média full-stack en Guinée (React/FastAPI/MongoDB) avec:
 - Fixed: Article like notifications going to wrong collection
 - Fixed: Saved procedures missing subcategory_name
 
+## Feature: Admin Procedures Module (March 2026)
+**Backend:**
+- Full CRUD: procedures with embedded steps, quick actions, version history
+- Cloud storage (emergentintegrations): file upload/download for procedure documents
+- Chat Actions: global AI assistant quick actions with country flags
+- Reference data APIs: categories (9), countries (16), languages (3), complexity levels
+- Stats endpoint: total, published, drafts, views, by_category, by_country
+
+**Frontend:**
+- Admin dashboard `/admin/procedures`: Dark theme (zinc-950), sidebar navigation, stats cards, procedure list with country flags, search & filters
+- Procedure builder `/admin/procedures/nouvelle|modifier/:id`: 
+  - Section 1: Info (title, description, category, keywords tags, country with flags, language, complexity, active toggle)
+  - Section 2: Steps builder with drag & drop (@dnd-kit), required documents, mandatory toggle
+  - Section 3: Chat Actions panel (AI assistant quick actions)
+  - Section 4: Quick Actions (navigate, download, start_procedure)
+  - Section 5: Files manager (cloud upload/download, delete)
+  - Preview panel with summary
+- Publish/Save draft/Version history buttons
+
 ## Feature: "Voir les biens autour de moi" (March 2026)
 - Backend: `/api/properties/nearby` endpoint with haversine distance calculation, bounding box pre-filter
 - Frontend MapPage: Geolocation button, blue user position dot with pulse animation, configurable radius circle (1/5/10/20 km)
