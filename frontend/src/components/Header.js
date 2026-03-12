@@ -36,9 +36,10 @@ function ProfileDropdown({ user, onClose }) {
 
   return (
     <div className="profile-dropdown absolute right-0 top-full mt-2 w-64 z-50" data-testid="profile-dropdown">
-      <div className="absolute right-4 -top-[7px] w-3 h-3 bg-black border-l border-t border-[#FF6600] rotate-45 z-10" />
+      <div className="absolute right-[18px] -top-[7px] w-3 h-3 bg-black border-l border-t border-[#FF6600] rotate-45 z-10" />
 
-      <div className="relative bg-black border border-[#FF6600] rounded-xl overflow-hidden shadow-2xl shadow-black/60">
+      <div className="relative bg-black border border-[#FF6600] rounded-xl overflow-hidden shadow-2xl shadow-black/60 max-h-[calc(100vh-70px)] overflow-y-auto overscroll-contain"
+        style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* User header */}
         <div className="px-4 py-4 border-b border-zinc-800 flex items-center gap-3">
           <div

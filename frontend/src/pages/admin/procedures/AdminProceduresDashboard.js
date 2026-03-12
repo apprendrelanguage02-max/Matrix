@@ -5,14 +5,14 @@ import { useAuth } from "../../../context/AuthContext";
 import {
   LayoutDashboard, FileText, BarChart3, FolderOpen, Settings, Plus, Search, Eye, Edit, Trash2,
   Globe, Tag, CheckCircle, Clock, AlertCircle, ChevronRight, Loader2, X, ExternalLink,
-  Download, TrendingUp, Users, MessageSquare, ArrowUpRight, Save
+  Download, TrendingUp, Users, MessageSquare, ArrowUpRight, Save, Menu
 } from "lucide-react";
 import { toast } from "sonner";
 
 const FLAG_URL = (code) => `https://flagcdn.com/24x18/${code}.png`;
 
 /* ─────────── Sidebar ─────────── */
-function Sidebar({ active, onNavigate }) {
+function Sidebar({ active, onNavigate, isOpen, onToggle }) {
   const items = [
     { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
     { id: "procedures", label: "Procedures", icon: FileText },
@@ -21,40 +21,60 @@ function Sidebar({ active, onNavigate }) {
     { id: "config", label: "Configuration", icon: Settings },
   ];
   const { user } = useAuth();
+
+  const handleNavigate = (id) => {
+    onNavigate(id);
+    if (window.innerWidth < 768) onToggle();
+  };
+
   return (
-    <aside className="w-56 bg-zinc-950 border-r border-zinc-800 min-h-screen flex flex-col flex-shrink-0" data-testid="admin-sidebar">
-      <div className="p-4 border-b border-zinc-800">
-        <button onClick={() => onNavigate("dashboard")} className="text-[#FF6600] font-['Oswald'] text-lg font-bold uppercase tracking-wider flex items-center gap-2">
-          <LayoutDashboard className="w-5 h-5" /> Dashboard
-        </button>
-      </div>
-      <nav className="flex-1 py-3">
-        {items.map(item => (
-          <button key={item.id} onClick={() => onNavigate(item.id)} data-testid={`sidebar-${item.id}`}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${
-              active === item.id
-                ? "bg-zinc-800/60 text-[#FF6600] border-l-2 border-[#FF6600]"
-                : "text-zinc-400 hover:text-white hover:bg-zinc-900"
-            }`}>
-            <item.icon className="w-4 h-4" /> {item.label}
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={onToggle} />
+      )}
+      <aside className={`
+        fixed md:relative z-40 md:z-auto
+        w-56 bg-zinc-950 border-r border-zinc-800 min-h-screen flex flex-col flex-shrink-0
+        transition-transform duration-200
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `} data-testid="admin-sidebar">
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+          <button onClick={() => handleNavigate("dashboard")} className="text-[#FF6600] font-['Oswald'] text-lg font-bold uppercase tracking-wider flex items-center gap-2">
+            <LayoutDashboard className="w-5 h-5" /> Dashboard
           </button>
-        ))}
-        <div className="h-px bg-zinc-800 mx-3 my-3" />
-        <Link to="/procedures" data-testid="sidebar-view-site"
-          className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-500 hover:text-[#FF6600] transition-colors">
-          <ExternalLink className="w-4 h-4" /> Voir le site
-        </Link>
-      </nav>
-      <div className="p-4 border-t border-zinc-800 flex items-center gap-3">
-        <div className="w-8 h-8 bg-[#FF6600] rounded-full flex items-center justify-center text-white text-xs font-bold">
-          {(user?.username || "A")[0].toUpperCase()}
+          <button onClick={onToggle} className="md:hidden text-zinc-400 hover:text-white p-1">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div>
-          <span className="text-zinc-300 text-xs font-bold block">{user?.username || "Admin"}</span>
-          <span className="text-zinc-600 text-[10px]">Administrateur</span>
+        <nav className="flex-1 py-3">
+          {items.map(item => (
+            <button key={item.id} onClick={() => handleNavigate(item.id)} data-testid={`sidebar-${item.id}`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left ${
+                active === item.id
+                  ? "bg-zinc-800/60 text-[#FF6600] border-l-2 border-[#FF6600]"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+              }`}>
+              <item.icon className="w-4 h-4" /> {item.label}
+            </button>
+          ))}
+          <div className="h-px bg-zinc-800 mx-3 my-3" />
+          <Link to="/procedures" data-testid="sidebar-view-site"
+            className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-500 hover:text-[#FF6600] transition-colors">
+            <ExternalLink className="w-4 h-4" /> Voir le site
+          </Link>
+        </nav>
+        <div className="p-4 border-t border-zinc-800 flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#FF6600] rounded-full flex items-center justify-center text-white text-xs font-bold">
+            {(user?.username || "A")[0].toUpperCase()}
+          </div>
+          <div>
+            <span className="text-zinc-300 text-xs font-bold block">{user?.username || "Admin"}</span>
+            <span className="text-zinc-600 text-[10px]">Administrateur</span>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -89,17 +109,12 @@ export default function AdminProceduresDashboard() {
   const [chatLoading, setChatLoading] = useState(false);
   const [newAction, setNewAction] = useState({ title: "", country: "guinee" });
   const [editingAction, setEditingAction] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      api.get("/procedures/categories"),
-      api.get("/procedures/countries"),
-      api.get("/procedures/stats"),
-    ]).then(([catRes, countryRes, statsRes]) => {
-      setCategories(catRes.data);
-      setCountries(countryRes.data);
-      setStats(statsRes.data);
-    }).catch(() => {});
+    api.get("/procedures/categories").then(r => setCategories(r.data)).catch(() => {});
+    api.get("/procedures/countries").then(r => setCountries(r.data)).catch(() => {});
+    api.get("/procedures/stats").then(r => setStats(r.data)).catch(() => {});
     fetchProcedures();
   }, []);
 
@@ -182,43 +197,46 @@ export default function AdminProceduresDashboard() {
 
   return (
     <div className="flex min-h-screen bg-zinc-950 font-['Manrope']">
-      <Sidebar active={activeTab} onNavigate={setActiveTab} />
+      <Sidebar active={activeTab} onNavigate={setActiveTab} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} />
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto min-w-0">
         {/* Header */}
-        <div className="border-b border-zinc-800 bg-zinc-950 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-          <div>
-            <h1 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-white">
+        <div className="border-b border-zinc-800 bg-zinc-950 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-10 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setSidebarOpen(v => !v)} className="md:hidden text-zinc-400 hover:text-white p-1 flex-shrink-0" data-testid="mobile-sidebar-toggle">
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="font-['Oswald'] text-base sm:text-xl font-bold uppercase tracking-tight text-white truncate">
               {activeTab === "dashboard" && "Tableau de bord"}
-              {activeTab === "procedures" && "Toutes les procedures"}
+              {activeTab === "procedures" && "Procedures"}
               {activeTab === "stats" && "Statistiques"}
-              {activeTab === "documents" && "Gestion des documents"}
+              {activeTab === "documents" && "Documents"}
               {activeTab === "config" && "Configuration"}
-              <span className="text-[#FF6600]"> — Matrix News</span>
+              <span className="text-[#FF6600] hidden sm:inline"> — Matrix News</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {(activeTab === "procedures" || activeTab === "dashboard") && (
               <>
-                <div className="relative">
+                <div className="relative hidden sm:block">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSearch()}
                     placeholder="Rechercher..." data-testid="proc-search"
-                    className="bg-zinc-900 border border-zinc-700 text-white text-sm pl-9 pr-3 py-2 w-56 focus:outline-none focus:border-[#FF6600]" />
+                    className="bg-zinc-900 border border-zinc-700 text-white text-sm pl-9 pr-3 py-2 w-44 lg:w-56 focus:outline-none focus:border-[#FF6600]" />
                 </div>
                 <button onClick={() => navigate("/admin/procedures/nouvelle")} data-testid="create-proc-btn"
-                  className="flex items-center gap-2 bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 hover:bg-[#CC5200] transition-colors">
-                  <Plus className="w-4 h-4" /> Creer
+                  className="flex items-center gap-1.5 sm:gap-2 bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2.5 hover:bg-[#CC5200] transition-colors">
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Creer</span>
                 </button>
               </>
             )}
             <Link to="/procedures" className="flex items-center gap-1.5 text-zinc-500 text-xs hover:text-[#FF6600] transition-colors" data-testid="header-view-site">
-              <ExternalLink className="w-3.5 h-3.5" /> Site
+              <ExternalLink className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Site</span>
             </Link>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* ═══ TAB: DASHBOARD ═══ */}
           {activeTab === "dashboard" && (
             <>
