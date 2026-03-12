@@ -156,15 +156,18 @@ function RequestsTab({ onCountChange }) {
 
   const fetchNotifications = useCallback(() => {
     setLoading(true);
-    api.get("/admin/notifications", { params: { page, limit: 20, status: statusFilter } })
+    api.get("/admin/notifications", { params: { page, limit: 20, status: statusFilter || undefined } })
       .then(r => {
-        setNotifications(r.data.notifications);
-        setTotal(r.data.total);
-        setPendingCount(r.data.pending_count);
-        setPages(r.data.pages);
-        if (onCountChange) onCountChange(r.data.pending_count);
+        setNotifications(r.data.notifications || []);
+        setTotal(r.data.total || 0);
+        setPendingCount(r.data.pending_count || 0);
+        setPages(r.data.pages || 1);
+        if (onCountChange) onCountChange(r.data.pending_count || 0);
       })
-      .catch(() => toast.error("Erreur lors du chargement des notifications"))
+      .catch(err => {
+        console.error("Notifications error:", err);
+        toast.error(err.response?.data?.detail || "Erreur lors du chargement des notifications");
+      })
       .finally(() => setLoading(false));
   }, [page, statusFilter, onCountChange]);
 

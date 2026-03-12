@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Type, Image as ImageIcon, Film, Quote, AlertTriangle, Table,
   GripVertical, Trash2, ChevronUp, ChevronDown, Plus, Loader2, Upload,
@@ -21,6 +21,15 @@ function genId() { return "blk_" + Math.random().toString(36).slice(2, 10); }
 // ─── Rich Text Mini Editor ────────────────────────────────────────────────────
 function RichTextBlock({ data, onChange }) {
   const editorRef = useRef(null);
+  const isInitialized = useRef(false);
+
+  // Only set innerHTML once on mount, not on every re-render
+  useEffect(() => {
+    if (editorRef.current && !isInitialized.current) {
+      editorRef.current.innerHTML = data.content || "";
+      isInitialized.current = true;
+    }
+  }, []);
 
   const exec = (cmd, val) => {
     document.execCommand(cmd, false, val);
@@ -54,9 +63,10 @@ function RichTextBlock({ data, onChange }) {
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
+        dir="ltr"
         className="min-h-[120px] p-4 text-sm leading-relaxed focus:outline-none prose prose-sm max-w-none"
+        style={{ direction: 'ltr', textAlign: 'left', unicodeBidi: 'plaintext' }}
         onInput={() => onChange({ content: editorRef.current?.innerHTML || "" })}
-        dangerouslySetInnerHTML={{ __html: data.content || "" }}
       />
     </div>
   );

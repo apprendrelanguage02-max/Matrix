@@ -33,7 +33,9 @@ def sanitize_html(content: str) -> str:
 def sanitize(text: str) -> str:
     if not text:
         return ""
-    return html.escape(text.strip())
+    # Strip any HTML tags but preserve special characters (accents, apostrophes, etc.)
+    cleaned = re.sub(r'<[^>]+>', '', text)
+    return cleaned.strip()
 
 def sanitize_url(url: Optional[str]) -> Optional[str]:
     if not url:
