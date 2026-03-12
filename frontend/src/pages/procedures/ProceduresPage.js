@@ -188,7 +188,7 @@ export default function ProceduresPage() {
         {isAdmin && (
           <div className="flex justify-end mb-4">
             <Link
-              to="/procedures/nouvelle"
+              to="/admin/procedures/nouvelle"
               className="flex items-center gap-2 bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#CC5200] transition-colors"
             >
               + Nouvelle procédure
