@@ -8,7 +8,7 @@ import { formatPrice, formatPriceConverted } from "../../components/immobilier/P
 import { useAuth } from "../../context/AuthContext";
 import { useWebSocket } from "../../context/WebSocketContext";
 import api from "../../lib/api";
-import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video, Bed, Bath, Maximize, Home, ShieldCheck, Heart, Bookmark } from "lucide-react";
+import { MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video, Bed, Bath, Maximize, Home, ShieldCheck, Heart, Bookmark, Lock } from "lucide-react";
 import LikeButton from "../../components/LikeButton";
 import { toast } from "sonner";
 
@@ -22,6 +22,34 @@ const STATUS_STYLES = {
   loue:       "bg-purple-100 text-purple-800",
 };
 const STATUS_LABELS = { disponible: "Disponible", reserve: "Réservé", vendu: "Vendu", loue: "Loué" };
+
+function AuthGateOverlay() {
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" data-testid="auth-gate-overlay">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-[#FF6600]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-8 h-8 text-[#FF6600]" />
+        </div>
+        <h2 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">
+          Contenu reserve aux membres
+        </h2>
+        <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
+          Connectez-vous ou creez un compte gratuit pour acceder aux details complets de cette annonce, aux photos et aux coordonnees du vendeur.
+        </p>
+        <div className="space-y-3">
+          <a href="/connexion" data-testid="auth-gate-login-btn"
+            className="block w-full bg-[#FF6600] text-white font-bold uppercase text-sm py-3 px-4 hover:bg-[#CC5200] transition-colors">
+            Se connecter
+          </a>
+          <a href="/connexion" data-testid="auth-gate-register-btn"
+            className="block w-full border-2 border-zinc-200 text-zinc-700 font-bold uppercase text-sm py-3 px-4 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
+            Creer un compte
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -70,6 +98,8 @@ export default function PropertyDetailPage() {
   return (
     <div className="min-h-screen bg-zinc-50 font-['Manrope']">
       <Header />
+      {/* Auth Gate for non-logged in users */}
+      {!token && <AuthGateOverlay />}
       <div className="h-1.5 bg-[#FF6600]" />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

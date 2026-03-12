@@ -1,0 +1,79 @@
+{
+  "summary": "Iteration 28 - Auth Gate, Video URL Support, and File Download Testing Complete. All features working correctly: (1) Auth gate overlay appears on /procedures/:id and /immobilier/:id when user is NOT logged in with Lock icon and SE CONNECTER/CREER UN COMPTE buttons. (2) Auth gate does NOT appear when user IS logged in. (3) Auth gate login button correctly redirects to /connexion. (4) File download from procedure detail page works - programmatic fetch+blob download with proper Content-Disposition header. (5) Backend API returns video_url at procedure level and step level. (6) Backend API accepts video_url and links in POST/PUT for procedures and steps. (7) Procedure builder shows video URL input (data-testid='proc-video-url') and step video URL input (data-testid='step-video-0'). (8) Fixed nested button HTML warning by changing outer button to div in ProcedureDetailPage.js.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ProcedureBuilder", "issues": ["Console warning: '<span> cannot be a child of <select>/<option>' - cosmetic hydration warning from React dev tools, does not affect functionality"]}
+    ]
+  },
+  "passed_tests": {
+    "backend_api": [
+      "GET /api/procedures/:id - Returns procedure with video_url field",
+      "GET /api/procedures/:id - Returns steps with video_url and links fields",
+      "POST /api/procedures - Creates procedure with video_url at procedure level",
+      "POST /api/procedures - Creates procedure with step video_url and links",
+      "PUT /api/procedures/:id - Updates video_url correctly",
+      "GET /api/procedures/files/:file_id/download - Returns file with Content-Disposition header",
+      "GET /api/procedures/:id - Public access works (no auth required for reading)",
+      "GET /api/properties/:id - Public access works (no auth required for reading)",
+      "GET /api/procedures/categories - Returns 9 categories",
+      "GET /api/procedures/countries - Returns 16 countries with flags",
+      "GET /api/procedures/languages - Returns 3 languages"
+    ],
+    "frontend_ui": [
+      "Auth gate overlay appears on /procedures/:id when NOT logged in (data-testid='auth-gate-overlay')",
+      "Auth gate overlay appears on /immobilier/:id when NOT logged in (data-testid='auth-gate-overlay')",
+      "Auth gate overlay does NOT appear when user IS logged in on both pages",
+      "Auth gate login button (data-testid='auth-gate-login-btn') links to /connexion",
+      "Auth gate register button (data-testid='auth-gate-register-btn') links to /connexion",
+      "File download from procedure detail page works - button with data-testid='download-file-{id}' triggers download",
+      "Procedure builder shows video URL input field (data-testid='proc-video-url')",
+      "Procedure builder step shows video URL input field (data-testid='step-video-{index}')",
+      "Procedure builder step shows 'LIENS UTILES' section with '+ Ajouter un lien' button",
+      "Files section shows in procedure detail (data-testid='files-section')"
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration28_auth_gate_video.py",
+    "/app/test_reports/pytest/pytest_results_iter28.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AuthGateOverlay component correctly checks for token presence to show/hide overlay",
+    "handleDownload function uses programmatic fetch+blob approach to download files (more reliable than <a> tag)",
+    "Backend properly returns video_url at both procedure and step levels in enrich_procedure helper",
+    "Backend sanitizes video_url using sanitize_url helper in both create and update operations",
+    "Fixed nested button HTML issue in ProcedureDetailPage.js - changed outer button to div to prevent hydration warning"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration28_auth_gate_video.py",
+    "/app/frontend/src/pages/procedures/ProcedureDetailPage.js"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 tests passed, 3 skipped due to OTP auth)",
+    "frontend": "100% (all UI features verified working)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "matrixguinea@gmail.com",
+      "password": "admin123",
+      "role": "admin"
+    },
+    "test_procedure_id": "62cfc5a7-0bee-4179-9996-ac31366f5c98",
+    "test_property_id": "438115d8-e44d-4559-9c1d-abc0663827ef",
+    "test_file_id": "93039f99-efa2-4bcc-a6bb-bc8d53cf5476"
+  },
+  "seed_data_creation": "None - used existing test data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Auth gate feature fully implemented and tested. Auth gate overlay shows on procedure and property detail pages when user is not logged in. File download uses programmatic fetch+blob approach. Video URL and links support added at both procedure level and step level. ProcedureBuilder has data-testid='proc-video-url' for procedure video and data-testid='step-video-{index}' for step videos. Fixed nested button HTML issue in ProcedureDetailPage - outer element is now div with cursor-pointer instead of button.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}

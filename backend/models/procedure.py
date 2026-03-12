@@ -54,6 +54,8 @@ class ProcedureStepInput(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     description: str = ""
     required_documents: List[str] = []
+    links: List[dict] = []  # [{url, label}]
+    video_url: str = ""
     mandatory: bool = True
 
 
@@ -76,6 +78,7 @@ class ProcedureCreate(BaseModel):
     active: bool = True
     status: str = "draft"  # draft, published
     image_url: Optional[str] = ""
+    video_url: Optional[str] = ""
     steps: List[ProcedureStepInput] = []
     quick_actions: List[QuickActionInput] = []
 
@@ -95,6 +98,7 @@ class ProcedureUpdate(BaseModel):
     active: Optional[bool] = None
     status: Optional[str] = None
     image_url: Optional[str] = None
+    video_url: Optional[str] = None
     steps: Optional[List[ProcedureStepInput]] = None
     quick_actions: Optional[List[QuickActionInput]] = None
     content: Optional[str] = None
@@ -108,6 +112,8 @@ class ProcedureStepOut(BaseModel):
     title: str = ""
     description: str = ""
     required_documents: List[str] = []
+    links: List[dict] = []
+    video_url: str = ""
     mandatory: bool = True
 
 
@@ -144,6 +150,7 @@ class ProcedureOut(BaseModel):
     active: bool = True
     status: str = "draft"
     image_url: str = ""
+    video_url: str = ""
     steps: List[ProcedureStepOut] = []
     quick_actions: List[QuickActionOut] = []
     files: List[ProcedureFileOut] = []

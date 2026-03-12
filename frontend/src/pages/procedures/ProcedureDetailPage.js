@@ -4,8 +4,8 @@ import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import api from "../../lib/api";
 import {
-  Loader2, Calendar, Eye, ArrowLeft, Edit, Trash2, User, CheckCircle, Circle,
-  FileText, Download, ChevronRight, Globe, Tag, Bookmark, Clock, AlertTriangle, Zap
+  Loader2, Calendar, Eye, ArrowLeft, Edit, Trash2, User, CheckCircle,
+  FileText, Download, ChevronRight, Tag, Bookmark, Zap, Video, ExternalLink, Lock
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
@@ -24,6 +24,59 @@ const COMPLEXITY_CONFIG = {
   difficile: { label: "Difficile", color: "text-red-500", bg: "bg-red-500/10 border-red-500/30" },
 };
 
+function getEmbedUrl(url) {
+  if (!url) return null;
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  return null;
+}
+
+function VideoPlayer({ url, testId }) {
+  if (!url) return null;
+  const embedUrl = getEmbedUrl(url);
+  if (embedUrl) {
+    return (
+      <div className="aspect-video rounded-lg overflow-hidden bg-black" data-testid={testId}>
+        <iframe src={embedUrl} title="Video" className="w-full h-full" allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+      </div>
+    );
+  }
+  return (
+    <div className="aspect-video rounded-lg overflow-hidden bg-black" data-testid={testId}>
+      <video src={url} controls className="w-full h-full" />
+    </div>
+  );
+}
+
+function AuthGateOverlay() {
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" data-testid="auth-gate-overlay">
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-[#FF6600]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-8 h-8 text-[#FF6600]" />
+        </div>
+        <h2 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">
+          Contenu reserve aux membres
+        </h2>
+        <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
+          Connectez-vous ou creez un compte gratuit pour acceder au detail complet de cette procedure, aux documents et aux etapes.
+        </p>
+        <div className="space-y-3">
+          <Link to="/connexion" data-testid="auth-gate-login-btn"
+            className="block w-full bg-[#FF6600] text-white font-bold uppercase text-sm py-3 px-4 hover:bg-[#CC5200] transition-colors">
+            Se connecter
+          </Link>
+          <Link to="/connexion" data-testid="auth-gate-register-btn"
+            className="block w-full border-2 border-zinc-200 text-zinc-700 font-bold uppercase text-sm py-3 px-4 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
+            Creer un compte
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProcedureDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,6 +88,7 @@ export default function ProcedureDetailPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [isSaved, setIsSaved] = useState(false);
+  const [downloadingFile, setDownloadingFile] = useState(null);
 
   useEffect(() => {
     api.get(`/procedures/${id}`)
@@ -66,6 +120,30 @@ export default function ProcedureDetailPage() {
       navigate("/procedures");
     } catch { toast.error("Erreur"); }
     finally { setDeleting(false); }
+  };
+
+  const handleDownload = async (file) => {
+    setDownloadingFile(file.id);
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/procedures/files/${file.id}/download`
+      );
+      if (!response.ok) throw new Error("Download failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.original_filename || file.file_name || "fichier";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Telechargement lance");
+    } catch {
+      toast.error("Erreur lors du telechargement");
+    } finally {
+      setDownloadingFile(null);
+    }
   };
 
   const toggleStepComplete = (stepIndex) => {
@@ -101,6 +179,9 @@ export default function ProcedureDetailPage() {
   return (
     <div className="min-h-screen bg-zinc-50 font-['Manrope']">
       <Header />
+
+      {/* Auth Gate for non-logged in users */}
+      {!token && <AuthGateOverlay />}
 
       {/* Hero */}
       <section className="bg-black py-8 sm:py-12">
@@ -168,6 +249,16 @@ export default function ProcedureDetailPage() {
               </div>
             )}
 
+            {/* Procedure-level video */}
+            {procedure.video_url && (
+              <div className="bg-white border border-zinc-200 rounded-lg p-5">
+                <h2 className="font-['Oswald'] text-sm font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
+                  <Video className="w-4 h-4 text-[#FF6600]" /> Video
+                </h2>
+                <VideoPlayer url={procedure.video_url} testId="procedure-video" />
+              </div>
+            )}
+
             {/* Description */}
             {procedure.description && (
               <div className="bg-white border border-zinc-200 rounded-lg p-5">
@@ -180,7 +271,7 @@ export default function ProcedureDetailPage() {
               </div>
             )}
 
-            {/* Steps - Step by Step Guide */}
+            {/* Steps */}
             {steps.length > 0 && (
               <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden" data-testid="steps-section">
                 <div className="px-5 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
@@ -189,8 +280,6 @@ export default function ProcedureDetailPage() {
                   </h2>
                   <span className="text-xs text-zinc-500">{completedSteps.size}/{steps.length} completees</span>
                 </div>
-
-                {/* Progress bar */}
                 <div className="h-1 bg-zinc-100">
                   <div className="h-full bg-[#FF6600] transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
@@ -203,9 +292,8 @@ export default function ProcedureDetailPage() {
                     return (
                       <div key={step.id || i} className={`transition-colors ${isActive ? "bg-[#FF6600]/5" : ""}`}
                         data-testid={`procedure-step-${i}`}>
-                        {/* Step header */}
-                        <button onClick={() => setActiveStep(isActive ? -1 : i)}
-                          className="w-full flex items-center gap-3 px-5 py-4 text-left">
+                        <div onClick={() => setActiveStep(isActive ? -1 : i)}
+                          className="w-full flex items-center gap-3 px-5 py-4 text-left cursor-pointer">
                           <button onClick={(e) => { e.stopPropagation(); toggleStepComplete(i); }}
                             className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
                               isCompleted ? "bg-green-500 border-green-500 text-white" : "border-zinc-300 text-zinc-300 hover:border-[#FF6600]"
@@ -216,18 +304,47 @@ export default function ProcedureDetailPage() {
                             <p className={`text-sm font-bold ${isCompleted ? "line-through text-zinc-400" : "text-black"}`}>
                               {step.title}
                             </p>
-                            {step.mandatory && (
-                              <span className="text-[9px] font-bold uppercase text-red-500">Obligatoire</span>
-                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {step.mandatory && (
+                                <span className="text-[9px] font-bold uppercase text-red-500">Obligatoire</span>
+                              )}
+                              {step.video_url && (
+                                <span className="text-[9px] font-bold uppercase text-blue-500 flex items-center gap-0.5">
+                                  <Video className="w-2.5 h-2.5" /> Video
+                                </span>
+                              )}
+                              {step.links?.length > 0 && (
+                                <span className="text-[9px] font-bold uppercase text-purple-500 flex items-center gap-0.5">
+                                  <ExternalLink className="w-2.5 h-2.5" /> {step.links.length} lien{step.links.length > 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <ChevronRight className={`w-4 h-4 text-zinc-400 transition-transform ${isActive ? "rotate-90" : ""}`} />
-                        </button>
+                        </div>
 
-                        {/* Step detail */}
                         {isActive && (
-                          <div className="px-5 pb-5 pl-16">
+                          <div className="px-5 pb-5 pl-16 space-y-3">
                             {step.description && (
-                              <p className="text-sm text-zinc-600 leading-relaxed mb-3">{step.description}</p>
+                              <p className="text-sm text-zinc-600 leading-relaxed">{step.description}</p>
+                            )}
+                            {step.video_url && (
+                              <VideoPlayer url={step.video_url} testId={`step-video-${i}`} />
+                            )}
+                            {step.links?.length > 0 && (
+                              <div>
+                                <p className="text-xs font-bold uppercase text-zinc-500 mb-2">Liens utiles :</p>
+                                <div className="space-y-1.5">
+                                  {step.links.map((link, li) => (
+                                    <a key={li} href={link.url} target="_blank" rel="noreferrer"
+                                      data-testid={`step-${i}-link-${li}`}
+                                      className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded text-sm transition-colors">
+                                      <ExternalLink className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                                      <span className="text-blue-700 font-medium">{link.label || link.url}</span>
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
                             )}
                             {step.required_documents?.length > 0 && (
                               <div>
@@ -251,7 +368,6 @@ export default function ProcedureDetailPage() {
                   })}
                 </div>
 
-                {/* Completion message */}
                 {completedSteps.size === steps.length && steps.length > 0 && (
                   <div className="px-5 py-4 bg-green-50 border-t border-green-200 flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -261,7 +377,7 @@ export default function ProcedureDetailPage() {
               </div>
             )}
 
-            {/* Files / Downloads */}
+            {/* Files / Downloads — Fixed with programmatic download */}
             {files.length > 0 && (
               <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden" data-testid="files-section">
                 <div className="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
@@ -271,10 +387,10 @@ export default function ProcedureDetailPage() {
                 </div>
                 <div className="p-4 space-y-2">
                   {files.map(f => (
-                    <a key={f.id}
-                      href={`${process.env.REACT_APP_BACKEND_URL}/api/procedures/files/${f.id}/download`}
-                      target="_blank" rel="noreferrer" data-testid={`download-file-${f.id}`}
-                      className="flex items-center gap-3 bg-zinc-50 hover:bg-[#FF6600]/5 px-4 py-3 rounded transition-colors group">
+                    <button key={f.id} onClick={() => handleDownload(f)}
+                      disabled={downloadingFile === f.id}
+                      data-testid={`download-file-${f.id}`}
+                      className="flex items-center gap-3 bg-zinc-50 hover:bg-[#FF6600]/5 px-4 py-3 rounded transition-colors group w-full text-left disabled:opacity-50">
                       <div className="w-10 h-10 bg-[#FF6600]/10 rounded flex items-center justify-center flex-shrink-0">
                         <FileText className="w-5 h-5 text-[#FF6600]" />
                       </div>
@@ -282,8 +398,12 @@ export default function ProcedureDetailPage() {
                         <p className="text-sm font-bold text-zinc-800 truncate group-hover:text-[#FF6600]">{f.file_name || f.original_filename}</p>
                         <p className="text-[10px] text-zinc-500 uppercase">{f.file_type} | {f.content_type}</p>
                       </div>
-                      <Download className="w-4 h-4 text-zinc-400 group-hover:text-[#FF6600]" />
-                    </a>
+                      {downloadingFile === f.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#FF6600]" />
+                      ) : (
+                        <Download className="w-4 h-4 text-zinc-400 group-hover:text-[#FF6600]" />
+                      )}
+                    </button>
                   ))}
                 </div>
               </div>

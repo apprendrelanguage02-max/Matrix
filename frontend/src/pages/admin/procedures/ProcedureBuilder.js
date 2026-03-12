@@ -11,7 +11,8 @@ import api from "../../../lib/api";
 import { toast } from "sonner";
 import {
   ArrowLeft, Save, Send, Clock, Plus, Trash2, GripVertical, ChevronDown, ChevronRight,
-  FileText, Upload, Download, X, Eye, Loader2, Globe, Tag, Sparkles, MessageSquare, Zap
+  FileText, Upload, Download, X, Eye, Loader2, Globe, Tag, Sparkles, MessageSquare, Zap,
+  Video, Link as LinkIcon
 } from "lucide-react";
 
 const FLAG_URL = (code) => `https://flagcdn.com/24x18/${code}.png`;
@@ -92,6 +93,46 @@ function SortableStep({ step, index, isOpen, onToggle, onUpdate, onDelete }) {
             </div>
             <span className="text-zinc-300 text-xs">Cette etape est obligatoire</span>
           </label>
+          {/* Video URL */}
+          <div>
+            <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1 block flex items-center gap-1">
+              <Video className="w-3 h-3" /> URL Video
+            </label>
+            <input value={step.video_url || ""} onChange={e => onUpdate({ ...step, video_url: e.target.value })}
+              placeholder="https://youtube.com/watch?v=... ou URL directe"
+              className="w-full bg-zinc-800 border border-zinc-700 text-white text-xs px-3 py-2 focus:outline-none focus:border-[#FF6600]"
+              data-testid={`step-video-${index}`} />
+          </div>
+          {/* Links */}
+          <div>
+            <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1 block flex items-center gap-1">
+              <LinkIcon className="w-3 h-3" /> Liens utiles
+            </label>
+            <div className="space-y-1.5">
+              {(step.links || []).map((link, li) => (
+                <div key={li} className="flex items-center gap-2">
+                  <input value={link.label || ""} onChange={e => {
+                    const links = [...(step.links || [])];
+                    links[li] = { ...links[li], label: e.target.value };
+                    onUpdate({ ...step, links });
+                  }} placeholder="Label" className="w-1/3 bg-zinc-800 border border-zinc-700 text-white text-xs px-2 py-1.5 focus:outline-none focus:border-[#FF6600]" />
+                  <input value={link.url || ""} onChange={e => {
+                    const links = [...(step.links || [])];
+                    links[li] = { ...links[li], url: e.target.value };
+                    onUpdate({ ...step, links });
+                  }} placeholder="https://..." className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-xs px-2 py-1.5 focus:outline-none focus:border-[#FF6600]" />
+                  <button onClick={() => {
+                    const links = (step.links || []).filter((_, i) => i !== li);
+                    onUpdate({ ...step, links });
+                  }} className="text-zinc-600 hover:text-red-400"><Trash2 className="w-3 h-3" /></button>
+                </div>
+              ))}
+              <button onClick={() => onUpdate({ ...step, links: [...(step.links || []), { label: "", url: "" }] })}
+                className="text-[#FF6600] text-xs font-bold flex items-center gap-1 hover:text-[#CC5200]">
+                <Plus className="w-3 h-3" /> Ajouter un lien
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -116,7 +157,7 @@ export default function ProcedureBuilder() {
   const [form, setForm] = useState({
     title: "", description: "", category: "visa_immigration", keywords: [],
     country: "guinee", language: "fr", complexity: "modere", active: true, status: "draft",
-    image_url: "",
+    image_url: "", video_url: "",
   });
   const [steps, setSteps] = useState([]);
   const [quickActions, setQuickActions] = useState([]);
@@ -159,6 +200,7 @@ export default function ProcedureBuilder() {
           keywords: p.keywords || [], country: p.country || p.subcategory || "guinee",
           language: p.language || "fr", complexity: p.complexity || "modere",
           active: p.active !== false, status: p.status || "draft", image_url: p.image_url || "",
+          video_url: p.video_url || "",
         });
         setSteps((p.steps || []).map(s => ({ ...s, id: s.id || crypto.randomUUID() })));
         setQuickActions(p.quick_actions || []);
@@ -173,7 +215,7 @@ export default function ProcedureBuilder() {
   const addStep = () => {
     const newStep = {
       id: crypto.randomUUID(), order: steps.length + 1,
-      title: "", description: "", required_documents: [], mandatory: true,
+      title: "", description: "", required_documents: [], links: [], video_url: "", mandatory: true,
     };
     setSteps(prev => [...prev, newStep]);
     setOpenStep(newStep.id);
@@ -243,7 +285,13 @@ export default function ProcedureBuilder() {
     setSaving(true);
     const payload = {
       ...form, status: publishStatus || form.status,
-      steps: steps.map((s, i) => ({ ...s, order: i + 1, required_documents: s.required_documents.filter(d => d.trim()) })),
+      steps: steps.map((s, i) => ({
+        ...s,
+        order: i + 1,
+        required_documents: s.required_documents.filter(d => d.trim()),
+        links: (s.links || []).filter(l => l.url && l.url.trim()),
+        video_url: s.video_url || "",
+      })),
       quick_actions: quickActions.filter(q => q.label.trim()),
     };
     try {
@@ -318,6 +366,15 @@ export default function ProcedureBuilder() {
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3}
                   placeholder="Instructions detaillees..." data-testid="proc-desc"
                   className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#FF6600] resize-none" />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs font-bold uppercase mb-1 block flex items-center gap-1">
+                  <Video className="w-3 h-3" /> URL Video (optionnel)
+                </label>
+                <input value={form.video_url} onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
+                  placeholder="https://youtube.com/watch?v=... ou URL directe de la video"
+                  data-testid="proc-video-url"
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#FF6600]" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

@@ -65,6 +65,7 @@ async def enrich_procedure(p: dict) -> dict:
         "active": p.get("active", True),
         "status": p.get("status", "published"),
         "image_url": p.get("image_url", ""),
+        "video_url": p.get("video_url", ""),
         "steps": steps,
         "quick_actions": quick_actions,
         "files": [ProcedureFileOut(**f).model_dump() for f in files],
@@ -215,6 +216,8 @@ async def create_procedure(data: ProcedureCreate, current_user: dict = Depends(r
             "title": sanitize(s.title),
             "description": s.description,
             "required_documents": s.required_documents,
+            "links": s.links,
+            "video_url": sanitize_url(s.video_url) if s.video_url else "",
             "mandatory": s.mandatory,
         })
 
@@ -238,6 +241,7 @@ async def create_procedure(data: ProcedureCreate, current_user: dict = Depends(r
         "active": data.active,
         "status": data.status,
         "image_url": sanitize_url(data.image_url) if data.image_url else "",
+        "video_url": sanitize_url(data.video_url) if data.video_url else "",
         "steps": steps,
         "quick_actions": quick_actions,
         "content": data.content or data.description or "",
@@ -294,6 +298,8 @@ async def update_procedure(procedure_id: str, data: ProcedureUpdate, current_use
         updates["status"] = data.status
     if data.image_url is not None:
         updates["image_url"] = sanitize_url(data.image_url) if data.image_url else ""
+    if data.video_url is not None:
+        updates["video_url"] = sanitize_url(data.video_url) if data.video_url else ""
     if data.content is not None:
         updates["content"] = data.content
 
@@ -306,6 +312,8 @@ async def update_procedure(procedure_id: str, data: ProcedureUpdate, current_use
                 "title": sanitize(s.title),
                 "description": s.description,
                 "required_documents": s.required_documents,
+                "links": s.links,
+                "video_url": sanitize_url(s.video_url) if s.video_url else "",
                 "mandatory": s.mandatory,
             })
         updates["steps"] = steps
