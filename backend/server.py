@@ -14,6 +14,9 @@ from routes.admin import router as admin_router
 from routes.notifications import router as notifications_router
 from routes.messages import router as messages_router
 from database import db
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Matrix News API", version="3.0")
 
@@ -102,6 +105,15 @@ async def global_search(q: str = Q("", max_length=200)):
 
 # ─── Serve uploaded files ──────────────────────────────────────────────────────
 app.mount("/api/media", StaticFiles(directory=str(UPLOAD_DIR)), name="media")
+
+# ─── Startup ───────────────────────────────────────────────────────────────────
+@app.on_event("startup")
+async def startup_init():
+    try:
+        from cloud_storage import init_storage
+        init_storage()
+    except Exception as e:
+        logger.warning(f"Cloud storage init deferred: {e}")
 
 # ─── Shutdown ──────────────────────────────────────────────────────────────────
 @app.on_event("shutdown")

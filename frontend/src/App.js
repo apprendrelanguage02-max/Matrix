@@ -24,6 +24,8 @@ import PriceEstimatePage from "./pages/immobilier/PriceEstimatePage";
 import ProceduresPage from "./pages/procedures/ProceduresPage";
 import ProcedureDetailPage from "./pages/procedures/ProcedureDetailPage";
 import ProcedureFormPage from "./pages/procedures/ProcedureFormPage";
+import AdminProceduresDashboard from "./pages/admin/procedures/AdminProceduresDashboard";
+import ProcedureBuilder from "./pages/admin/procedures/ProcedureBuilder";
 import ChatHelp from "./components/ChatHelp";
 import "./App.css";
 
@@ -89,6 +91,9 @@ function App() {
           <Route path="/procedures/:id" element={<ProcedureDetailPage />} />
           <Route path="/procedures/nouvelle" element={<AdminRoute><ProcedureFormPage /></AdminRoute>} />
           <Route path="/procedures/modifier/:id" element={<AdminRoute><ProcedureFormPage /></AdminRoute>} />
+          <Route path="/admin/procedures" element={<AdminRoute><AdminProceduresDashboard /></AdminRoute>} />
+          <Route path="/admin/procedures/nouvelle" element={<AdminRoute><ProcedureBuilder /></AdminRoute>} />
+          <Route path="/admin/procedures/modifier/:id" element={<AdminRoute><ProcedureBuilder /></AdminRoute>} />
         </Routes>
           <ChatHelp />
           <Toaster position="top-right" />
