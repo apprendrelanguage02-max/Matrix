@@ -8,10 +8,14 @@
 - [x] Admin price references management
 - [x] "Voir les biens autour de moi" - Geolocation feature
 - [x] Admin Procedures Module - Dashboard + Builder (Phase 1+2)
+- [x] Permanent cloud storage for all uploads (images never disappear)
+- [x] Phase 3: Public procedure viewer with step-by-step guide
+- [x] SEO meta tags + matrixnews.org branding
+- [x] Badges anti-arnaque (admin verification)
+- [x] Rate limiting (429 instead of 520)
 
 ## P1 — Next Up
-- [ ] Phase 3: Public procedure viewer with step-by-step guide
-- [ ] Rate limiting API login returns 520 instead of 429
+- [ ] Notifications for new matching properties
 
 ## P2 — Future
 - [ ] Notifications pour nouvelles annonces correspondant à une recherche

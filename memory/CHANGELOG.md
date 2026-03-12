@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-03-12 — Cloud Storage, SEO, Badges, Rate Limiting, Public Procedures
+- **Cloud Storage**: Migrated ALL image/video uploads to permanent cloud storage (emergentintegrations). Images never disappear again.
+- **Phase 3 Public Procedures**: Step-by-step guided view with progress bar, expandable steps, required documents, downloadable files, quick actions, country flags, complexity badges, tags
+- **SEO & Branding**: Open Graph meta tags (og:url, og:title, og:description, og:image) with matrixnews.org domain. robots.txt. Footer updated with matrixnews.org link.
+- **Badges Anti-Arnaque**: Admin can verify properties via toggle. Green "Verifie" badge on PropertyCard and PropertyDetailPage.
+- **Rate Limiting**: Middleware returns proper HTTP 429 on auth endpoints after 30 requests/minute. Uses X-Forwarded-For for real client IP.
+- Testing: 100% pass (11/11 backend + 15/15 frontend verified)
+
 ## 2026-03-12 — Feature: Admin Procedures Module (Phase 1+2)
 - **Backend**: Full procedure CRUD with steps, quick actions, version history, cloud file storage
 - **Backend**: Chat actions CRUD, reference data APIs (categories, countries, languages)
