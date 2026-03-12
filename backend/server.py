@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Matrix News API", version="3.0")
 
+# ─── Rate Limiting ─────────────────────────────────────────────────────────────
+from middleware.rate_limit import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware, rate_limit=30, window=60)
+
 # ─── CORS ──────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
@@ -103,8 +107,20 @@ async def global_search(q: str = Q("", max_length=200)):
     ).sort("created_at", -1).limit(5).to_list(5)
     return {"articles": articles, "properties": properties, "procedures": procedures}
 
-# ─── Serve uploaded files ──────────────────────────────────────────────────────
-app.mount("/api/media", StaticFiles(directory=str(UPLOAD_DIR)), name="media")
+# ─── Serve uploaded files (local legacy + cloud proxy) ─────────────────────────
+app.mount("/api/media/images", StaticFiles(directory=str(UPLOAD_DIR / "images")), name="media_images")
+app.mount("/api/media/videos", StaticFiles(directory=str(UPLOAD_DIR / "videos")), name="media_videos")
+
+from fastapi import Response as FastAPIResponse
+
+@app.get("/api/media/cloud/{path:path}")
+async def serve_cloud_media(path: str):
+    try:
+        from cloud_storage import get_object
+        data, content_type = get_object(path)
+        return FastAPIResponse(content=data, media_type=content_type, headers={"Cache-Control": "public, max-age=31536000"})
+    except Exception:
+        raise HTTPException(status_code=404, detail="Fichier introuvable")
 
 # ─── Startup ───────────────────────────────────────────────────────────────────
 @app.on_event("startup")

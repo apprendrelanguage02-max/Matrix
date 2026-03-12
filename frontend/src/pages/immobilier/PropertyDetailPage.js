@@ -77,12 +77,30 @@ export default function PropertyDetailPage() {
           <Link to="/immobilier" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-500 hover:text-[#FF6600] transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          {canEdit && (
-            <Link to={`/immobilier/modifier/${property.id}`}
-              className="flex items-center gap-1.5 text-sm font-bold uppercase text-zinc-500 hover:text-[#FF6600] transition-colors">
-              <Edit className="w-4 h-4" /> Modifier
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {user?.role === "admin" && (
+              <button onClick={async () => {
+                try {
+                  const res = await api.post(`/properties/${property.id}/verify`);
+                  setProperty(p => ({ ...p, is_verified: res.data.is_verified }));
+                  toast.success(res.data.message);
+                } catch { toast.error("Erreur"); }
+              }} data-testid="verify-property-btn"
+                className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 transition-colors ${
+                  property.is_verified
+                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                    : "bg-zinc-100 text-zinc-500 hover:bg-[#FF6600] hover:text-white"
+                }`}>
+                <ShieldCheck className="w-3.5 h-3.5" /> {property.is_verified ? "Verifie" : "Verifier"}
+              </button>
+            )}
+            {canEdit && (
+              <Link to={`/immobilier/modifier/${property.id}`}
+                className="flex items-center gap-1.5 text-sm font-bold uppercase text-zinc-500 hover:text-[#FF6600] transition-colors">
+                <Edit className="w-4 h-4" /> Modifier
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

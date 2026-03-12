@@ -1,6 +1,10 @@
 import os
 import requests
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / '.env')
 
 logger = logging.getLogger(__name__)
 
@@ -41,3 +45,14 @@ def get_object(path: str) -> tuple:
     )
     resp.raise_for_status()
     return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+
+
+def get_public_url(path: str) -> str:
+    key = init_storage()
+    resp = requests.get(
+        f"{STORAGE_URL}/url/{path}",
+        headers={"X-Storage-Key": key}, timeout=30
+    )
+    if resp.status_code == 200:
+        return resp.json().get("url", "")
+    return ""

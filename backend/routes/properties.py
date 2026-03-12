@@ -6,7 +6,7 @@ from models.property import (
     PaginatedProperties, SavedPropertyOut, SearchAlertCreate, SearchAlertOut,
     PROPERTY_TYPES, PROPERTY_STATUSES, PROPERTY_CATEGORIES, convert_price
 )
-from middleware.auth import get_current_user, require_agent
+from middleware.auth import get_current_user, require_agent, require_admin
 from utils import sanitize, sanitize_html, sanitize_url
 from routes.messages import manager
 from pymongo import ReturnDocument
@@ -604,3 +604,16 @@ async def toggle_property_like(property_id: str, current_user: dict = Depends(ge
     updated = await db.properties.find_one({"id": property_id}, {"_id": 0, "likes_count": 1, "liked_by": 1})
     await manager.broadcast_all({"type": "like_update", "content_type": "property", "id": property_id, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])})
     return {"action": action, "likes_count": updated.get("likes_count", 0), "liked_by": updated.get("liked_by", [])}
+
+
+
+# ─── Admin Verification Badge ────────────────────────────────────────────────
+
+@router.post("/properties/{property_id}/verify")
+async def toggle_verify_property(property_id: str, current_user: dict = Depends(require_admin)):
+    prop = await db.properties.find_one({"id": property_id}, {"_id": 0, "id": 1, "is_verified": 1})
+    if not prop:
+        raise HTTPException(status_code=404, detail="Annonce introuvable")
+    new_status = not prop.get("is_verified", False)
+    await db.properties.update_one({"id": property_id}, {"$set": {"is_verified": new_status}})
+    return {"is_verified": new_status, "message": "Annonce verifiee" if new_status else "Verification retiree"}

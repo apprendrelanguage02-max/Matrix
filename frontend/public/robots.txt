@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /immobilier
+Allow: /procedures
+Allow: /categorie/
+
+Sitemap: https://matrixnews.org/sitemap.xml
+
+# Matrix News - matrixnews.org
+# La plateforme media de reference en Guinee

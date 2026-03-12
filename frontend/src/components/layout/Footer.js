@@ -22,8 +22,11 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5 text-zinc-500">
-              La plateforme média de référence en Guinée. Actualités, immobilier et services pour la communauté GIMO.
+              La plateforme media de reference en Guinee. Actualites, immobilier et services pour la communaute GIMO.
             </p>
+            <a href="https://matrixnews.org" target="_blank" rel="noreferrer" className="text-[#FF6600] text-xs font-bold hover:underline mb-3 inline-block">
+              matrixnews.org
+            </a>
             <div className="flex items-center gap-2 sm:gap-3">
               <a href="#" aria-label="Facebook" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-[#FF6600] hover:text-[#FF6600] transition-all">
                 <Facebook className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -127,7 +130,7 @@ export default function Footer() {
       <div className="border-t border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-[10px] sm:text-xs">
           <p className="text-zinc-600 text-center sm:text-left">
-            &copy; {year} Matrix News — Tous droits réservés · Conakry, Guinée
+            &copy; {year} <a href="https://matrixnews.org" className="text-zinc-400 hover:text-[#FF6600]">matrixnews.org</a> — Matrix News — Tous droits reserves
           </p>
           <div className="flex items-center gap-2 sm:gap-4 text-zinc-600 flex-wrap justify-center">
             <a href="#" className="hover:text-zinc-400 transition-colors">Politique de confidentialité</a>

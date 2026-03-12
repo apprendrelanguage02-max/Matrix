@@ -1,16 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile
-from database import db
-from config import (
-    ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES,
-    MAX_IMAGE_SIZE, MAX_VIDEO_SIZE,
-    UPLOAD_IMAGES_DIR, UPLOAD_VIDEOS_DIR
-)
 from middleware.auth import get_current_user
+from cloud_storage import put_object, get_public_url, APP_NAME
 import uuid
-import os
 from pathlib import Path
 
 router = APIRouter(tags=["upload"])
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/webm"}
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_VIDEO_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/upload")
@@ -19,14 +18,14 @@ async def upload_media(file: UploadFile = File(...), current_user: dict = Depend
 
     if content_type in ALLOWED_IMAGE_TYPES:
         max_size = MAX_IMAGE_SIZE
-        save_dir = UPLOAD_IMAGES_DIR
         media_type = "image"
+        folder = "images"
     elif content_type in ALLOWED_VIDEO_TYPES:
         max_size = MAX_VIDEO_SIZE
-        save_dir = UPLOAD_VIDEOS_DIR
         media_type = "video"
+        folder = "videos"
     else:
-        raise HTTPException(status_code=400, detail="Type de fichier non autorisé. Utilisez JPG, PNG, WEBP, MP4 ou WebM.")
+        raise HTTPException(status_code=400, detail="Type de fichier non autorise. Utilisez JPG, PNG, WEBP, MP4 ou WebM.")
 
     data = await file.read()
     if len(data) > max_size:
@@ -37,12 +36,26 @@ async def upload_media(file: UploadFile = File(...), current_user: dict = Depend
     if not ext:
         ext = ".jpg" if media_type == "image" else ".mp4"
     unique_name = f"{uuid.uuid4().hex}{ext}"
-    dest = save_dir / unique_name
+    storage_path = f"{APP_NAME}/{folder}/{unique_name}"
 
-    with open(dest, "wb") as f:
-        f.write(data)
+    result = put_object(storage_path, data, content_type)
 
-    backend_url = os.environ.get("REACT_APP_BACKEND_URL", "")
-    public_url = f"{backend_url}/api/media/{media_type}s/{unique_name}"
+    # Get permanent public URL from cloud
+    public_url = get_public_url(result["path"])
+    if not public_url:
+        # Serve via our cloud proxy endpoint (permanent URL)
+        import os
+        backend_url = os.environ.get("REACT_APP_BACKEND_URL", "")
+        if not backend_url:
+            # Read from frontend .env as fallback
+            try:
+                with open("/app/frontend/.env") as f:
+                    for line in f:
+                        if line.startswith("REACT_APP_BACKEND_URL="):
+                            backend_url = line.strip().split("=", 1)[1]
+                            break
+            except Exception:
+                pass
+        public_url = f"{backend_url}/api/media/cloud/{result['path']}"
 
-    return {"url": public_url, "type": media_type, "filename": unique_name}
+    return {"url": public_url, "type": media_type, "filename": unique_name, "storage_path": result["path"]}
