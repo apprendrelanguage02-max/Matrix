@@ -50,6 +50,8 @@ Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, u
 - [x] **Bug fix: Fleche menu avatar alignee** (Mars 2026)
 - [x] **Bug fix: Dashboard procedures responsive mobile** (Mars 2026)
 
+- [x] **Bug fix: Images persistantes via cloud storage** (Mars 2026)
+
 ## Pending / Backlog
 - [ ] Systeme de notifications pour nouvelles annonces
 - [ ] Visites video natives dans les annonces

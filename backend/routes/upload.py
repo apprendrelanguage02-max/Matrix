@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile
 from middleware.auth import get_current_user
-from cloud_storage import put_object, get_public_url, APP_NAME
+from cloud_storage import put_object, APP_NAME
 import uuid
 from pathlib import Path
 
@@ -40,22 +40,7 @@ async def upload_media(file: UploadFile = File(...), current_user: dict = Depend
 
     result = put_object(storage_path, data, content_type)
 
-    # Get permanent public URL from cloud
-    public_url = get_public_url(result["path"])
-    if not public_url:
-        # Serve via our cloud proxy endpoint (permanent URL)
-        import os
-        backend_url = os.environ.get("REACT_APP_BACKEND_URL", "")
-        if not backend_url:
-            # Read from frontend .env as fallback
-            try:
-                with open("/app/frontend/.env") as f:
-                    for line in f:
-                        if line.startswith("REACT_APP_BACKEND_URL="):
-                            backend_url = line.strip().split("=", 1)[1]
-                            break
-            except Exception:
-                pass
-        public_url = f"{backend_url}/api/media/cloud/{result['path']}"
+    # Always return a RELATIVE cloud proxy URL (deployment-independent)
+    public_url = f"/api/media/cloud/{result['path']}"
 
     return {"url": public_url, "type": media_type, "filename": unique_name, "storage_path": result["path"]}
