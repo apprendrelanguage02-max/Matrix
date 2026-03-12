@@ -1,82 +1,52 @@
-# Matrix News / GIMO — PRD
+# Matrix News - PRD (Product Requirements Document)
 
 ## Original Problem Statement
-Plateforme média full-stack en Guinée (React/FastAPI/MongoDB) avec:
-- Newsroom (articles, éditeur par blocs, catégories)
-- Section Immobilier (annonces, carte interactive, profils agents, estimation de prix)
-- Section Procédures administratives
-- Dashboard Admin complet
-- Système de favoris unifié (articles, annonces, procédures)
-- Authentification OTP + système de rôles (admin, auteur, agent, visiteur)
+Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, une plateforme combinant:
+- **News/Articles**: Publication et lecture d'articles de presse
+- **Immobilier**: Annonces immobilieres avec geolocalisation, carte interactive, estimation de prix
+- **Procedures administratives**: Guide complet pour les demarches administratives (visa, documents, etc.)
+
+## Core Requirements
+1. Systeme d'authentification (OTP par email via Resend)
+2. Publication et gestion d'articles
+3. Annonces immobilieres avec recherche avancee, carte Leaflet, geolocalisation
+4. Module de procedures administratives avec constructeur d'etapes (drag-and-drop)
+5. Dashboard admin complet
+6. Stockage cloud (AWS S3) pour fichiers et images
+7. Systeme de messagerie entre utilisateurs
+8. SEO et branding (matrixnews.org)
 
 ## Architecture
-```
-/app/
-├── backend/          # FastAPI + MongoDB
-│   ├── data/         # guinea_locations.py (communes/quartiers)
-│   ├── models/       # Pydantic models
-│   ├── routes/       # API routes (admin, articles, properties, procedures, etc.)
-│   └── server.py     # App entry point
-└── frontend/         # React + TailwindCSS
-    └── src/
-        ├── components/  # Reusable UI components
-        ├── pages/       # Page-level components
-        ├── context/     # Auth & WebSocket contexts
-        └── lib/         # API client, utilities
-```
+- **Frontend**: React, TailwindCSS, Shadcn/UI, @dnd-kit, React-Leaflet
+- **Backend**: FastAPI, MongoDB, Pydantic
+- **Storage**: AWS S3 via boto3
+- **Auth**: OTP par email (Resend)
+- **Deployment**: Kubernetes container
 
-## What's Been Implemented
-- Full Newsroom with block editor, categories, article CRUD
-- Full Immobilier section with property CRUD, map (Leaflet), agent profiles
-- Price estimation with cascading dropdowns (Ville > Commune > Quartier)
-- Admin dashboard: users, articles, properties, payments, role requests, price references
-- Unified favorites system (bookmark icon) for articles, properties, procedures
-- WebSocket real-time updates (likes, views, notifications)
-- OTP-based registration with Resend email
-- Search alerts for properties
-- CSV exports for admin data
+## Key API Endpoints
+- Auth: `/api/auth/send-otp`, `/api/auth/verify-otp`, `/api/auth/me`
+- Articles: CRUD `/api/articles`
+- Properties: CRUD `/api/properties`, `/api/properties/nearby`
+- Procedures: CRUD `/api/procedures`, `/api/procedures/{id}/files`, `/api/procedures/files/{id}/download`
+- Upload: `/api/upload`
+- Admin: `/api/admin/*`
 
-## Completed Bug Fixes (March 2026)
-- Fixed: Price estimation page was blank → Now working with cascading dropdowns
-- Fixed: Article favorites broken → Save/unsave toggle works correctly
-- Fixed: Admin "Demandes" page inaccessible → RequestsTab loads correctly
-- Fixed: Property edit data loss → PUT endpoint preserves all fields
-- Fixed: Article like notifications going to wrong collection
-- Fixed: Saved procedures missing subcategory_name
+## Implemented Features (Complete)
+- [x] Systeme d'articles (CRUD, categories, likes, favoris)
+- [x] Annonces immobilieres (CRUD, recherche, carte, geolocalisation)
+- [x] Estimation de prix immobilier
+- [x] Module de procedures v2 (CRUD, etapes drag-and-drop, fichiers cloud)
+- [x] Dashboard admin procedures (stats, config, graphiques)
+- [x] Geolocalisation "Biens autour de moi"
+- [x] Badges anti-arnaque (verification admin)
+- [x] SEO (robots.txt, sitemap.xml, meta-tags)
+- [x] Migration stockage cloud
+- [x] Correction rate limiting (429)
+- [x] **Support video/liens dans procedures** (Mars 2026)
+- [x] **Auth Gate** sur pages detail immobilier et procedures (Mars 2026)
+- [x] **Correction telechargement fichiers** procedures (Mars 2026)
 
-## Feature: Admin Procedures Module (March 2026)
-**Backend:**
-- Full CRUD: procedures with embedded steps, quick actions, version history
-- Cloud storage (emergentintegrations): file upload/download for procedure documents
-- Chat Actions: global AI assistant quick actions with country flags
-- Reference data APIs: categories (9), countries (16), languages (3), complexity levels
-- Stats endpoint: total, published, drafts, views, by_category, by_country
-
-**Frontend:**
-- Admin dashboard `/admin/procedures`: Dark theme (zinc-950), sidebar navigation, stats cards, procedure list with country flags, search & filters
-- Procedure builder `/admin/procedures/nouvelle|modifier/:id`: 
-  - Section 1: Info (title, description, category, keywords tags, country with flags, language, complexity, active toggle)
-  - Section 2: Steps builder with drag & drop (@dnd-kit), required documents, mandatory toggle
-  - Section 3: Chat Actions panel (AI assistant quick actions)
-  - Section 4: Quick Actions (navigate, download, start_procedure)
-  - Section 5: Files manager (cloud upload/download, delete)
-  - Preview panel with summary
-- Publish/Save draft/Version history buttons
-
-## Feature: "Voir les biens autour de moi" (March 2026)
-- Backend: `/api/properties/nearby` endpoint with haversine distance calculation, bounding box pre-filter
-- Frontend MapPage: Geolocation button, blue user position dot with pulse animation, configurable radius circle (1/5/10/20 km)
-- Frontend MapPage: Nearby results section below map with property cards showing distance
-- Frontend ImmobilierPage: "Autour de moi" button linking to map with auto-trigger
-- Mobile-first responsive design
-- Radius selector, exit nearby mode, smooth fly-to animation
-
-## 3rd Party Integrations
-- Resend: OTP emails
-- Leaflet/React-Leaflet: Interactive map
-- bcrypt: Password hashing
-- JWT: Authentication tokens
-
-## Test Credentials
-- Admin: matrixguinea@gmail.com / admin123
-- Agent: gui002@gmail.com / agent123
+## Pending / Backlog
+- [ ] Systeme de notifications pour nouvelles annonces
+- [ ] Visites video natives dans les annonces
+- [ ] Heatmap des prix immobiliers sur la carte
