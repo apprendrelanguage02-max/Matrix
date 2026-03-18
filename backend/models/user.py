@@ -4,13 +4,21 @@ import re
 
 
 class UserRegister(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=100)
     username: str = Field(..., min_length=2, max_length=50)
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=100)
     role: str = Field(default="visiteur")
     phone: Optional[str] = None
     country: Optional[str] = None
-    otp: str = Field(..., min_length=6, max_length=6, description="Code OTP à 6 chiffres")
+
+    @field_validator('full_name')
+    @classmethod
+    def validate_full_name(cls, v):
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError("Le nom complet est requis")
+        return v
 
     @field_validator('username')
     @classmethod
@@ -35,6 +43,7 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: str
     username: str
+    full_name: Optional[str] = None
     email: str
     role: str
     phone: Optional[str] = None
@@ -42,7 +51,8 @@ class UserOut(BaseModel):
     address: Optional[str] = None
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
-    status: Optional[str] = "actif"
+    status: Optional[str] = "active"
+    eligible_trusted_badge: Optional[bool] = False
     last_seen: Optional[str] = None
     created_at: Optional[str] = None
 
@@ -50,11 +60,15 @@ class UserOut(BaseModel):
 class UserAdminOut(BaseModel):
     id: str
     username: str
+    full_name: Optional[str] = None
     email: str
     role: str
     phone: Optional[str] = None
     country: Optional[str] = None
-    status: Optional[str] = "actif"
+    status: Optional[str] = "active"
+    eligible_trusted_badge: Optional[bool] = False
+    email_verified: Optional[bool] = False
+    verified_at: Optional[str] = None
     last_seen: Optional[str] = None
     created_at: Optional[str] = None
 
@@ -68,6 +82,7 @@ class PaginatedUsers(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     username: Optional[str] = None
+    full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     country: Optional[str] = None
@@ -98,9 +113,13 @@ class TokenResponse(BaseModel):
 
 
 def user_to_out(user: dict) -> UserOut:
+    status = user.get("status", "active")
+    if status == "actif":
+        status = "active"
     return UserOut(
         id=user["id"],
         username=user["username"],
+        full_name=user.get("full_name"),
         email=user["email"],
         role=user.get("role", "visiteur"),
         created_at=user.get("created_at", ""),
@@ -109,20 +128,28 @@ def user_to_out(user: dict) -> UserOut:
         address=user.get("address"),
         avatar_url=user.get("avatar_url"),
         bio=user.get("bio"),
-        status=user.get("status", "actif"),
+        status=status,
+        eligible_trusted_badge=user.get("eligible_trusted_badge", False),
         last_seen=user.get("last_seen"),
     )
 
 
 def user_to_admin_out(user: dict) -> UserAdminOut:
+    status = user.get("status", "active")
+    if status == "actif":
+        status = "active"
     return UserAdminOut(
         id=user["id"],
         username=user["username"],
+        full_name=user.get("full_name"),
         email=user["email"],
         role=user.get("role", "visiteur"),
         created_at=user.get("created_at", ""),
         phone=user.get("phone"),
         country=user.get("country"),
-        status=user.get("status", "actif"),
+        status=status,
+        eligible_trusted_badge=user.get("eligible_trusted_badge", False),
+        email_verified=user.get("email_verified", False),
+        verified_at=user.get("verified_at"),
         last_seen=user.get("last_seen"),
     )

@@ -11,15 +11,32 @@ from routes.messages import manager
 import bcrypt
 import uuid
 import jwt
+import hashlib
 import random
 import os
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel, EmailStr
+from collections import defaultdict
+import time
 
 router = APIRouter(tags=["auth"])
 logger = logging.getLogger(__name__)
+
+# ── Rate limiting (in-memory, per-endpoint) ──────────────────────────────────
+_rate_limits = defaultdict(list)  # key -> list of timestamps
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX_SEND = 5  # max send-otp per minute per email
+RATE_LIMIT_MAX_VERIFY = 10  # max verify-otp per minute per email
+
+
+def _check_rate_limit(key: str, max_requests: int):
+    now = time.time()
+    _rate_limits[key] = [t for t in _rate_limits[key] if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limits[key]) >= max_requests:
+        raise HTTPException(status_code=429, detail="Trop de tentatives. Veuillez patienter 1 minute.")
+    _rate_limits[key].append(now)
 
 
 def create_token(user_id: str) -> str:
@@ -27,12 +44,17 @@ def create_token(user_id: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def _hash_otp(code: str) -> str:
+    """Hash OTP with SHA-256 for secure storage."""
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
 async def _send_otp_email(email: str, code: str):
     """Send OTP via Resend. Falls back to dev mode if no API key."""
     api_key = os.environ.get("RESEND_API_KEY", "")
     if not api_key:
         logger.info(f"[DEV MODE] OTP for {email}: {code}")
-        return False  # dev mode
+        return False
 
     try:
         import resend
@@ -40,17 +62,18 @@ async def _send_otp_email(email: str, code: str):
         html = f"""
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
           <h2 style="color:#FF6600;margin-bottom:8px">GIMO / Matrix News</h2>
-          <p style="color:#333;margin-bottom:24px">Voici votre code de vérification :</p>
+          <p style="color:#333;margin-bottom:24px">Voici votre code de verification :</p>
           <div style="background:#f5f5f5;border:2px solid #FF6600;border-radius:8px;padding:24px;text-align:center">
             <span style="font-size:36px;font-weight:bold;letter-spacing:12px;color:#000">{code}</span>
           </div>
           <p style="color:#888;font-size:13px;margin-top:16px">Ce code expire dans 5 minutes. Ne le partagez pas.</p>
+          <p style="color:#aaa;font-size:11px;margin-top:8px">Si vous n'avez pas demande ce code, ignorez cet email.</p>
         </div>
         """
         params = {
             "from": "GIMO <onboarding@resend.dev>",
             "to": [email],
-            "subject": f"Votre code de vérification : {code}",
+            "subject": f"Votre code de verification : {code}",
             "html": html,
         }
         await asyncio.to_thread(resend.Emails.send, params)
@@ -64,131 +87,189 @@ class OTPRequest(BaseModel):
     email: EmailStr
 
 
+class OTPVerify(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+# ── STEP 1: Register (creates pending_verification account) ─────────────────
+@router.post("/register")
+async def register(data: UserRegister):
+    if data.role == "admin":
+        raise HTTPException(status_code=403, detail="Role non autorise")
+
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "status": 1})
+    if existing:
+        if existing.get("status") == "pending_verification":
+            raise HTTPException(status_code=400, detail="Un compte avec cet email est en attente de verification. Verifiez votre email.")
+        raise HTTPException(status_code=400, detail="Cet email est deja utilise")
+
+    hashed_pw = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt(rounds=12)).decode()
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
+    is_professional = data.role in ("auteur", "agent")
+
+    user_doc = {
+        "id": user_id,
+        "full_name": sanitize(data.full_name),
+        "username": sanitize(data.username),
+        "email": data.email,
+        "phone": sanitize(data.phone) if data.phone else None,
+        "hashed_password": hashed_pw,
+        "role": "visiteur" if is_professional else data.role,
+        "requested_role": data.role if is_professional else None,
+        "status": "pending_verification",
+        "email_verified": False,
+        "eligible_trusted_badge": is_professional,
+        "created_at": now,
+        "updated_at": now,
+        "verified_at": None,
+        "verification_logs": [],
+    }
+    await db.users.insert_one(user_doc)
+
+    logger.info(f"User registered (pending_verification): {data.email} as {data.role}")
+
+    return {"message": "Compte cree. Verifiez votre email pour activer votre compte.", "user_id": user_id, "email": data.email}
+
+
+# ── STEP 2: Send OTP (email only) ───────────────────────────────────────────
 @router.post("/send-otp")
 async def send_otp(data: OTPRequest):
-    """Generate and send 6-digit OTP to email."""
-    # Check if email is already registered
-    existing = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1})
-    if existing:
-        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé.")
+    _check_rate_limit(f"send_otp:{data.email}", RATE_LIMIT_MAX_SEND)
 
-    # Generate 6-digit OTP
+    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "status": 1, "email_verified": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Aucun compte trouve avec cet email. Inscrivez-vous d'abord.")
+
+    if user.get("email_verified") and user.get("status") != "pending_verification":
+        raise HTTPException(status_code=400, detail="Cet email est deja verifie.")
+
     code = str(random.randint(100000, 999999))
+    hashed_code = _hash_otp(code)
     now = datetime.now(timezone.utc)
     expires_at = (now + timedelta(minutes=5)).isoformat()
 
-    # Store (replace any previous OTP for this email)
     await db.otp_codes.delete_many({"email": data.email})
     await db.otp_codes.insert_one({
         "email": data.email,
-        "code": code,
+        "code_hash": hashed_code,
         "created_at": now.isoformat(),
         "expires_at": expires_at,
+        "attempts": 0,
+        "max_attempts": 5,
         "verified": False,
     })
 
     sent = await _send_otp_email(data.email, code)
 
+    logger.info(f"OTP sent to {data.email} (sent={sent})")
+
     if not sent:
-        # Dev mode: return code so it can be displayed in UI
-        return {"sent": False, "dev_otp": code, "message": "Mode développement : email service non configuré."}
+        return {"sent": False, "dev_otp": code, "message": "Mode developpement : email service non configure."}
 
-    return {"sent": True, "message": f"Code envoyé à {data.email}"}
+    return {"sent": True, "message": f"Code envoye a {data.email}"}
 
 
-@router.post("/register", response_model=TokenResponse)
-async def register(data: UserRegister):
-    if data.role == "admin":
-        raise HTTPException(status_code=403, detail="Rôle non autorisé")
-
-    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
-
-    # Verify OTP
-    otp_code = getattr(data, "otp", None)
-    if not otp_code:
-        raise HTTPException(status_code=400, detail="Le code de vérification est requis.")
+# ── STEP 3: Verify OTP (activates account) ──────────────────────────────────
+@router.post("/verify-otp")
+async def verify_otp(data: OTPVerify):
+    _check_rate_limit(f"verify_otp:{data.email}", RATE_LIMIT_MAX_VERIFY)
 
     otp_doc = await db.otp_codes.find_one({"email": data.email}, {"_id": 0})
     if not otp_doc:
-        raise HTTPException(status_code=400, detail="Aucun code envoyé pour cet email. Demandez un nouveau code.")
+        raise HTTPException(status_code=400, detail="Aucun code envoye pour cet email. Demandez un nouveau code.")
 
-    # Check expiry
+    if otp_doc.get("attempts", 0) >= otp_doc.get("max_attempts", 5):
+        await db.otp_codes.delete_many({"email": data.email})
+        raise HTTPException(status_code=429, detail="Trop de tentatives echouees. Demandez un nouveau code.")
+
     try:
         expires_at = datetime.fromisoformat(otp_doc["expires_at"])
         if expires_at.tzinfo is None:
             expires_at = expires_at.replace(tzinfo=timezone.utc)
         if datetime.now(timezone.utc) > expires_at:
             await db.otp_codes.delete_many({"email": data.email})
-            raise HTTPException(status_code=400, detail="Le code a expiré. Demandez un nouveau code.")
+            raise HTTPException(status_code=400, detail="Le code a expire. Demandez un nouveau code.")
     except HTTPException:
         raise
     except Exception:
         raise HTTPException(status_code=400, detail="Erreur de validation du code.")
 
-    if otp_doc["code"] != str(otp_code).strip():
-        raise HTTPException(status_code=400, detail="Code incorrect. Vérifiez et réessayez.")
+    input_hash = _hash_otp(str(data.otp).strip())
 
-    # OTP valid – clean up
+    if otp_doc["code_hash"] != input_hash:
+        await db.otp_codes.update_one(
+            {"email": data.email},
+            {"$inc": {"attempts": 1}}
+        )
+        remaining = otp_doc.get("max_attempts", 5) - otp_doc.get("attempts", 0) - 1
+        if remaining <= 0:
+            await db.otp_codes.delete_many({"email": data.email})
+            raise HTTPException(status_code=429, detail="Trop de tentatives echouees. Demandez un nouveau code.")
+        raise HTTPException(status_code=400, detail=f"Code incorrect. {remaining} tentative(s) restante(s).")
+
     await db.otp_codes.delete_many({"email": data.email})
 
-    hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt(rounds=12)).decode()
-    user_id = str(uuid.uuid4())
-    created_at = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
 
-    requires_approval = data.role in ("auteur", "agent")
-    actual_role = "visiteur" if requires_approval else data.role
-    status = "pending" if requires_approval else "actif"
+    is_professional = user.get("requested_role") in ("auteur", "agent")
+    new_status = "pending" if is_professional else "active"
 
-    user_doc = {
-        "id": user_id,
-        "username": sanitize(data.username),
-        "email": data.email,
-        "hashed_password": hashed,
-        "role": actual_role,
-        "requested_role": data.role if requires_approval else None,
-        "status": status,
-        "created_at": created_at
+    update_fields = {
+        "email_verified": True,
+        "verified_at": now,
+        "status": new_status,
+        "updated_at": now,
     }
-    await db.users.insert_one(user_doc)
 
-    if requires_approval:
-        role_label = "Auteur" if data.role == "auteur" else "Agent immobilier"
+    log_entry = {
+        "action": "email_verified",
+        "timestamp": now,
+        "ip": None,
+    }
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": update_fields, "$push": {"verification_logs": log_entry}}
+    )
+
+    if is_professional:
+        role_label = "Auteur" if user["requested_role"] == "auteur" else "Agent immobilier"
         await db.admin_notifications.insert_one({
             "id": str(uuid.uuid4()),
             "type": "role_request",
-            "user_id": user_id,
+            "user_id": user["id"],
             "user_email": data.email,
-            "user_username": sanitize(data.username),
-            "requested_role": data.role,
-            "message": f"Nouvelle demande de rôle {role_label} de {sanitize(data.username)} ({data.email})",
+            "user_username": user.get("username", ""),
+            "requested_role": user["requested_role"],
+            "message": f"Nouvelle demande de role {role_label} de {user.get('username', '')} ({data.email})",
             "status": "pending",
-            "created_at": created_at,
+            "created_at": now,
             "processed_at": ""
         })
-        # Real-time: notify admin(s) of new role request
         admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(10)
         for adm in admins:
             await manager.send_to_user(adm["id"], {
                 "type": "new_role_request",
-                "message": f"Nouvelle demande de rôle {role_label} de {sanitize(data.username)}",
+                "message": f"Nouvelle demande de role {role_label} de {user.get('username', '')}",
             })
 
-    token = create_token(user_id)
-    return TokenResponse(
-        token=token,
-        user=UserOut(
-            id=user_id, username=user_doc["username"], email=data.email,
-            role=actual_role, created_at=created_at, status=status
-        )
-    )
+    token = create_token(user["id"])
+    updated_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+
+    logger.info(f"OTP verified for {data.email}, status -> {new_status}")
+
+    return TokenResponse(token=token, user=user_to_out(updated_user))
 
 
+# ── Login ────────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=TokenResponse)
 async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    # Valid bcrypt hash for timing-attack prevention (never matches real passwords)
     dummy_hash = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/ufn/P0SqS"
     stored_hash = user["hashed_password"] if user else dummy_hash
     try:
@@ -198,34 +279,42 @@ async def login(data: UserLogin):
     if not user or not valid:
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
-    if user.get("status") == "bloque":
-        raise HTTPException(status_code=403, detail="Votre compte a été bloqué. Contactez l'administrateur.")
-    if user.get("status") == "suspendu":
-        raise HTTPException(status_code=403, detail="Votre compte est temporairement suspendu.")
-    if user.get("status") == "rejected":
-        raise HTTPException(status_code=403, detail="Votre demande de rôle a été refusée. Vous ne pouvez plus accéder à la plateforme avec ce compte.")
+    status = user.get("status", "active")
+    if status == "pending_verification":
+        raise HTTPException(status_code=403, detail="Votre compte n'est pas encore verifie. Verifiez votre email.")
+    if status in ("bloque", "suspended"):
+        raise HTTPException(status_code=403, detail="Votre compte a ete bloque. Contactez l'administrateur.")
+    if status == "rejected":
+        raise HTTPException(status_code=403, detail="Votre demande de role a ete refusee.")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now}})
 
     token = create_token(user["id"])
     return TokenResponse(token=token, user=user_to_out(user))
 
 
+# ── Get me ───────────────────────────────────────────────────────────────────
 @router.get("/me", response_model=UserOut)
 async def get_me(current_user: dict = Depends(get_current_user)):
     return user_to_out(current_user)
 
 
+# ── Update profile ──────────────────────────────────────────────────────────
 @router.put("/profile", response_model=UserOut)
 async def update_profile(data: UserProfileUpdate, current_user: dict = Depends(get_current_user)):
     updates = {}
     if data.username is not None:
         existing = await db.users.find_one({"username": sanitize(data.username), "id": {"$ne": current_user["id"]}}, {"_id": 0})
         if existing:
-            raise HTTPException(status_code=400, detail="Ce nom d'utilisateur est déjà pris")
+            raise HTTPException(status_code=400, detail="Ce nom d'utilisateur est deja pris")
         updates["username"] = sanitize(data.username)
+    if data.full_name is not None:
+        updates["full_name"] = sanitize(data.full_name)
     if data.email is not None:
         existing = await db.users.find_one({"email": data.email, "id": {"$ne": current_user["id"]}}, {"_id": 0})
         if existing:
-            raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+            raise HTTPException(status_code=400, detail="Cet email est deja utilise")
         updates["email"] = data.email
     if data.phone is not None:
         updates["phone"] = sanitize(data.phone)
@@ -239,16 +328,18 @@ async def update_profile(data: UserProfileUpdate, current_user: dict = Depends(g
         updates["bio"] = sanitize(data.bio)
 
     if updates:
+        updates["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.users.update_one({"id": current_user["id"]}, {"$set": updates})
 
     updated = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     return user_to_out(updated)
 
 
+# ── Change password ──────────────────────────────────────────────────────────
 @router.put("/password")
 async def change_password(data: PasswordChange, current_user: dict = Depends(get_current_user)):
     if not bcrypt.checkpw(data.current_password.encode(), current_user["hashed_password"].encode()):
         raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
     new_hash = bcrypt.hashpw(data.new_password.encode(), bcrypt.gensalt(rounds=12)).decode()
     await db.users.update_one({"id": current_user["id"]}, {"$set": {"hashed_password": new_hash}})
-    return {"message": "Mot de passe mis à jour avec succès"}
+    return {"message": "Mot de passe mis a jour avec succes"}

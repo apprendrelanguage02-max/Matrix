@@ -41,7 +41,7 @@ function AuthGateOverlay() {
             className="block w-full bg-[#FF6600] text-white font-bold uppercase text-sm py-3 px-4 hover:bg-[#CC5200] transition-colors">
             Se connecter
           </a>
-          <a href="/connexion" data-testid="auth-gate-register-btn"
+          <a href="/inscription" data-testid="auth-gate-register-btn"
             className="block w-full border-2 border-zinc-200 text-zinc-700 font-bold uppercase text-sm py-3 px-4 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
             Creer un compte
           </a>

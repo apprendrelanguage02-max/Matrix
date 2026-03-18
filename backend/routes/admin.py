@@ -90,9 +90,17 @@ async def get_admin_stats(current_user: dict = Depends(require_admin)):
     total_articles = await db.articles.count_documents({})
     total_properties = await db.properties.count_documents({})
     total_payments = await db.payments.count_documents({})
+    verified_users = await db.users.count_documents({"email_verified": True})
+    unverified_users = await db.users.count_documents({"$or": [{"email_verified": False}, {"email_verified": {"$exists": False}}]})
+    pending_verification = await db.users.count_documents({"status": "pending_verification"})
+    active_users = await db.users.count_documents({"status": {"$in": ["active", "actif"]}})
+    suspended_users = await db.users.count_documents({"status": {"$in": ["suspended", "suspendu", "bloque"]}})
     return {
         "total_users": total_users, "total_articles": total_articles,
         "total_properties": total_properties, "total_payments": total_payments,
+        "verified_users": verified_users, "unverified_users": unverified_users,
+        "pending_verification": pending_verification, "active_users": active_users,
+        "suspended_users": suspended_users,
     }
 
 
@@ -102,6 +110,7 @@ async def get_admin_stats(current_user: dict = Depends(require_admin)):
 async def get_admin_users(
     page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
     search: str = Query("", max_length=100), role: str = Query("", max_length=20),
+    verification: str = Query("", max_length=20),
     current_user: dict = Depends(require_admin)
 ):
     query = {}
@@ -109,9 +118,24 @@ async def get_admin_users(
         query["$or"] = [
             {"username": {"$regex": search, "$options": "i"}},
             {"email": {"$regex": search, "$options": "i"}},
+            {"full_name": {"$regex": search, "$options": "i"}},
         ]
     if role:
         query["role"] = role
+    if verification == "verified":
+        query["email_verified"] = True
+    elif verification == "unverified":
+        query["$or"] = query.get("$or") or []
+        # Handle the case where $or is already used for search
+        if search:
+            query["$and"] = [
+                {"$or": query.pop("$or")},
+                {"$or": [{"email_verified": False}, {"email_verified": {"$exists": False}}]}
+            ]
+        else:
+            query["$or"] = [{"email_verified": False}, {"email_verified": {"$exists": False}}]
+    elif verification == "pending":
+        query["status"] = "pending_verification"
 
     total = await db.users.count_documents(query)
     pages = max(1, (total + limit - 1) // limit)
@@ -130,7 +154,7 @@ async def get_admin_user_detail(user_id: str, current_user: dict = Depends(requi
 
 @router.put("/users/{user_id}/status")
 async def update_user_status(user_id: str, status: str = Query(...), current_user: dict = Depends(require_admin)):
-    if status not in ("actif", "suspendu"):
+    if status not in ("actif", "active", "suspendu", "suspended", "pending_verification"):
         raise HTTPException(status_code=400, detail="Statut invalide")
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:

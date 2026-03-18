@@ -5,6 +5,8 @@ import { WebSocketProvider } from "./context/WebSocketContext";
 import HomePage from "./pages/HomePage";
 import ArticleDetailPage from "./pages/ArticleDetailPage";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import VerifyOTPPage from "./pages/VerifyOTPPage";
 import DashboardPage from "./pages/DashboardPage";
 import ArticleFormPage from "./pages/ArticleFormPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -66,6 +68,8 @@ function App() {
           <Route path="/article/:id" element={<ArticleDetailPage />} />
           <Route path="/categorie/:slug" element={<CategoryPage />} />
           <Route path="/connexion" element={<LoginPage />} />
+          <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/verification" element={<VerifyOTPPage />} />
           <Route path="/profil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/sauvegardes" element={<PrivateRoute><SavedArticlesPage /></PrivateRoute>} />
           <Route path="/parametres" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />

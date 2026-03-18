@@ -439,7 +439,7 @@ export default function Header() {
                           <LogIn className="w-4 h-4 text-zinc-500 group-hover:text-[#FF6600] transition-colors" />
                           Connexion
                         </Link>
-                        <Link to="/connexion?tab=register" onClick={() => setDropdownOpen(false)} data-testid="guest-register-link" className="flex items-center gap-3 px-4 py-2.5 text-sm font-['Manrope'] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors duration-150 group">
+                        <Link to="/inscription" onClick={() => setDropdownOpen(false)} data-testid="guest-register-link" className="flex items-center gap-3 px-4 py-2.5 text-sm font-['Manrope'] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors duration-150 group">
                           <UserPlus className="w-4 h-4 text-zinc-500 group-hover:text-[#FF6600] transition-colors" />
                           Creer un compte
                         </Link>
