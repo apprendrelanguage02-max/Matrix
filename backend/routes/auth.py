@@ -50,13 +50,16 @@ def _hash_otp(code: str) -> str:
 
 
 async def _send_otp_email(email: str, code: str) -> bool:
-    """Send OTP via Resend. Production-ready, no dev fallback."""
+    """Send OTP via Resend. Tries verified domain first, falls back to resend.dev."""
     api_key = os.environ.get("RESEND_API_KEY", "")
-    sender = os.environ.get("SENDER_EMAIL", "Matrix News <onboarding@resend.dev>")
+    primary_sender = os.environ.get("SENDER_EMAIL", "Matrix News <noreply@matrixnews.org>")
+    fallback_sender = "Matrix News <onboarding@resend.dev>"
 
     if not api_key:
-        logger.error("RESEND_API_KEY not configured")
+        logger.error("RESEND_API_KEY not configured — cannot send OTP emails")
         return False
+
+    logger.info(f"Sending OTP email to {email}")
 
     try:
         import resend
@@ -70,21 +73,17 @@ async def _send_otp_email(email: str, code: str) -> bool:
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 20px">
     <tr><td align="center">
       <table width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%">
-        <!-- Header -->
         <tr><td style="background-color:#000000;padding:24px 32px;text-align:center">
           <h1 style="margin:0;color:#FF6600;font-size:28px;font-weight:800;letter-spacing:4px;text-transform:uppercase">MATRIX NEWS</h1>
           <p style="margin:4px 0 0;color:#888888;font-size:11px;letter-spacing:2px;text-transform:uppercase">Verification de votre compte</p>
         </td></tr>
-        <!-- Orange bar -->
         <tr><td style="background-color:#FF6600;height:4px"></td></tr>
-        <!-- Content -->
         <tr><td style="background-color:#ffffff;padding:40px 32px">
           <p style="margin:0 0 8px;color:#333333;font-size:16px;font-weight:600">Bonjour,</p>
           <p style="margin:0 0 28px;color:#666666;font-size:14px;line-height:22px">
             Voici votre code de verification pour activer votre compte Matrix News.
             Ce code est valable pendant <strong style="color:#000">5 minutes</strong>.
           </p>
-          <!-- OTP Code -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td style="background-color:#fafafa;border:2px solid #FF6600;border-radius:8px;padding:28px;text-align:center">
               <p style="margin:0 0 8px;color:#999999;font-size:11px;text-transform:uppercase;letter-spacing:2px">Votre code de verification</p>
@@ -96,7 +95,6 @@ async def _send_otp_email(email: str, code: str) -> bool:
             <strong style="color:#FF6600">Ne partagez jamais ce code avec qui que ce soit.</strong>
           </p>
         </td></tr>
-        <!-- Footer -->
         <tr><td style="background-color:#000000;padding:20px 32px;text-align:center">
           <p style="margin:0;color:#888888;font-size:11px">
             &copy; 2026 Matrix News &mdash; <a href="https://matrixnews.org" style="color:#FF6600;text-decoration:none">matrixnews.org</a>
@@ -108,17 +106,43 @@ async def _send_otp_email(email: str, code: str) -> bool:
 </body>
 </html>"""
 
-        params = {
-            "from": sender,
+        payload = {
             "to": [email],
             "subject": "Votre code de verification Matrix News",
             "html": html,
         }
-        await asyncio.to_thread(resend.Emails.send, params)
-        logger.info(f"OTP email sent to {email}")
-        return True
+
+        # Try primary sender (verified domain)
+        try:
+            payload["from"] = primary_sender
+            result = await asyncio.to_thread(resend.Emails.send, payload)
+            logger.info(f"OTP sent to {email} via {primary_sender} | {result}")
+            return True
+        except Exception as primary_err:
+            primary_msg = str(primary_err)
+            logger.warning(f"Primary sender failed: {primary_msg}")
+
+            # If domain not verified, try fallback
+            if "not verified" in primary_msg.lower() or "domain" in primary_msg.lower():
+                try:
+                    payload["from"] = fallback_sender
+                    result = await asyncio.to_thread(resend.Emails.send, payload)
+                    logger.info(f"OTP sent to {email} via fallback {fallback_sender} | {result}")
+                    return True
+                except Exception as fallback_err:
+                    fallback_msg = str(fallback_err)
+                    logger.error(f"Fallback sender also failed: {fallback_msg}")
+                    if "only send testing emails" in fallback_msg.lower():
+                        logger.error(
+                            "RESEND LIMITATION: Testing mode only sends to account owner. "
+                            "To send to all users, verify matrixnews.org at https://resend.com/domains "
+                            "then create a new API key with full access."
+                        )
+                    raise fallback_err
+            raise primary_err
+
     except Exception as e:
-        logger.error(f"Resend send error for {email}: {e}")
+        logger.error(f"Resend FAILED for {email} | {e}")
         return False
 
 
