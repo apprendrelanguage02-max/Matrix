@@ -50,16 +50,13 @@ def _hash_otp(code: str) -> str:
 
 
 async def _send_otp_email(email: str, code: str) -> bool:
-    """Send OTP via Resend. Tries verified domain first, falls back to resend.dev."""
+    """Send OTP via Resend with verified matrixnews.org domain."""
     api_key = os.environ.get("RESEND_API_KEY", "")
-    primary_sender = os.environ.get("SENDER_EMAIL", "Matrix News <noreply@matrixnews.org>")
-    fallback_sender = "Matrix News <onboarding@resend.dev>"
+    sender = os.environ.get("SENDER_EMAIL", "Matrix News <noreply@matrixnews.org>")
 
     if not api_key:
-        logger.error("RESEND_API_KEY not configured — cannot send OTP emails")
+        logger.error("RESEND_API_KEY not configured")
         return False
-
-    logger.info(f"Sending OTP email to {email}")
 
     try:
         import resend
@@ -106,41 +103,14 @@ async def _send_otp_email(email: str, code: str) -> bool:
 </body>
 </html>"""
 
-        payload = {
+        result = await asyncio.to_thread(resend.Emails.send, {
+            "from": sender,
             "to": [email],
             "subject": "Votre code de verification Matrix News",
             "html": html,
-        }
-
-        # Try primary sender (verified domain)
-        try:
-            payload["from"] = primary_sender
-            result = await asyncio.to_thread(resend.Emails.send, payload)
-            logger.info(f"OTP sent to {email} via {primary_sender} | {result}")
-            return True
-        except Exception as primary_err:
-            primary_msg = str(primary_err)
-            logger.warning(f"Primary sender failed: {primary_msg}")
-
-            # If domain not verified, try fallback
-            if "not verified" in primary_msg.lower() or "domain" in primary_msg.lower():
-                try:
-                    payload["from"] = fallback_sender
-                    result = await asyncio.to_thread(resend.Emails.send, payload)
-                    logger.info(f"OTP sent to {email} via fallback {fallback_sender} | {result}")
-                    return True
-                except Exception as fallback_err:
-                    fallback_msg = str(fallback_err)
-                    logger.error(f"Fallback sender also failed: {fallback_msg}")
-                    if "only send testing emails" in fallback_msg.lower():
-                        logger.error(
-                            "RESEND LIMITATION: Testing mode only sends to account owner. "
-                            "To send to all users, verify matrixnews.org at https://resend.com/domains "
-                            "then create a new API key with full access."
-                        )
-                    raise fallback_err
-            raise primary_err
-
+        })
+        logger.info(f"OTP email sent to {email} | {result}")
+        return True
     except Exception as e:
         logger.error(f"Resend FAILED for {email} | {e}")
         return False
