@@ -10,11 +10,11 @@ Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, u
 - **Frontend**: React, TailwindCSS, Shadcn/UI, @dnd-kit, React-Leaflet
 - **Backend**: FastAPI, MongoDB, Pydantic
 - **Storage**: AWS S3 / Emergent Object Store (cloud persistant)
-- **Auth**: OTP par email (Resend) + login mot de passe
+- **Auth**: OTP email (Resend) + Password, SHA-256 hashed OTP, rate limiting
 - **Deployment**: Kubernetes container
 
 ## Key API Endpoints
-- Auth: `/api/auth/send-otp`, `/api/auth/verify-otp`, `/api/auth/login`, `/api/auth/me`
+- Auth: `/api/auth/register`, `/api/auth/send-otp`, `/api/auth/verify-otp`, `/api/auth/login`, `/api/auth/me`
 - Articles: CRUD `/api/articles`
 - Properties: CRUD `/api/properties`, `/api/properties/nearby`
 - Procedures: CRUD `/api/procedures`, `/api/procedures/{id}/files`, `/api/procedures/files/{id}/download`
@@ -31,17 +31,21 @@ Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, u
 - [x] Badges anti-arnaque (verification admin)
 - [x] SEO (robots.txt, sitemap.xml, meta-tags)
 - [x] Migration stockage cloud (images persistantes, URLs relatives)
-- [x] Correction rate limiting (429)
-- [x] Support video/liens dans procedures (Mars 2026)
-- [x] Auth Gate sur pages detail immobilier et procedures (Mars 2026)
-- [x] Correction telechargement fichiers procedures (Mars 2026)
-- [x] Menu avatar scrollable sur mobile (Mars 2026)
-- [x] Fleche menu avatar alignee avec point vert (Mars 2026)
-- [x] Dashboard procedures responsive mobile — sidebar collapsible (Mars 2026)
-- [x] Images persistantes via cloud storage avec URLs relatives (Mars 2026)
-- [x] Correction caracteres speciaux (accents, apostrophes) — plus de HTML entities (Mars 2026)
-- [x] Editeur d'articles : texte s'ecrit normalement (LTR, curseur stable) (Mars 2026)
-- [x] Notifications admin : chargement robuste avec gestion d'erreurs (Mars 2026)
+- [x] Support video/liens dans procedures
+- [x] Auth Gate sur pages detail immobilier et procedures
+- [x] Correction telechargement fichiers procedures
+- [x] Menu avatar scrollable + fleche alignee
+- [x] Dashboard procedures responsive mobile
+- [x] Correction caracteres speciaux + editeur d'articles
+- [x] **Systeme OTP securise** (Mars 2026):
+  - Inscription en 3 etapes: Register -> Send OTP -> Verify OTP
+  - OTP 6 chiffres, hache SHA-256, expire 5 min
+  - 5 tentatives max par code, rate limiting 5 req/min
+  - Statuts: pending_verification -> active / pending (pro) -> suspended
+  - Champ full_name, eligible_trusted_badge pour agents/auteurs
+  - Pages: /inscription, /verification, /connexion
+  - Vue admin avec filtres verified/unverified/pending
+  - Succes animation + redirect dashboard personnalise
 
 ## Pending / Backlog
 - [ ] Systeme de notifications pour nouvelles annonces

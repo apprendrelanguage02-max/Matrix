@@ -1,6 +1,24 @@
 # Matrix News - Changelog
 
-## [Mars 2026 - Iteration 3] - Special Characters, Editor Fix, Notifications
+## [Mars 2026 - Iteration 4] - Secure OTP Verification System
+
+### Added
+- **Systeme OTP securise complet**:
+  - Page `/inscription` avec nom complet, email, telephone, mot de passe, selection de role (Visiteur/Auteur/Agent)
+  - Page `/verification` avec 6 inputs OTP individuels, collage automatique, tentatives restantes, cooldown 60s, mode dev
+  - Page `/connexion` simplifiee (login uniquement)
+  - Backend: OTP hache SHA-256, 5 tentatives max, rate limiting 5 req/min, expiration 5 min
+  - Statuts utilisateur: `pending_verification` -> `active` (ou `pending` pour roles pro)
+  - `eligible_trusted_badge` pour agents et auteurs
+  - Vue admin: filtres verified/unverified/pending, stats enrichies
+  - Animation de succes + redirect dashboard personnalise
+  - Logs de verification avec timestamps
+
+### Changed
+- Auth routes reecrites avec securite renforcee
+- Modele utilisateur enrichi: full_name, email_verified, verified_at, verification_logs, eligible_trusted_badge
+- Header: lien inscription pointe vers /inscription
+- Auth gate: bouton "Creer un compte" pointe vers /inscription
 
 ### Fixed
 - **Caracteres speciaux (HTML entities)**: La fonction `sanitize()` utilisait `html.escape()` qui convertissait `'` en `&#x27;`, `&` en `&amp;`, etc. Remplacee par `re.sub(r'<[^>]+>', '', text)` qui supprime les balises HTML mais preserve tous les caracteres Unicode (accents, apostrophes, guillemets). Donnees existantes nettoyees dans la base.
