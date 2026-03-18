@@ -47,6 +47,8 @@ Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, u
   - Vue admin avec filtres verified/unverified/pending
   - Succes animation + redirect dashboard personnalise
 
+- [x] **Integration Resend production** : emails OTP reels via Resend SDK, template HTML professionnel, OTP jamais expose (Mars 2026)
+
 ## Pending / Backlog
 - [ ] Systeme de notifications pour nouvelles annonces
 - [ ] Visites video natives dans les annonces

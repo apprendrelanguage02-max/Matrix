@@ -49,37 +49,76 @@ def _hash_otp(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
-async def _send_otp_email(email: str, code: str):
-    """Send OTP via Resend. Falls back to dev mode if no API key."""
+async def _send_otp_email(email: str, code: str) -> bool:
+    """Send OTP via Resend. Production-ready, no dev fallback."""
     api_key = os.environ.get("RESEND_API_KEY", "")
+    sender = os.environ.get("SENDER_EMAIL", "Matrix News <onboarding@resend.dev>")
+
     if not api_key:
-        logger.info(f"[DEV MODE] OTP for {email}: {code}")
+        logger.error("RESEND_API_KEY not configured")
         return False
 
     try:
         import resend
         resend.api_key = api_key
+
         html = f"""
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
-          <h2 style="color:#FF6600;margin-bottom:8px">GIMO / Matrix News</h2>
-          <p style="color:#333;margin-bottom:24px">Voici votre code de verification :</p>
-          <div style="background:#f5f5f5;border:2px solid #FF6600;border-radius:8px;padding:24px;text-align:center">
-            <span style="font-size:36px;font-weight:bold;letter-spacing:12px;color:#000">{code}</span>
-          </div>
-          <p style="color:#888;font-size:13px;margin-top:16px">Ce code expire dans 5 minutes. Ne le partagez pas.</p>
-          <p style="color:#aaa;font-size:11px;margin-top:8px">Si vous n'avez pas demande ce code, ignorez cet email.</p>
-        </div>
-        """
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,Helvetica,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 20px">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%">
+        <!-- Header -->
+        <tr><td style="background-color:#000000;padding:24px 32px;text-align:center">
+          <h1 style="margin:0;color:#FF6600;font-size:28px;font-weight:800;letter-spacing:4px;text-transform:uppercase">MATRIX NEWS</h1>
+          <p style="margin:4px 0 0;color:#888888;font-size:11px;letter-spacing:2px;text-transform:uppercase">Verification de votre compte</p>
+        </td></tr>
+        <!-- Orange bar -->
+        <tr><td style="background-color:#FF6600;height:4px"></td></tr>
+        <!-- Content -->
+        <tr><td style="background-color:#ffffff;padding:40px 32px">
+          <p style="margin:0 0 8px;color:#333333;font-size:16px;font-weight:600">Bonjour,</p>
+          <p style="margin:0 0 28px;color:#666666;font-size:14px;line-height:22px">
+            Voici votre code de verification pour activer votre compte Matrix News.
+            Ce code est valable pendant <strong style="color:#000">5 minutes</strong>.
+          </p>
+          <!-- OTP Code -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="background-color:#fafafa;border:2px solid #FF6600;border-radius:8px;padding:28px;text-align:center">
+              <p style="margin:0 0 8px;color:#999999;font-size:11px;text-transform:uppercase;letter-spacing:2px">Votre code de verification</p>
+              <p style="margin:0;font-size:42px;font-weight:800;letter-spacing:16px;color:#000000;font-family:monospace">{code}</p>
+            </td></tr>
+          </table>
+          <p style="margin:24px 0 0;color:#999999;font-size:12px;line-height:18px;text-align:center">
+            Si vous n'avez pas demande ce code, ignorez simplement cet email.<br>
+            <strong style="color:#FF6600">Ne partagez jamais ce code avec qui que ce soit.</strong>
+          </p>
+        </td></tr>
+        <!-- Footer -->
+        <tr><td style="background-color:#000000;padding:20px 32px;text-align:center">
+          <p style="margin:0;color:#888888;font-size:11px">
+            &copy; 2026 Matrix News &mdash; <a href="https://matrixnews.org" style="color:#FF6600;text-decoration:none">matrixnews.org</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
         params = {
-            "from": "GIMO <onboarding@resend.dev>",
+            "from": sender,
             "to": [email],
-            "subject": f"Votre code de verification : {code}",
+            "subject": "Votre code de verification Matrix News",
             "html": html,
         }
         await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"OTP email sent to {email}")
         return True
     except Exception as e:
-        logger.error(f"Resend error: {e}")
+        logger.error(f"Resend send error for {email}: {e}")
         return False
 
 
@@ -164,10 +203,10 @@ async def send_otp(data: OTPRequest):
 
     sent = await _send_otp_email(data.email, code)
 
-    logger.info(f"OTP sent to {data.email} (sent={sent})")
+    logger.info(f"OTP generated for {data.email} (sent={sent})")
 
     if not sent:
-        return {"sent": False, "dev_otp": code, "message": "Mode developpement : email service non configure."}
+        raise HTTPException(status_code=500, detail="Erreur lors de l'envoi du code. Veuillez reessayer.")
 
     return {"sent": True, "message": f"Code envoye a {data.email}"}
 

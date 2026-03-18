@@ -17,7 +17,6 @@ export default function VerifyOTPPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [devOtp, setDevOtp] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(5);
   const [verifiedUser, setVerifiedUser] = useState(null);
@@ -45,12 +44,7 @@ export default function VerifyOTPPage() {
       setOtpSent(true);
       setCooldown(60);
       setAttemptsLeft(5);
-      if (!res.data.sent && res.data.dev_otp) {
-        setDevOtp(res.data.dev_otp);
-      } else {
-        setDevOtp(null);
-        toast.success(`Code envoye a ${email}`);
-      }
+      toast.success(res.data.message || `Code envoye a ${email}`);
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (detail?.includes("deja verifie")) {
@@ -196,16 +190,6 @@ export default function VerifyOTPPage() {
                 </p>
               </div>
             </div>
-
-            {/* Dev mode OTP display */}
-            {devOtp && (
-              <div className="bg-amber-50 border border-amber-300 px-4 py-3 mb-5" data-testid="dev-otp-display">
-                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">
-                  Mode developpement — Code de test :
-                </p>
-                <p className="text-3xl font-bold tracking-[0.5em] text-black font-mono">{devOtp}</p>
-              </div>
-            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-5" data-testid="otp-error">
