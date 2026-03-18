@@ -242,20 +242,17 @@ export default function ProcedureDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content (2/3) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Cover image */}
-            {procedure.image_url && (
-              <div className="overflow-hidden rounded-lg">
-                <img src={procedure.image_url} alt={procedure.title} className="w-full max-h-[350px] object-cover" />
+            {/* Main image (priority display) */}
+            {procedure.main_image_url && (
+              <div className="overflow-hidden rounded-lg" data-testid="procedure-main-image">
+                <img src={procedure.main_image_url} alt={procedure.title} className="w-full max-h-[400px] object-cover" />
               </div>
             )}
 
-            {/* Procedure-level video */}
-            {procedure.video_url && (
-              <div className="bg-white border border-zinc-200 rounded-lg p-5">
-                <h2 className="font-['Oswald'] text-sm font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
-                  <Video className="w-4 h-4 text-[#FF6600]" /> Video
-                </h2>
-                <VideoPlayer url={procedure.video_url} testId="procedure-video" />
+            {/* Cover image (fallback if no main image) */}
+            {!procedure.main_image_url && procedure.image_url && (
+              <div className="overflow-hidden rounded-lg">
+                <img src={procedure.image_url} alt={procedure.title} className="w-full max-h-[350px] object-cover" />
               </div>
             )}
 
@@ -406,6 +403,16 @@ export default function ProcedureDetailPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Procedure-level video (displayed after steps and files) */}
+            {procedure.video_url && (
+              <div className="bg-white border border-zinc-200 rounded-lg p-5" data-testid="procedure-video-section">
+                <h2 className="font-['Oswald'] text-sm font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
+                  <Video className="w-4 h-4 text-[#FF6600]" /> Video
+                </h2>
+                <VideoPlayer url={procedure.video_url} testId="procedure-video" />
               </div>
             )}
           </div>

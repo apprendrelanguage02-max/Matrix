@@ -157,7 +157,7 @@ export default function ProcedureBuilder() {
   const [form, setForm] = useState({
     title: "", description: "", category: "visa_immigration", keywords: [],
     country: "guinee", language: "fr", complexity: "modere", active: true, status: "draft",
-    image_url: "", video_url: "",
+    image_url: "", video_url: "", main_image_url: "",
   });
   const [steps, setSteps] = useState([]);
   const [quickActions, setQuickActions] = useState([]);
@@ -200,7 +200,7 @@ export default function ProcedureBuilder() {
           keywords: p.keywords || [], country: p.country || p.subcategory || "guinee",
           language: p.language || "fr", complexity: p.complexity || "modere",
           active: p.active !== false, status: p.status || "draft", image_url: p.image_url || "",
-          video_url: p.video_url || "",
+          video_url: p.video_url || "", main_image_url: p.main_image_url || "",
         });
         setSteps((p.steps || []).map(s => ({ ...s, id: s.id || crypto.randomUUID() })));
         setQuickActions(p.quick_actions || []);
@@ -375,6 +375,41 @@ export default function ProcedureBuilder() {
                   placeholder="https://youtube.com/watch?v=... ou URL directe de la video"
                   data-testid="proc-video-url"
                   className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#FF6600]" />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs font-bold uppercase mb-1 block">Image principale (optionnel)</label>
+                <div className="flex items-start gap-3">
+                  <input value={form.main_image_url} onChange={e => setForm(f => ({ ...f, main_image_url: e.target.value }))}
+                    placeholder="URL de l'image principale ou uploadez ci-dessous"
+                    data-testid="proc-main-image-url"
+                    className="flex-1 bg-zinc-800 border border-zinc-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#FF6600]" />
+                  <label className="flex items-center gap-1.5 bg-zinc-700 text-zinc-300 text-xs font-bold uppercase px-3 py-2.5 hover:bg-zinc-600 cursor-pointer transition-colors flex-shrink-0">
+                    <Upload className="w-3.5 h-3.5" /> Upload
+                    <input type="file" accept="image/*" className="hidden" data-testid="proc-main-image-upload"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          const res = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+                          const url = res.data.urls?.[0] || res.data.url;
+                          if (url) setForm(f => ({ ...f, main_image_url: url }));
+                          toast.success("Image principale uploadee");
+                        } catch { toast.error("Erreur upload image"); }
+                        e.target.value = "";
+                      }} />
+                  </label>
+                </div>
+                {form.main_image_url && (
+                  <div className="mt-2 relative inline-block">
+                    <img src={form.main_image_url} alt="Apercu" className="h-24 rounded border border-zinc-700 object-cover" />
+                    <button onClick={() => setForm(f => ({ ...f, main_image_url: "" }))}
+                      className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

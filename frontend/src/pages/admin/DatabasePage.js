@@ -472,8 +472,13 @@ function UsersTab() {
                   <td className="px-3 py-3 text-zinc-500 hidden md:table-cell">{u.country || "-"}</td>
                   <td className="px-3 py-3 text-zinc-500 hidden lg:table-cell">{formatDate(u.created_at)}</td>
                   <td className="px-3 py-3 text-center">
-                    <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded ${u.status === "actif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                      {u.status || "actif"}
+                    <span data-testid={`user-status-badge-${u.id}`} className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded ${
+                      u.status === "actif" ? "bg-green-100 text-green-700" :
+                      u.status === "suspendu" ? "bg-red-100 text-red-700" :
+                      u.status === "pending_verification" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-zinc-100 text-zinc-600"
+                    }`}>
+                      {u.status === "pending_verification" ? "En attente" : u.status || "actif"}
                     </span>
                   </td>
                   <td className="px-3 py-3">

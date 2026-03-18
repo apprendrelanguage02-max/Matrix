@@ -18,7 +18,7 @@ import time
 import uuid
 import hashlib
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://auth-gate-update.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://admin-status-badges.preview.emergentagent.com")
 
 # Test credentials
 ADMIN_EMAIL = "matrixguinea@gmail.com"

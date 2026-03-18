@@ -79,6 +79,7 @@ class ProcedureCreate(BaseModel):
     status: str = "draft"  # draft, published
     image_url: Optional[str] = ""
     video_url: Optional[str] = ""
+    main_image_url: Optional[str] = ""
     steps: List[ProcedureStepInput] = []
     quick_actions: List[QuickActionInput] = []
 
@@ -99,6 +100,7 @@ class ProcedureUpdate(BaseModel):
     status: Optional[str] = None
     image_url: Optional[str] = None
     video_url: Optional[str] = None
+    main_image_url: Optional[str] = None
     steps: Optional[List[ProcedureStepInput]] = None
     quick_actions: Optional[List[QuickActionInput]] = None
     content: Optional[str] = None
@@ -151,6 +153,7 @@ class ProcedureOut(BaseModel):
     status: str = "draft"
     image_url: str = ""
     video_url: str = ""
+    main_image_url: str = ""
     steps: List[ProcedureStepOut] = []
     quick_actions: List[QuickActionOut] = []
     files: List[ProcedureFileOut] = []

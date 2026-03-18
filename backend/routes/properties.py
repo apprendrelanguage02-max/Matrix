@@ -323,7 +323,7 @@ async def create_property(data: PropertyCreate, current_user: dict = Depends(req
         "seller_phone": sanitize(data.seller_phone),
         "seller_email": sanitize(data.seller_email),
         "seller_whatsapp": sanitize(data.seller_whatsapp),
-        "images": [url for url in data.images if url.startswith("http")],
+        "images": [url for url in data.images if url.startswith("http") or url.startswith("/api/media/")],
         "video_url": sanitize_url(data.video_url) or "",
         "status": "disponible",
         "author_id": current_user["id"],
@@ -405,7 +405,7 @@ async def update_property(property_id: str, data: PropertyUpdate, current_user: 
     if "city" in updates:
         updates["city"] = sanitize(updates["city"])
     if "images" in updates:
-        updates["images"] = [u for u in updates["images"] if u.startswith("http")]
+        updates["images"] = [u for u in updates["images"] if u.startswith("http") or u.startswith("/api/media/")]
 
     await db.properties.update_one({"id": property_id}, {"$set": updates})
     prop.update(updates)

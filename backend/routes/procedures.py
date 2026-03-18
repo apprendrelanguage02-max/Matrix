@@ -66,6 +66,7 @@ async def enrich_procedure(p: dict) -> dict:
         "status": p.get("status", "published"),
         "image_url": p.get("image_url", ""),
         "video_url": p.get("video_url", ""),
+        "main_image_url": p.get("main_image_url", ""),
         "steps": steps,
         "quick_actions": quick_actions,
         "files": [ProcedureFileOut(**f).model_dump() for f in files],
@@ -242,6 +243,7 @@ async def create_procedure(data: ProcedureCreate, current_user: dict = Depends(r
         "status": data.status,
         "image_url": sanitize_url(data.image_url) if data.image_url else "",
         "video_url": sanitize_url(data.video_url) if data.video_url else "",
+        "main_image_url": sanitize_url(data.main_image_url) if data.main_image_url else "",
         "steps": steps,
         "quick_actions": quick_actions,
         "content": data.content or data.description or "",
@@ -300,6 +302,8 @@ async def update_procedure(procedure_id: str, data: ProcedureUpdate, current_use
         updates["image_url"] = sanitize_url(data.image_url) if data.image_url else ""
     if data.video_url is not None:
         updates["video_url"] = sanitize_url(data.video_url) if data.video_url else ""
+    if data.main_image_url is not None:
+        updates["main_image_url"] = sanitize_url(data.main_image_url) if data.main_image_url else ""
     if data.content is not None:
         updates["content"] = data.content
 
