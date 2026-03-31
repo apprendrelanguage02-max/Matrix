@@ -1,55 +1,38 @@
-# Matrix News - PRD (Product Requirements Document)
+# Matrix News — PRD
 
-## Original Problem Statement
-Application de plateforme full-stack (React/FastAPI/MongoDB) pour Matrix News, une plateforme combinant:
-- **News/Articles**: Publication et lecture d'articles de presse
-- **Immobilier**: Annonces immobilieres avec geolocalisation, carte interactive, estimation de prix
-- **Procedures administratives**: Guide complet pour les demarches administratives (visa, documents, etc.)
+## Problème Original
+Plateforme full-stack (React/FastAPI/MongoDB) pour un portail d'actualités et immobilier en Guinée. Inclut gestion d'articles, annonces immobilières avec géolocalisation, procédures administratives, et système d'authentification OTP.
 
 ## Architecture
-- **Frontend**: React, TailwindCSS, Shadcn/UI, @dnd-kit, React-Leaflet
+- **Frontend**: React, TailwindCSS, Shadcn/UI, React-Leaflet
 - **Backend**: FastAPI, MongoDB, Pydantic
-- **Storage**: AWS S3 / Emergent Object Store (cloud persistant)
-- **Auth**: OTP email (Resend) + Password, SHA-256 hashed OTP, rate limiting
-- **Deployment**: Kubernetes container
+- **Stockage**: AWS S3 via boto3, cloud proxy `/api/media/cloud/`
+- **Auth**: JWT + OTP (SHA-256, expiration 5min, 5 tentatives max)
+- **Emails**: Resend API (`noreply@matrixnews.org`)
+- **Drag & Drop**: @dnd-kit pour le constructeur de procédures
 
-## Key API Endpoints
-- Auth: `/api/auth/register`, `/api/auth/send-otp`, `/api/auth/verify-otp`, `/api/auth/login`, `/api/auth/me`
-- Articles: CRUD `/api/articles`
-- Properties: CRUD `/api/properties`, `/api/properties/nearby`
-- Procedures: CRUD `/api/procedures`, `/api/procedures/{id}/files`, `/api/procedures/files/{id}/download`
-- Upload: `/api/upload` (retourne URLs cloud relatives)
-- Admin: `/api/admin/*`
+## Fonctionnalités Implémentées
+1. Système d'articles avec catégories, recherche, vues, likes
+2. Module immobilier complet (CRUD, carte, géolocalisation, alertes, estimation prix)
+3. Module procédures V2 (constructeur drag-and-drop, fichiers cloud, vidéos, liens)
+4. Authentification OTP avec Resend
+5. Tableau de bord admin avec gestion utilisateurs, articles, annonces, paiements
+6. Stockage cloud S3 pour tous les fichiers/images
 
-## Implemented Features
-- [x] Systeme d'articles (CRUD, categories, likes, favoris)
-- [x] Annonces immobilieres (CRUD, recherche, carte, geolocalisation)
-- [x] Estimation de prix immobilier
-- [x] Module de procedures v2 (CRUD, etapes drag-and-drop, fichiers cloud)
-- [x] Dashboard admin procedures (stats, config, graphiques) — responsive mobile
-- [x] Geolocalisation "Biens autour de moi"
-- [x] Badges anti-arnaque (verification admin)
-- [x] SEO (robots.txt, sitemap.xml, meta-tags)
-- [x] Migration stockage cloud (images persistantes, URLs relatives)
-- [x] Support video/liens dans procedures
-- [x] Auth Gate sur pages detail immobilier et procedures
-- [x] Correction telechargement fichiers procedures
-- [x] Menu avatar scrollable + fleche alignee
-- [x] Dashboard procedures responsive mobile
-- [x] Correction caracteres speciaux + editeur d'articles
-- [x] **Systeme OTP securise** (Mars 2026):
-  - Inscription en 3 etapes: Register -> Send OTP -> Verify OTP
-  - OTP 6 chiffres, hache SHA-256, expire 5 min
-  - 5 tentatives max par code, rate limiting 5 req/min
-  - Statuts: pending_verification -> active / pending (pro) -> suspended
-  - Champ full_name, eligible_trusted_badge pour agents/auteurs
-  - Pages: /inscription, /verification, /connexion
-  - Vue admin avec filtres verified/unverified/pending
-  - Succes animation + redirect dashboard personnalise
+## Tâches Complétées (Session Actuelle — 31 Mars 2026)
+- [x] P0: Correction du bug images immobilier (filtre `startsWith("http")` → accepte aussi `/api/media/`)
+- [x] P1: Badges colorés statuts utilisateurs admin (vert=actif, rouge=suspendu, jaune=en attente)
+- [x] P1: Champ `main_image_url` ajouté aux procédures (backend + frontend admin + page publique)
+- [x] P1: Vidéo déplacée en bas de page sur ProcedureDetailPage (après description, étapes et fichiers)
 
-- [x] **Integration Resend production** : emails OTP reels via Resend SDK, template HTML professionnel, OTP jamais expose (Mars 2026)
+## Backlog
+- P2: Supprimer anciens fichiers obsolètes procédures (procedures.py v1, models/procedure.py v1) — nettoyage
+- P3: Système de notifications pour recherches sauvegardées
+- P3: Intégration visites vidéo natives dans annonces
+- P3: Heatmap des prix immobiliers sur carte
+- P3: Bug potentiel perte de données édition annonces (jamais reproduit)
 
-## Pending / Backlog
-- [ ] Systeme de notifications pour nouvelles annonces
-- [ ] Visites video natives dans les annonces
-- [ ] Heatmap des prix immobiliers sur la carte
+## Credentials Test
+- Admin: `matrixguinea@gmail.com` / `admin123`
+- Agent: `testagent@nimba.com`
+- Auteur: `testauteur@nimba.com`
