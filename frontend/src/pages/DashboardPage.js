@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
@@ -152,6 +152,8 @@ export default function DashboardPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  const topArticles = useMemo(() => [...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10), [articles]);
 
   const fetchAll = useCallback(() => {
     setLoading(true);
@@ -361,7 +363,7 @@ export default function DashboardPage() {
               <div className="bg-white border border-zinc-200 p-6">
                 <h3 className="font-['Oswald'] text-lg font-bold uppercase mb-4">Top articles par vues</h3>
                 <div className="space-y-3">
-                  {[...articles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10).map((a, i) => (
+                  {topArticles.map((a, i) => (
                     <div key={a.id} className="flex items-center gap-3">
                       <span className="font-['Oswald'] text-lg font-bold text-zinc-300 w-6">{i + 1}</span>
                       <div className="flex-1 min-w-0">

@@ -12,7 +12,7 @@ import bcrypt
 import uuid
 import jwt
 import hashlib
-import random
+import secrets
 import os
 import asyncio
 import logging
@@ -179,7 +179,7 @@ async def send_otp(data: OTPRequest):
     if user.get("email_verified") and user.get("status") != "pending_verification":
         raise HTTPException(status_code=400, detail="Cet email est deja verifie.")
 
-    code = str(random.randint(100000, 999999))
+    code = str(secrets.randbelow(900000) + 100000)
     hashed_code = _hash_otp(code)
     now = datetime.now(timezone.utc)
     expires_at = (now + timedelta(minutes=5)).isoformat()

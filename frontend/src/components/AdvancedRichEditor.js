@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { 
   Bold, Italic, Underline, Strikethrough, 
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
@@ -62,14 +63,14 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
   // Initialize content only on mount (avoids cursor jump)
   useEffect(() => {
     if (editorRef.current && value && !editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value;
+      editorRef.current.innerHTML = DOMPurify.sanitize(value);
     }
   }, []); // eslint-disable-line
 
   // Sync external value changes (e.g. loading existing content)
   useEffect(() => {
     if (editorRef.current && value && editorRef.current.innerHTML !== value && !editorRef.current.matches(":focus")) {
-      editorRef.current.innerHTML = value;
+      editorRef.current.innerHTML = DOMPurify.sanitize(value);
     }
   }, [value]);
 

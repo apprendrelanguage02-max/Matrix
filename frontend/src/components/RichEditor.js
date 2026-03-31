@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
+import DOMPurify from "dompurify";
 import {
   Bold, Italic, Underline, List, ListOrdered,
   Quote, Image, Heading2, Heading3, Trash2, Upload, Loader2, Film
@@ -40,7 +41,7 @@ export default function RichEditor({ value, onChange, error }) {
     if (!el) return;
     // Only set innerHTML on mount or external reset, not on every keystroke
     if (el.innerHTML !== value) {
-      el.innerHTML = value || "";
+      el.innerHTML = DOMPurify.sanitize(value || "");
     }
   }, []); // eslint-disable-line
 

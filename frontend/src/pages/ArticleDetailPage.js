@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 import Header from "../components/Header";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -30,7 +31,7 @@ function RenderBlock({ block }) {
         <div
           className="prose prose-lg max-w-none prose-zinc prose-headings:font-['Oswald'] prose-headings:uppercase prose-a:text-[#FF6600] prose-a:no-underline hover:prose-a:underline"
           data-testid="block-text"
-          dangerouslySetInnerHTML={{ __html: data.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.content) }}
         />
       ) : null;
     case "image":
@@ -112,7 +113,7 @@ function RenderBlock({ block }) {
             <thead>
               <tr className="bg-zinc-50 border-b border-zinc-200">
                 {data.headers.map((h, i) => (
-                  <th key={i} className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-600 border-r border-zinc-200 last:border-r-0">
+                  <th key={`header-${h}-${i}`} className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-600 border-r border-zinc-200 last:border-r-0">
                     {h}
                   </th>
                 ))}
@@ -120,9 +121,9 @@ function RenderBlock({ block }) {
             </thead>
             <tbody>
               {(data.rows || []).map((row, ri) => (
-                <tr key={ri} className="border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50/50">
+                <tr key={`row-${ri}`} className="border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50/50">
                   {row.map((cell, ci) => (
-                    <td key={ci} className="px-4 py-2.5 text-zinc-700 border-r border-zinc-100 last:border-r-0">
+                    <td key={`cell-${ri}-${ci}`} className="px-4 py-2.5 text-zinc-700 border-r border-zinc-100 last:border-r-0">
                       {cell}
                     </td>
                   ))}
@@ -311,7 +312,7 @@ export default function ArticleDetailPage() {
               <div
                 className="article-content"
                 data-testid="article-content"
-                dangerouslySetInnerHTML={{ __html: article.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
               />
             ) : (
               <div className="font-['Manrope'] text-lg text-zinc-800 leading-relaxed" data-testid="article-content">

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import api from "../../lib/api";
@@ -156,6 +157,7 @@ export default function ProcedureDetailPage() {
 
   const isAdmin = user?.role === "admin";
   const steps = procedure?.steps || [];
+  const sortedSteps = useMemo(() => [...steps].sort((a, b) => a.order - b.order), [steps]);
   const files = procedure?.files || [];
   const quickActions = procedure?.quick_actions || [];
   const cx = COMPLEXITY_CONFIG[procedure?.complexity] || COMPLEXITY_CONFIG.modere;
@@ -263,7 +265,7 @@ export default function ProcedureDetailPage() {
                 <div className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">{procedure.description}</div>
                 {procedure.content && procedure.content !== procedure.description && (
                   <article className="mt-4 prose prose-sm max-w-none prose-a:text-[#FF6600]"
-                    dangerouslySetInnerHTML={{ __html: procedure.content }} />
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(procedure.content) }} />
                 )}
               </div>
             )}
@@ -282,7 +284,7 @@ export default function ProcedureDetailPage() {
                 </div>
 
                 <div className="divide-y divide-zinc-100">
-                  {steps.sort((a, b) => a.order - b.order).map((step, i) => {
+                  {sortedSteps.map((step, i) => {
                     const isCompleted = completedSteps.has(i);
                     const isActive = activeStep === i;
 
@@ -333,7 +335,7 @@ export default function ProcedureDetailPage() {
                                 <p className="text-xs font-bold uppercase text-zinc-500 mb-2">Liens utiles :</p>
                                 <div className="space-y-1.5">
                                   {step.links.map((link, li) => (
-                                    <a key={li} href={link.url} target="_blank" rel="noreferrer"
+                                    <a key={`${link.url}-${li}`} href={link.url} target="_blank" rel="noreferrer"
                                       data-testid={`step-${i}-link-${li}`}
                                       className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded text-sm transition-colors">
                                       <ExternalLink className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
@@ -348,7 +350,7 @@ export default function ProcedureDetailPage() {
                                 <p className="text-xs font-bold uppercase text-zinc-500 mb-2">Documents requis :</p>
                                 <div className="space-y-1.5">
                                   {step.required_documents.map((doc, di) => (
-                                    <div key={di} className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded text-sm">
+                                    <div key={`doc-${doc}-${di}`} className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded text-sm">
                                       <div className="w-4 h-4 bg-[#FF6600]/20 rounded flex items-center justify-center flex-shrink-0">
                                         <FileText className="w-2.5 h-2.5 text-[#FF6600]" />
                                       </div>
@@ -461,7 +463,7 @@ export default function ProcedureDetailPage() {
                 <h3 className="text-xs font-bold uppercase text-zinc-400 mb-2">Tags</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {procedure.keywords.map((kw, i) => (
-                    <span key={i} className="bg-[#FF6600]/10 text-[#FF6600] text-[10px] font-bold px-2 py-0.5 rounded">{kw}</span>
+                    <span key={`kw-${kw}`} className="bg-[#FF6600]/10 text-[#FF6600] text-[10px] font-bold px-2 py-0.5 rounded">{kw}</span>
                   ))}
                 </div>
               </div>

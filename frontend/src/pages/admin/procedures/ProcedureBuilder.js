@@ -63,7 +63,7 @@ function SortableStep({ step, index, isOpen, onToggle, onUpdate, onDelete }) {
             </label>
             <div className="space-y-1.5">
               {(step.required_documents || []).map((doc, di) => (
-                <div key={di} className="flex items-center gap-2">
+                <div key={`doc-${di}`} className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-[#FF6600]/20 border border-[#FF6600] rounded flex items-center justify-center">
                     <div className="w-2 h-2 bg-[#FF6600] rounded-sm" />
                   </div>
@@ -110,7 +110,7 @@ function SortableStep({ step, index, isOpen, onToggle, onUpdate, onDelete }) {
             </label>
             <div className="space-y-1.5">
               {(step.links || []).map((link, li) => (
-                <div key={li} className="flex items-center gap-2">
+                <div key={`link-${li}`} className="flex items-center gap-2">
                   <input value={link.label || ""} onChange={e => {
                     const links = [...(step.links || [])];
                     links[li] = { ...links[li], label: e.target.value };
@@ -433,7 +433,7 @@ export default function ProcedureBuilder() {
                   {form.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {form.keywords.map((kw, i) => (
-                        <span key={i} className="bg-[#FF6600]/20 text-[#FF6600] text-xs font-bold px-2 py-0.5 flex items-center gap-1.5">
+                        <span key={`kw-${kw}`} className="bg-[#FF6600]/20 text-[#FF6600] text-xs font-bold px-2 py-0.5 flex items-center gap-1.5">
                           {kw}
                           <button onClick={() => setForm(f => ({ ...f, keywords: f.keywords.filter((_, j) => j !== i) }))} className="hover:text-white">
                             <X className="w-3 h-3" />
@@ -516,7 +516,7 @@ export default function ProcedureBuilder() {
             {form.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {form.keywords.map((kw, i) => (
-                  <span key={i} className="bg-[#FF6600]/20 text-[#FF6600] text-[10px] font-bold px-2 py-0.5">{kw}</span>
+                  <span key={`kw-preview-${kw}`} className="bg-[#FF6600]/20 text-[#FF6600] text-[10px] font-bold px-2 py-0.5">{kw}</span>
                 ))}
               </div>
             )}

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import DOMPurify from "dompurify";
 import {
   Type, Image as ImageIcon, Film, Quote, AlertTriangle, Table,
   GripVertical, Trash2, ChevronUp, ChevronDown, Plus, Loader2, Upload,
@@ -26,7 +27,7 @@ function RichTextBlock({ data, onChange }) {
   // Only set innerHTML once on mount, not on every re-render
   useEffect(() => {
     if (editorRef.current && !isInitialized.current) {
-      editorRef.current.innerHTML = data.content || "";
+      editorRef.current.innerHTML = DOMPurify.sanitize(data.content || "");
       isInitialized.current = true;
     }
   }, []);

@@ -1,5 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import PaymentModal from "../../components/immobilier/PaymentModal";
@@ -154,7 +155,7 @@ export default function PropertyDetailPage() {
                       </button>
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                         {images.map((_, i) => (
-                          <button key={i} onClick={() => setImgIdx(i)}
+                          <button key={`dot-${i}`} onClick={() => setImgIdx(i)}
                             className={`w-2 h-2 rounded-full transition-all ${i === imgIdx ? "bg-[#FF6600]" : "bg-white/60"}`} />
                         ))}
                       </div>
@@ -172,7 +173,7 @@ export default function PropertyDetailPage() {
             {images.length > 1 && (
               <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
                 {images.map((img, i) => (
-                  <button key={i} onClick={() => setImgIdx(i)}
+                  <button key={`thumb-${i}`} onClick={() => setImgIdx(i)}
                     className={`flex-shrink-0 w-16 h-16 border-2 overflow-hidden transition-all ${i === imgIdx ? "border-[#FF6600]" : "border-transparent"}`}>
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
@@ -195,7 +196,7 @@ export default function PropertyDetailPage() {
             <div className="bg-white border border-zinc-200 p-6 mb-6">
               <h2 className="font-['Oswald'] text-lg font-bold uppercase tracking-tight mb-4">Description</h2>
               <div className="text-sm text-zinc-700 leading-relaxed article-content"
-                dangerouslySetInnerHTML={{ __html: property.description }} />
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(property.description) }} />
             </div>
 
             {/* Map */}

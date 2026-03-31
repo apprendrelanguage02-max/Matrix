@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime, timezone
-import random
+import secrets
 import string
 
 PAYMENT_METHODS = ["orange_money", "mobile_money", "paycard", "carte_bancaire"]
@@ -10,7 +10,7 @@ PAYMENT_STATUSES = ["en_attente", "confirme", "annule"]
 
 def generate_reference() -> str:
     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
-    chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    chars = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     return f"GIMO-{ts}-{chars}"
 
 
