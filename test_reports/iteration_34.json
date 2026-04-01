@@ -1,0 +1,77 @@
+{
+  "summary": "Iteration 34 - Fiches PDF Premium Visual Refonte Testing Complete. Fixed missing fees_currency field in ProcedureStep model. All backend tests pass (8/8). Frontend verified: CreateFichePage loads with premium design, Matrix.png logo in preview, per-step currency selector works, company settings sync correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "CreateFichePage",
+        "issues": ["Console warning: 'In HTML, <span> cannot be a child of <select>' - React hydration warning from visual editor wrapper, not affecting functionality"]
+      }
+    ]
+  },
+  "passed_tests": {
+    "backend": {
+      "GET /api/company-settings": "PASS - Returns settings with logo_url=/Matrix.png",
+      "PUT /api/company-settings": "PASS - Can update logo to /Matrix.png",
+      "POST /api/fiches with step currencies": "PASS - Creates fiche with fees_currency per step (GNF/EUR/USD)",
+      "GET /api/fiches/{id} returns step currencies": "PASS - fees_currency preserved per step",
+      "POST /api/fiches/{id}/pdf": "PASS - Generates valid PDF (application/pdf, >1KB)",
+      "POST /api/fiches/preview-pdf": "PASS - Preview PDF without saving works",
+      "GET /Matrix.png": "PASS - Logo accessible from frontend (229KB)",
+      "Cleanup test fiches": "PASS - TEST_ prefixed fiches cleaned up"
+    },
+    "frontend": {
+      "CreateFichePage loads": "PASS - Premium design with orange/white/black theme",
+      "Matrix.png logo in preview": "PASS - Logo src='/Matrix.png' in preview panel",
+      "Sticky action bar": "PASS - Back button, settings link, save button, generate PDF button all visible",
+      "Informations generales section": "PASS - Title, country, category, type, currency, fees, delay, status fields",
+      "Etapes section with counter": "PASS - Shows step count badge",
+      "Step fees with currency selector": "PASS - data-testid='step-fees-currency-0' works, can select GNF/EUR/USD",
+      "Add document to step": "PASS - data-testid='step-0-add-doc' adds document input",
+      "Company settings page": "PASS - Logo URL shows /Matrix.png, company name 'Matrix News'",
+      "Settings link works": "PASS - data-testid='settings-link' navigates to /admin/parametres-entreprise"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_fiches_pdf_premium.py",
+    "/app/test_reports/pytest/pytest_results_iter34.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BUG FIX: Added missing 'fees_currency: str = \"\"' field to ProcedureStep model in /app/backend/models/fiche.py",
+    "BUG FIX: Updated pdf_generator.py to use step-level fees_currency instead of global currency for step fees display",
+    "pdf_generator.py load_logo() correctly reads from local static files (no HTTP requests)",
+    "CreateFichePage.js has proper data-testid attributes for all interactive elements",
+    "Company settings default logo_url is /Matrix.png (not nimba-logo.png)",
+    "Matrix.png exists in both /app/backend/static/ and /app/frontend/public/"
+  ],
+  "updated_files": [
+    "/app/backend/models/fiche.py",
+    "/app/backend/services/pdf_generator.py",
+    "/app/backend/tests/test_fiches_pdf_premium.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (9/9 features verified)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "matrixguinea@gmail.com",
+      "password": "admin123"
+    }
+  },
+  "seed_data_creation": "Test fiches created with TEST_ prefix and cleaned up after tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Fiches PDF premium refonte complete. Key changes: 1) fees_currency field added to ProcedureStep model for per-step currency selection. 2) pdf_generator.py uses step-level currency. 3) Matrix.png is the default logo (not nimba-logo.png). Routes: /admin/fiches/create, /admin/fiches/:id/edit, /admin/parametres-entreprise. All endpoints require admin auth.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": [],
+    "note": "All APIs are fully functional with real MongoDB storage and ReportLab PDF generation"
+  }
+}

@@ -17,7 +17,7 @@ export default function CompanySettingsPage() {
     signature_text: "Matrix News - Services Professionnels",
     footer_text: "Document genere automatiquement. Pour toute question, contactez-nous.",
     default_currency: "GNF",
-    logo_url: "/nimba-logo.png",
+    logo_url: "/Matrix.png",
     contact_email: "",
     contact_phone: "",
     primary_color: "#FF6600",

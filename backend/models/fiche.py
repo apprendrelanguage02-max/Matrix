@@ -18,6 +18,7 @@ class ProcedureStep(BaseModel):
     order: int = 0
     documents: List[RequiredDocument] = []
     fees: float = 0
+    fees_currency: str = ""
 
 
 class AdditionalDetail(BaseModel):
@@ -75,7 +76,7 @@ class CompanySettings(BaseModel):
     signature_text: str = "Matrix News - Services Professionnels"
     footer_text: str = "Document genere automatiquement. Pour toute question, contactez-nous."
     default_currency: str = "GNF"
-    logo_url: str = "/nimba-logo.png"
+    logo_url: str = "/Matrix.png"
     contact_email: str = ""
     contact_phone: str = ""
     primary_color: str = "#FF6600"
