@@ -7,12 +7,18 @@ Plateforme full-stack (React/FastAPI/MongoDB) pour un portail d'actualites et im
 - **Frontend**: React, TailwindCSS, Shadcn/UI, React-Leaflet, DOMPurify
 - **Backend**: FastAPI, MongoDB, Pydantic, ReportLab (PDF)
 - **Stockage**: AWS S3 via boto3, cloud proxy `/api/media/cloud/`
-- **Auth**: JWT + OTP (SHA-256 + secrets, expiration 5min, 5 tentatives max)
-- **Emails**: Resend API (`noreply@matrixnews.org`)
+- **Auth**: JWT + OTP, Resend API
 
 ## Fonctionnalites Implementees
 1. Systeme d'articles avec categories, recherche, vues, likes
-2. Module immobilier complet avec page de creation premium (3 colonnes, carte Leaflet, equipements, conversion GNF/USD/EUR)
+2. Module immobilier complet:
+   - Page creation premium 3 colonnes (photos, details, carte)
+   - Page detail premium 2 colonnes (galerie/description/equipements/contact | info/localisation/carte)
+   - Carte Leaflet interactive avec pin draggable
+   - Conversion GNF/USD/EUR
+   - Equipements par categories (40+)
+   - Communes de Conakry
+   - Champs etendus (salons, cuisines, toilettes, etages, annee, commune, reperes)
 3. Module procedures V2 (drag-and-drop, fichiers cloud, videos, image principale)
 4. Module Fiches PDF (CRUD, apercu live, generation ReportLab, parametres entreprise)
 5. Authentification OTP avec Resend
@@ -22,19 +28,20 @@ Plateforme full-stack (React/FastAPI/MongoDB) pour un portail d'actualites et im
 ## Session 1 Avril 2026 — Complete
 - [x] Code review fixes (XSS/DOMPurify, secrets, React keys, useMemo)
 - [x] Module Fiches PDF complet (100% tests)
-- [x] Navigation fiches dans dashboard procedures
-- [x] Page creation annonce immobiliere premium (3 colonnes, carte interactive, equipements, conversion monetaire, validation)
-  - Backend: champs etendus (salons, cuisines, toilettes, etages, commune, points de repere, equipements, etc.)
-  - Frontend: layout 3 colonnes, upload photos drag & drop, carte Leaflet interactive, prix GNF/USD/EUR, checkboxes equipements, resume live
-  - Tests: 100% backend (9/9) + 100% frontend (14/14)
+- [x] Page creation annonce immobiliere premium 3 colonnes (100% tests)
+- [x] Page detail annonce immobiliere premium:
+  - Hero: titre, badges statut/type, prix GNF+USD+EUR, quick stats (surface, chambres, sdb, salons)
+  - Galerie photos avec fleches, compteur, thumbnails, badge video
+  - Description detaillee (section separee)
+  - Equipements & Caracteristiques (section separee, organisee par categories)
+  - Contact (section separee: avatar, nom, agent verifie, tel, whatsapp, email, message)
+  - Sidebar: Informations principales (type, operation, surface, pieces, annee) + Localisation + Carte
+  - Breadcrumb, admin actions, reservation
 
 ## Backlog
 - P2: Supprimer anciens fichiers procedures V1
 - P2: Refactoring composants >300 lignes
-- P2: Migration token auth vers httpOnly cookies
-- P3: Export Word des fiches
-- P3: Notifications recherches sauvegardees
-- P3: Visites video natives, heatmap prix
+- P3: Export Word fiches, notifications, heatmap prix
 
-## Credentials Test
+## Credentials
 - Admin: `matrixguinea@gmail.com` / `admin123`
