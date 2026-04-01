@@ -36,7 +36,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await api.post("/auth/register", {
+      const res = await api.post("/auth/register", {
         full_name: form.full_name,
         username: form.username,
         email: form.email,
@@ -44,8 +44,9 @@ export default function RegisterPage() {
         password: form.password,
         role: form.role,
       });
-      toast.success("Compte cree ! Verifiez votre email.");
-      navigate(`/verification?email=${encodeURIComponent(form.email)}`);
+      const otpSent = res.data?.otp_sent === true;
+      toast.success(otpSent ? "Compte cree ! Un code a ete envoye a votre email." : "Compte cree ! Verifiez votre email.");
+      navigate(`/verification?email=${encodeURIComponent(form.email)}${otpSent ? "&sent=1" : ""}`);
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (detail?.includes("attente de verification")) {
@@ -65,7 +66,7 @@ export default function RegisterPage() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:py-16">
         <Link to="/" className="flex items-center gap-2 mb-8 group">
-          <img src="/nimba-logo.png" alt="Matrix News" className="w-9 h-9 object-contain" />
+          <img src="/Matrix.png" alt="Matrix News" className="w-9 h-9 object-contain" />
           <span className="font-['Oswald'] text-2xl font-bold tracking-widest uppercase text-black group-hover:text-[#FF6600] transition-colors">
             Matrix News
           </span>

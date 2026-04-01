@@ -164,7 +164,32 @@ async def register(data: UserRegister):
 
     logger.info(f"User registered (pending_verification): {data.email} as {data.role}")
 
-    return {"message": "Compte cree. Verifiez votre email pour activer votre compte.", "user_id": user_id, "email": data.email}
+    # Generate and send OTP immediately during registration
+    code = str(secrets.randbelow(900000) + 100000)
+    hashed_code = _hash_otp(code)
+    now_dt = datetime.now(timezone.utc)
+    expires_at = (now_dt + timedelta(minutes=5)).isoformat()
+
+    await db.otp_codes.delete_many({"email": data.email})
+    await db.otp_codes.insert_one({
+        "email": data.email,
+        "code_hash": hashed_code,
+        "created_at": now_dt.isoformat(),
+        "expires_at": expires_at,
+        "attempts": 0,
+        "max_attempts": 5,
+        "verified": False,
+    })
+
+    otp_sent = await _send_otp_email(data.email, code)
+    logger.info(f"OTP sent during registration for {data.email}: sent={otp_sent}")
+
+    return {
+        "message": "Compte cree. Verifiez votre email pour activer votre compte.",
+        "user_id": user_id,
+        "email": data.email,
+        "otp_sent": otp_sent,
+    }
 
 
 # ── STEP 2: Send OTP (email only) ───────────────────────────────────────────

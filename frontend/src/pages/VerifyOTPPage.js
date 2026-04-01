@@ -10,6 +10,7 @@ export default function VerifyOTPPage() {
   const { login } = useAuth();
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email") || "";
+  const alreadySent = searchParams.get("sent") === "1";
 
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,13 @@ export default function VerifyOTPPage() {
       navigate("/inscription");
       return;
     }
-    sendOtp();
+    if (alreadySent) {
+      // OTP was already sent during registration, skip auto-send
+      setOtpSent(true);
+      setCooldown(60);
+    } else {
+      sendOtp();
+    }
   }, []);
 
   useEffect(() => {
@@ -170,7 +177,7 @@ export default function VerifyOTPPage() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         <Link to="/" className="flex items-center gap-2 mb-8 group">
-          <img src="/nimba-logo.png" alt="Matrix News" className="w-9 h-9 object-contain" />
+          <img src="/Matrix.png" alt="Matrix News" className="w-9 h-9 object-contain" />
           <span className="font-['Oswald'] text-2xl font-bold tracking-widest uppercase text-black group-hover:text-[#FF6600] transition-colors">
             Matrix News
           </span>

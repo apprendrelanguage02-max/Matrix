@@ -1,0 +1,74 @@
+{
+  "summary": "Iteration 35 - OTP Registration Bug Fix Testing Complete. Bug fix verified: OTP is now sent during registration (in /register endpoint) instead of requiring a separate call. All 10 backend tests pass. Frontend verified: Registration redirects to /verification?email=...&sent=1, verification page does NOT auto-send OTP when sent=1, Matrix.png logo displays on all auth pages.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": {
+    "backend": {
+      "POST /api/auth/register returns otp_sent:true": "PASS - OTP sent during registration",
+      "POST /api/auth/register duplicate pending_verification": "PASS - Returns 400 with correct message",
+      "POST /api/auth/send-otp for resend": "PASS - Works for resending OTP",
+      "POST /api/auth/send-otp nonexistent email": "PASS - Returns 404",
+      "POST /api/auth/verify-otp wrong code": "PASS - Returns 400 with attempts remaining",
+      "POST /api/auth/verify-otp no code sent": "PASS - Returns 400 with correct message",
+      "POST /api/auth/login pending_verification": "PASS - Returns 403",
+      "POST /api/auth/login admin": "PASS - Admin login works",
+      "POST /api/auth/register admin role": "PASS - Returns 422 (validation error)",
+      "Rate limiting send-otp": "PASS - Rate limit applied after 5 requests"
+    },
+    "frontend": {
+      "Registration page loads": "PASS - Matrix.png logo displayed",
+      "Registration form submission": "PASS - Creates account and redirects to /verification?email=...&sent=1",
+      "Verification page with sent=1": "PASS - Does NOT auto-send OTP (0 send-otp calls)",
+      "Verification page without sent=1": "PASS - Auto-sends OTP",
+      "Login page loads": "PASS - Matrix.png logo displayed",
+      "Login with pending_verification account": "PASS - Returns 403 and redirects to verification",
+      "60s cooldown timer": "PASS - Displayed correctly on verification page",
+      "OTP input fields": "PASS - 6 digit inputs with data-testid attributes"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_otp_registration_flow.py",
+    "/app/test_reports/pytest/pytest_results_iter35.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BUG FIX VERIFIED: /register endpoint now sends OTP directly (lines 167-185 in auth.py)",
+    "RegisterPage.js correctly passes &sent=1 in redirect URL when otp_sent=true",
+    "VerifyOTPPage.js correctly skips auto-send when sent=1 (alreadySent check)",
+    "Matrix.png logo correctly used on all 3 auth pages (inscription, connexion, verification)",
+    "Rate limiting implemented: 5 send-otp per minute, 10 verify-otp per minute"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_otp_registration_flow.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "100% (8/8 features verified)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "matrixguinea@gmail.com",
+      "password": "admin123"
+    },
+    "test_users_created": [
+      "test_ui_c020bf9f@example.com",
+      "test_sent1_099a5c3a@example.com"
+    ]
+  },
+  "seed_data_creation": "Test users created with TEST_ prefix during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "OTP registration bug fix verified. Key changes: 1) /register endpoint sends OTP directly (returns otp_sent:true). 2) RegisterPage.js passes &sent=1 to verification URL. 3) VerifyOTPPage.js skips auto-send if sent=1. 4) Matrix.png logo on all auth pages. Routes: /inscription, /connexion, /verification?email=...&sent=1. Email sending via Resend API is working.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": [],
+    "note": "All APIs are fully functional with real MongoDB storage and Resend email sending"
+  }
+}
