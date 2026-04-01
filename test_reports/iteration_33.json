@@ -1,0 +1,82 @@
+{
+  "summary": "Iteration 33 - Fiches PDF Restructure Testing Complete. All features verified: Documents and fees are now per-step (not global), Matrix.png logo displays in preview, 'Frais et Couts' section shows at bottom with total calculation, PDF generation works correctly. Backend: 9/9 tests passed. Frontend: All UI elements verified.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "CreateFichePage",
+        "issues": ["Console warning: 'In HTML, <span> cannot be a child of <select>' - React hydration warning from visual editor wrapper, not affecting functionality"]
+      }
+    ]
+  },
+  "passed_tests": {
+    "backend": {
+      "POST /api/fiches with step documents and fees": "PASS - Creates fiche with documents[] and fees in each step",
+      "GET /api/fiches/{id} returns step documents and fees": "PASS - Step documents and fees returned correctly",
+      "PUT /api/fiches/{id} updates step documents and fees": "PASS - Can update documents and fees per step",
+      "Total fees calculation": "PASS - Correctly sums step_fees + official_fees + service_cost",
+      "POST /api/fiches/{id}/pdf generates valid PDF": "PASS - Returns application/pdf with valid content (240KB)",
+      "POST /api/fiches/preview-pdf with step data": "PASS - Preview PDF includes step documents and fees",
+      "GET /api/company-settings": "PASS - Returns settings including logo_url",
+      "PUT /api/company-settings with Matrix.png": "PASS - Logo updated to /Matrix.png",
+      "Cleanup test fiches": "PASS - TEST_ prefixed fiches cleaned up"
+    },
+    "frontend": {
+      "CreateFichePage loads after admin login": "PASS - Page loads with 2-column layout (form + preview)",
+      "Matrix.png logo in preview": "PASS - Logo src='/Matrix.png' in preview panel",
+      "No global 'Documents requis' section": "PASS - Only 'INFORMATIONS GENERALES' and 'ETAPES DE LA PROCEDURE' sections visible",
+      "Step has 'FRAIS DE TRAITEMENT' field": "PASS - Number input with data-testid='step-fees-0'",
+      "Step has 'DOCUMENTS REQUIS POUR CETTE ETAPE' section": "PASS - Shows document count and list",
+      "'+ Ajouter un document' button in step": "PASS - Button with data-testid='step-0-add-doc' works",
+      "Adding document to step works": "PASS - Document input appears with name/note/required fields",
+      "Live preview shows documents per step": "PASS - Shows 'Documents requis:' with document list under each step",
+      "Live preview shows fees per step": "PASS - Shows 'Frais: 100,000 GNF' under step",
+      "'FRAIS ET COUTS' section at bottom of preview": "PASS - Shows breakdown: step fees, sous-total, frais officiels, cout prestation",
+      "'TOTAL GENERAL' in preview": "PASS - Shows calculated total (175,000 GNF for test data)",
+      "Save button works": "PASS - Saves fiche and redirects to edit page",
+      "Generate PDF button present": "PASS - Button with data-testid='generate-pdf-btn'"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_fiches_restructure.py",
+    "/app/test_reports/pytest/pytest_results_iter33.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "pdf_generator.py correctly moved 'currency' variable to top of function (line 103) - bug fix verified",
+    "pdf_generator.py fallback logo order is Matrix.png first, then nimba-logo.png (lines 78-81)",
+    "CreateFichePage.js correctly removed global documents section and handlers (addDoc/removeDoc/updateDoc)",
+    "Step-level document handlers (addStepDoc/removeStepDoc/updateStepDoc) work correctly",
+    "Live preview correctly shows documents and fees inside each step",
+    "'Frais et Couts' section in preview shows breakdown with step fees, official fees, service cost, and total",
+    "Total calculation: totalStepFees + official_fees + service_cost (line 212 in CreateFichePage.js)",
+    "ProcedureStep model in fiche.py has documents: List[RequiredDocument] and fees: float fields"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_fiches_restructure.py"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% (13/13 features verified)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "matrixguinea@gmail.com",
+      "password": "admin123"
+    }
+  },
+  "seed_data_creation": "Test fiches created with TEST_ prefix and cleaned up after tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Fiches PDF restructure complete. Documents and fees are now per-step (not global). Matrix.png logo is used in PDF. 'Frais et Couts' section shows at bottom of PDF with breakdown. All endpoints require admin auth. Routes: /admin/fiches/create, /admin/fiches/:id/edit. PDF generation via POST /api/fiches/{id}/pdf.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": [],
+    "note": "All APIs are fully functional with real MongoDB storage and ReportLab PDF generation"
+  }
+}

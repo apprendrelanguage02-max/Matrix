@@ -73,9 +73,12 @@ def fetch_logo(logo_url: str, backend_url: str = None):
             return io.BytesIO(resp.content)
     except Exception:
         pass
-    logo_path = os.path.join(os.path.dirname(__file__), "..", "static", "nimba-logo.png")
-    if os.path.exists(logo_path):
-        return open(logo_path, "rb")
+    # Try Matrix.png first, then nimba-logo.png as fallback
+    static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+    for fname in ["Matrix.png", "nimba-logo.png"]:
+        logo_path = os.path.join(static_dir, fname)
+        if os.path.exists(logo_path):
+            return open(logo_path, "rb")
     return None
 
 
@@ -97,6 +100,7 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
 
     story = []
     page_w = A4[0] - 40 * mm
+    currency = fiche.get("currency", "GNF")
 
     # ─── Header with logo ───────────────────────────────────────────────
     logo_data = fetch_logo(settings.get("logo_url", "/nimba-logo.png"))
@@ -257,7 +261,6 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
                 story.append(Paragraph(f'<font color="#cc0000">&#10007;</font> {item}', styles["BodyText2"]))
 
     # ─── FEES — at the very bottom ─────────────────────────────────────
-    currency = fiche.get("currency", "GNF")
     official = fiche.get("official_fees", 0)
     service = fiche.get("service_cost", 0)
     if total_step_fees or official or service:

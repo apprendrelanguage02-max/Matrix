@@ -142,15 +142,6 @@ export default function CreateFichePage() {
     finally { setDownloading(false); }
   };
 
-  // Document handlers
-  const addDoc = () => setForm(f => ({ ...f, documents: [...f.documents, emptyDoc()] }));
-  const removeDoc = (i) => setForm(f => ({ ...f, documents: f.documents.filter((_, idx) => idx !== i) }));
-  const updateDoc = (i, field, val) => setForm(f => {
-    const docs = [...f.documents];
-    docs[i] = { ...docs[i], [field]: val };
-    return { ...f, documents: docs };
-  });
-
   // Step handlers
   const addStep = () => setForm(f => ({ ...f, steps: [...f.steps, emptyStep()] }));
   const removeStep = (i) => setForm(f => ({ ...f, steps: f.steps.filter((_, idx) => idx !== i) }));
@@ -164,6 +155,25 @@ export default function CreateFichePage() {
     const j = i + dir;
     if (j < 0 || j >= steps.length) return f;
     [steps[i], steps[j]] = [steps[j], steps[i]];
+    return { ...f, steps };
+  });
+
+  // Step-level document handlers
+  const addStepDoc = (stepIdx) => setForm(f => {
+    const steps = [...f.steps];
+    steps[stepIdx] = { ...steps[stepIdx], documents: [...(steps[stepIdx].documents || []), emptyDoc()] };
+    return { ...f, steps };
+  });
+  const removeStepDoc = (stepIdx, docIdx) => setForm(f => {
+    const steps = [...f.steps];
+    steps[stepIdx] = { ...steps[stepIdx], documents: steps[stepIdx].documents.filter((_, idx) => idx !== docIdx) };
+    return { ...f, steps };
+  });
+  const updateStepDoc = (stepIdx, docIdx, field, val) => setForm(f => {
+    const steps = [...f.steps];
+    const docs = [...(steps[stepIdx].documents || [])];
+    docs[docIdx] = { ...docs[docIdx], [field]: val };
+    steps[stepIdx] = { ...steps[stepIdx], documents: docs };
     return { ...f, steps };
   });
 
@@ -198,7 +208,8 @@ export default function CreateFichePage() {
     </div>
   );
 
-  const totalCost = (form.official_fees || 0) + (form.service_cost || 0);
+  const totalStepFees = form.steps.reduce((sum, s) => sum + (s.fees || 0), 0);
+  const totalCost = totalStepFees + (form.official_fees || 0) + (form.service_cost || 0);
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col" data-testid="create-fiche-page">
@@ -282,38 +293,6 @@ export default function CreateFichePage() {
               </div>
             </Section>
 
-            {/* Documents */}
-            <Section title={`Documents requis (${form.documents.length})`} icon={<FileText className="w-4 h-4 text-[#FF6600]" />}>
-              <div className="space-y-3 pt-4">
-                {form.documents.map((doc, i) => (
-                  <div key={`doc-${i}`} className="bg-zinc-50 border border-zinc-200 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-[#FF6600] bg-[#FF6600]/10 w-6 h-6 flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                      <input value={doc.name} onChange={e => updateDoc(i, "name", e.target.value)}
-                        placeholder="Nom du document" data-testid={`doc-name-${i}`}
-                        className="flex-1 bg-white border border-zinc-200 text-sm px-3 py-2 focus:outline-none focus:border-[#FF6600]" />
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer flex-shrink-0">
-                        <input type="checkbox" checked={doc.required} onChange={e => updateDoc(i, "required", e.target.checked)}
-                          className="accent-[#FF6600]" data-testid={`doc-required-${i}`} />
-                        <span className="text-zinc-500">Obligatoire</span>
-                      </label>
-                      <button onClick={() => removeDoc(i)} className="text-zinc-400 hover:text-red-500 p-1" data-testid={`doc-remove-${i}`}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <input value={doc.note} onChange={e => updateDoc(i, "note", e.target.value)}
-                      placeholder="Note ou precision (optionnel)"
-                      className="w-full bg-white border border-zinc-200 text-xs px-3 py-2 focus:outline-none focus:border-[#FF6600] text-zinc-500"
-                      data-testid={`doc-note-${i}`} />
-                  </div>
-                ))}
-                <button onClick={addDoc} className="w-full border-2 border-dashed border-zinc-300 py-2.5 text-sm text-zinc-500 font-bold hover:border-[#FF6600] hover:text-[#FF6600] transition-colors flex items-center justify-center gap-1.5"
-                  data-testid="add-doc-btn">
-                  <Plus className="w-4 h-4" /> Ajouter un document
-                </button>
-              </div>
-            </Section>
-
             {/* Steps */}
             <Section title={`Etapes de la procedure (${form.steps.length})`} icon={<FileText className="w-4 h-4 text-[#FF6600]" />}>
               <div className="space-y-3 pt-4">
@@ -349,6 +328,49 @@ export default function CreateFichePage() {
                       placeholder="Remarques importantes (optionnel)"
                       className="w-full bg-white border border-zinc-200 text-xs px-3 py-2 text-orange-600 focus:outline-none focus:border-[#FF6600]"
                       data-testid={`step-remarks-${i}`} />
+
+                    {/* Frais de cette etape */}
+                    <div className="pt-1">
+                      <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1 block">Frais de traitement</label>
+                      <input type="number" value={step.fees || 0} onChange={e => updateStep(i, "fees", parseFloat(e.target.value) || 0)}
+                        placeholder="0" data-testid={`step-fees-${i}`}
+                        className="w-40 bg-white border border-zinc-200 text-xs px-3 py-2 focus:outline-none focus:border-[#FF6600]" />
+                    </div>
+
+                    {/* Documents de cette etape */}
+                    <div className="pt-1 border-t border-zinc-100">
+                      <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1.5 block">
+                        Documents requis pour cette etape ({(step.documents || []).length})
+                      </label>
+                      <div className="space-y-1.5">
+                        {(step.documents || []).map((doc, di) => (
+                          <div key={`step-${i}-doc-${di}`} className="bg-white border border-zinc-200 p-2 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-[#FF6600] bg-[#FF6600]/10 w-5 h-5 flex items-center justify-center flex-shrink-0">{di + 1}</span>
+                              <input value={doc.name} onChange={e => updateStepDoc(i, di, "name", e.target.value)}
+                                placeholder="Nom du document" data-testid={`step-${i}-doc-name-${di}`}
+                                className="flex-1 bg-zinc-50 border border-zinc-200 text-[11px] px-2 py-1.5 focus:outline-none focus:border-[#FF6600]" />
+                              <label className="flex items-center gap-1 text-[10px] cursor-pointer flex-shrink-0">
+                                <input type="checkbox" checked={doc.required} onChange={e => updateStepDoc(i, di, "required", e.target.checked)}
+                                  className="accent-[#FF6600]" data-testid={`step-${i}-doc-req-${di}`} />
+                                <span className="text-zinc-500">Oblig.</span>
+                              </label>
+                              <button onClick={() => removeStepDoc(i, di)} className="text-zinc-400 hover:text-red-500 p-0.5" data-testid={`step-${i}-doc-rm-${di}`}>
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <input value={doc.note} onChange={e => updateStepDoc(i, di, "note", e.target.value)}
+                              placeholder="Note (optionnel)" data-testid={`step-${i}-doc-note-${di}`}
+                              className="w-full bg-zinc-50 border border-zinc-200 text-[10px] px-2 py-1 focus:outline-none focus:border-[#FF6600] text-zinc-500" />
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={() => addStepDoc(i)}
+                        className="mt-1.5 text-[10px] text-[#FF6600] font-bold hover:underline flex items-center gap-1"
+                        data-testid={`step-${i}-add-doc`}>
+                        <Plus className="w-3 h-3" /> Ajouter un document
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <button onClick={addStep} className="w-full border-2 border-dashed border-zinc-300 py-2.5 text-sm text-zinc-500 font-bold hover:border-[#FF6600] hover:text-[#FF6600] transition-colors flex items-center justify-center gap-1.5"
@@ -476,7 +498,7 @@ export default function CreateFichePage() {
                 <div className="p-5 max-h-[calc(100vh-160px)] overflow-y-auto" data-testid="fiche-preview">
                   {/* Logo + Company */}
                   <div className="text-center mb-4">
-                    <img src="/nimba-logo.png" alt="Logo" className="h-10 mx-auto mb-1" />
+                    <img src="/Matrix.png" alt="Logo" className="h-10 mx-auto mb-1" />
                     <p className="font-['Oswald'] text-sm font-bold text-black">Matrix News</p>
                     <p className="text-[10px] text-zinc-400">Votre partenaire pour toutes vos demarches</p>
                   </div>
@@ -504,52 +526,7 @@ export default function CreateFichePage() {
                     </div>
                   )}
 
-                  {/* Fees */}
-                  {(form.official_fees > 0 || form.service_cost > 0) && (
-                    <div className="mb-3">
-                      <p className="text-[10px] font-bold text-[#FF6600] uppercase mb-1">Frais et Couts</p>
-                      <div className="text-[9px] space-y-1">
-                        {form.official_fees > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-zinc-500">Frais officiels</span>
-                            <span className="font-bold text-[#FF6600]">{form.official_fees.toLocaleString()} {form.currency}</span>
-                          </div>
-                        )}
-                        {form.service_cost > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-zinc-500">Cout prestation</span>
-                            <span className="font-bold text-[#FF6600]">{form.service_cost.toLocaleString()} {form.currency}</span>
-                          </div>
-                        )}
-                        {totalCost > 0 && (
-                          <div className="flex justify-between border-t border-[#FF6600]/30 pt-1 mt-1">
-                            <span className="font-bold text-zinc-900">TOTAL</span>
-                            <span className="font-bold text-[#FF6600]">{totalCost.toLocaleString()} {form.currency}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Documents */}
-                  {form.documents.some(d => d.name) && (
-                    <div className="mb-3">
-                      <p className="text-[10px] font-bold text-[#FF6600] uppercase mb-1">Documents requis</p>
-                      <div className="space-y-1">
-                        {form.documents.filter(d => d.name).map((doc, i) => (
-                          <div key={`prev-doc-${i}`} className="text-[9px]">
-                            <span className="font-bold">{i + 1}.</span> {doc.name}
-                            <span className={`ml-1 text-[8px] ${doc.required ? "text-[#FF6600] font-bold" : "text-zinc-400"}`}>
-                              ({doc.required ? "Obligatoire" : "Optionnel"})
-                            </span>
-                            {doc.note && <p className="text-[8px] text-zinc-400 italic ml-3">{doc.note}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Steps */}
+                  {/* Steps with documents & fees */}
                   {form.steps.some(s => s.title) && (
                     <div className="mb-3">
                       <p className="text-[10px] font-bold text-[#FF6600] uppercase mb-1">Etapes</p>
@@ -557,11 +534,25 @@ export default function CreateFichePage() {
                         {form.steps.filter(s => s.title).map((step, i) => (
                           <div key={`prev-step-${i}`} className="flex items-start gap-2">
                             <span className="bg-[#FF6600] text-white text-[8px] font-bold w-4 h-4 flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                            <div className="text-[9px]">
+                            <div className="text-[9px] flex-1">
                               <p className="font-bold text-zinc-900">{step.title}</p>
                               {step.duration && <p className="text-[#FF6600] text-[8px]">Duree: {step.duration}</p>}
                               {step.description && <p className="text-zinc-500 mt-0.5">{step.description}</p>}
                               {step.remarks && <p className="text-red-500 text-[8px] mt-0.5">Important: {step.remarks}</p>}
+                              {(step.documents || []).filter(d => d.name).length > 0 && (
+                                <div className="mt-1 pl-1 border-l-2 border-[#FF6600]/30">
+                                  <p className="text-[8px] font-bold text-[#FF6600]">Documents requis :</p>
+                                  {step.documents.filter(d => d.name).map((doc, di) => (
+                                    <p key={`prev-sd-${i}-${di}`} className="text-[8px] text-zinc-600">
+                                      - {doc.name} <span className={doc.required ? "text-[#FF6600] font-bold" : "text-zinc-400"}>({doc.required ? "Oblig." : "Opt."})</span>
+                                      {doc.note && <span className="italic text-zinc-400"> — {doc.note}</span>}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                              {step.fees > 0 && (
+                                <p className="text-[8px] font-bold text-[#FF6600] mt-0.5">Frais: {step.fees.toLocaleString()} {form.currency}</p>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -606,6 +597,43 @@ export default function CreateFichePage() {
                           ))}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Frais et Couts — en bas */}
+                  {totalCost > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-bold text-[#FF6600] uppercase mb-1">Frais et Couts</p>
+                      <div className="text-[9px] space-y-1">
+                        {form.steps.filter(s => s.fees > 0).map((step, i) => (
+                          <div key={`prev-sfee-${i}`} className="flex justify-between">
+                            <span className="text-zinc-500">Etape {form.steps.indexOf(step) + 1}: {step.title || "Sans titre"}</span>
+                            <span className="font-bold">{step.fees.toLocaleString()} {form.currency}</span>
+                          </div>
+                        ))}
+                        {totalStepFees > 0 && (
+                          <div className="flex justify-between text-[#FF6600]">
+                            <span className="font-bold">Sous-total etapes</span>
+                            <span className="font-bold">{totalStepFees.toLocaleString()} {form.currency}</span>
+                          </div>
+                        )}
+                        {form.official_fees > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-zinc-500">Frais officiels</span>
+                            <span className="font-bold">{form.official_fees.toLocaleString()} {form.currency}</span>
+                          </div>
+                        )}
+                        {form.service_cost > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-zinc-500">Cout prestation</span>
+                            <span className="font-bold">{form.service_cost.toLocaleString()} {form.currency}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t border-[#FF6600]/30 pt-1 mt-1">
+                          <span className="font-bold text-zinc-900">TOTAL GENERAL</span>
+                          <span className="font-bold text-[#FF6600]">{totalCost.toLocaleString()} {form.currency}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
 
