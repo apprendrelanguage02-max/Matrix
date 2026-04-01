@@ -140,7 +140,33 @@ async def register(data: UserRegister):
     existing = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "status": 1})
     if existing:
         if existing.get("status") == "pending_verification":
-            raise HTTPException(status_code=400, detail="Un compte avec cet email est en attente de verification. Verifiez votre email.")
+            # Re-send a fresh OTP for the pending account
+            code = str(secrets.randbelow(900000) + 100000)
+            hashed_code = _hash_otp(code)
+            now_dt = datetime.now(timezone.utc)
+            expires_at = (now_dt + timedelta(minutes=5)).isoformat()
+
+            await db.otp_codes.delete_many({"email": data.email})
+            await db.otp_codes.insert_one({
+                "email": data.email,
+                "code_hash": hashed_code,
+                "created_at": now_dt.isoformat(),
+                "expires_at": expires_at,
+                "attempts": 0,
+                "max_attempts": 5,
+                "verified": False,
+            })
+
+            otp_sent = await _send_otp_email(data.email, code)
+            logger.info(f"Re-sent OTP for pending account {data.email}: sent={otp_sent}")
+
+            return {
+                "message": "Un compte existe deja pour cet email. Un nouveau code de verification a ete envoye.",
+                "user_id": existing["id"],
+                "email": data.email,
+                "otp_sent": otp_sent,
+                "existing_pending": True,
+            }
         raise HTTPException(status_code=400, detail="Cet email est deja utilise")
 
     hashed_pw = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt(rounds=12)).decode()

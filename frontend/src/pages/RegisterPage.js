@@ -49,10 +49,6 @@ export default function RegisterPage() {
       navigate(`/verification?email=${encodeURIComponent(form.email)}${otpSent ? "&sent=1" : ""}`);
     } catch (err) {
       const detail = err.response?.data?.detail;
-      if (detail?.includes("attente de verification")) {
-        navigate(`/verification?email=${encodeURIComponent(form.email)}`);
-        return;
-      }
       setError(detail || "Erreur lors de l'inscription.");
     } finally {
       setLoading(false);
