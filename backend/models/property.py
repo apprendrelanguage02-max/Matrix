@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 
-PROPERTY_TYPES = ["achat", "vente", "location"]
+PROPERTY_TYPES = ["achat", "vente", "location", "location_meublee", "location_non_meublee", "colocation", "bail_commercial"]
 PROPERTY_STATUSES = ["disponible", "reserve", "vendu"]
-PROPERTY_CATEGORIES = ["villa", "appartement", "terrain", "bureau", "commerce", "entrepot", "maison", "studio", "duplex", "autre"]
+PROPERTY_CATEGORIES = ["villa", "appartement", "terrain", "bureau", "commerce", "entrepot", "maison", "studio", "duplex", "immeuble", "magasin", "autre"]
 
 # Approximate fixed conversion rates (updated periodically)
 GNF_TO_USD = 1 / 8600
@@ -43,6 +43,21 @@ class PropertyCreate(BaseModel):
     surface_area: float = 0
     is_verified: bool = False
 
+    # Extended fields
+    salons: int = 0
+    kitchens: int = 0
+    toilets: int = 0
+    floors: int = 0
+    year_built: str = ""
+    commune: str = ""
+    landmarks: str = ""
+    equipment: List[str] = []
+    show_usd: bool = True
+    show_eur: bool = True
+    hide_email: bool = False
+    show_phone: bool = True
+    whatsapp_direct: bool = False
+
     @field_validator('type')
     @classmethod
     def validate_type(cls, v):
@@ -76,12 +91,26 @@ class PropertyUpdate(BaseModel):
     images: Optional[List[str]] = None
     video_url: Optional[str] = None
     status: Optional[str] = None
-    # New fields
     property_category: Optional[str] = None
     bedrooms: Optional[int] = None
     bathrooms: Optional[int] = None
     surface_area: Optional[float] = None
     is_verified: Optional[bool] = None
+
+    # Extended fields
+    salons: Optional[int] = None
+    kitchens: Optional[int] = None
+    toilets: Optional[int] = None
+    floors: Optional[int] = None
+    year_built: Optional[str] = None
+    commune: Optional[str] = None
+    landmarks: Optional[str] = None
+    equipment: Optional[List[str]] = None
+    show_usd: Optional[bool] = None
+    show_eur: Optional[bool] = None
+    hide_email: Optional[bool] = None
+    show_phone: Optional[bool] = None
+    whatsapp_direct: Optional[bool] = None
 
     @field_validator('type')
     @classmethod
@@ -130,6 +159,21 @@ class PropertyOut(BaseModel):
     surface_area: float = 0
     is_verified: bool = False
     price_converted: dict = {}
+
+    # Extended fields
+    salons: int = 0
+    kitchens: int = 0
+    toilets: int = 0
+    floors: int = 0
+    year_built: str = ""
+    commune: str = ""
+    landmarks: str = ""
+    equipment: List[str] = []
+    show_usd: bool = True
+    show_eur: bool = True
+    hide_email: bool = False
+    show_phone: bool = True
+    whatsapp_direct: bool = False
 
 
 class PaginatedProperties(BaseModel):

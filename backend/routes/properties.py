@@ -336,6 +336,20 @@ async def create_property(data: PropertyCreate, current_user: dict = Depends(req
         "bathrooms": data.bathrooms,
         "surface_area": data.surface_area,
         "is_verified": False,
+        # Extended fields
+        "salons": data.salons,
+        "kitchens": data.kitchens,
+        "toilets": data.toilets,
+        "floors": data.floors,
+        "year_built": data.year_built,
+        "commune": sanitize(data.commune),
+        "landmarks": sanitize(data.landmarks),
+        "equipment": data.equipment,
+        "show_usd": data.show_usd,
+        "show_eur": data.show_eur,
+        "hide_email": data.hide_email,
+        "show_phone": data.show_phone,
+        "whatsapp_direct": data.whatsapp_direct,
     }
     await db.properties.insert_one(prop)
     prop["author_username"] = current_user.get("username", "")
