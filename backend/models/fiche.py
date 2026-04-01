@@ -16,6 +16,8 @@ class ProcedureStep(BaseModel):
     duration: str = ""
     remarks: str = ""
     order: int = 0
+    documents: List[RequiredDocument] = []
+    fees: float = 0
 
 
 class AdditionalDetail(BaseModel):

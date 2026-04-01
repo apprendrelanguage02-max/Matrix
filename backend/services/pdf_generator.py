@@ -162,59 +162,9 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
         story.append(build_section_header("Resume", styles))
         story.append(Paragraph(fiche["summary"], styles["BodyText2"]))
 
-    # ─── Fees table ──────────────────────────────────────────────────────
-    currency = fiche.get("currency", "GNF")
-    official = fiche.get("official_fees", 0)
-    service = fiche.get("service_cost", 0)
-    if official or service:
-        story.append(Spacer(1, 2 * mm))
-        story.append(build_section_header("Frais et Couts", styles))
-        fees_data = []
-        if official:
-            fees_data.append([
-                Paragraph("Frais officiels de traitement", styles["SmallBold"]),
-                Paragraph(f"<b>{official:,.0f} {currency}</b>", ParagraphStyle("FeeVal", fontName="Helvetica-Bold", fontSize=9, textColor=ORANGE, alignment=TA_RIGHT))
-            ])
-        if service:
-            fees_data.append([
-                Paragraph("Cout de la prestation", styles["SmallBold"]),
-                Paragraph(f"<b>{service:,.0f} {currency}</b>", ParagraphStyle("FeeVal2", fontName="Helvetica-Bold", fontSize=9, textColor=ORANGE, alignment=TA_RIGHT))
-            ])
-        if official and service:
-            fees_data.append([
-                Paragraph("<b>TOTAL</b>", ParagraphStyle("TotLabel", fontName="Helvetica-Bold", fontSize=10, textColor=DARK)),
-                Paragraph(f"<b>{(official + service):,.0f} {currency}</b>", ParagraphStyle("TotVal", fontName="Helvetica-Bold", fontSize=10, textColor=ORANGE, alignment=TA_RIGHT))
-            ])
-        fees_table = Table(fees_data, colWidths=[page_w * 0.65, page_w * 0.35])
-        fee_style = [
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ("LEFTPADDING", (0, 0), (-1, -1), 8),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-            ("LINEBELOW", (0, 0), (-1, -2), 0.5, BORDER_COLOR),
-        ]
-        if official and service:
-            fee_style.append(("BACKGROUND", (0, -1), (-1, -1), LIGHT_ORANGE))
-            fee_style.append(("LINEABOVE", (0, -1), (-1, -1), 1.5, ORANGE))
-        fees_table.setStyle(TableStyle(fee_style))
-        story.append(fees_table)
-
-    # ─── Documents ───────────────────────────────────────────────────────
-    docs = fiche.get("documents", [])
-    if docs:
-        story.append(Spacer(1, 2 * mm))
-        story.append(build_section_header("Documents Requis", styles))
-        for i, d in enumerate(docs):
-            badge = '<font color="#FF6600"><b>OBLIGATOIRE</b></font>' if d.get("required", True) else '<font color="#666666">Optionnel</font>'
-            name = d.get("name", "Document")
-            row = f'<b>{i + 1}.</b> {name}  ({badge})'
-            story.append(Paragraph(row, styles["BodyText2"]))
-            if d.get("note"):
-                story.append(Paragraph(f'<i><font color="#888888">{d["note"]}</font></i>', styles["Small"]))
-            story.append(Spacer(1, 1.5 * mm))
-
-    # ─── Steps ───────────────────────────────────────────────────────────
+    # ─── Steps (with documents & fees per step) ──────────────────────────
     steps = fiche.get("steps", [])
+    total_step_fees = 0
     if steps:
         story.append(Spacer(1, 2 * mm))
         story.append(build_section_header("Etapes de la Procedure", styles))
@@ -241,6 +191,24 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
                 content_parts.append(Paragraph(step["description"], styles["BodyText2"]))
             if step.get("remarks"):
                 content_parts.append(Paragraph(f'<font color="#cc0000"><b>Important:</b> {step["remarks"]}</font>', styles["Small"]))
+
+            # Documents required for this step
+            step_docs = step.get("documents", [])
+            if step_docs:
+                content_parts.append(Spacer(1, 2 * mm))
+                content_parts.append(Paragraph('<font color="#FF6600"><b>Documents requis :</b></font>', styles["Small"]))
+                for d in step_docs:
+                    badge = '<font color="#FF6600"><b>OBLIGATOIRE</b></font>' if d.get("required", True) else '<font color="#666666">Optionnel</font>'
+                    content_parts.append(Paragraph(f'  - {d.get("name", "Document")}  ({badge})', styles["Small"]))
+                    if d.get("note"):
+                        content_parts.append(Paragraph(f'    <i><font color="#888888">{d["note"]}</font></i>', styles["Small"]))
+
+            # Fees for this step
+            step_fee = step.get("fees", 0)
+            if step_fee:
+                total_step_fees += step_fee
+                content_parts.append(Spacer(1, 1 * mm))
+                content_parts.append(Paragraph(f'<font color="#FF6600"><b>Frais de traitement : {step_fee:,.0f} {currency}</b></font>', styles["Small"]))
 
             step_data = [[num_table, content_parts]]
             step_table = Table(step_data, colWidths=[12 * mm, page_w - 14 * mm])
@@ -287,6 +255,58 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
             story.append(Paragraph("<b>Ce qui n'est pas inclus:</b>", styles["SmallBold"]))
             for item in svc["not_included"]:
                 story.append(Paragraph(f'<font color="#cc0000">&#10007;</font> {item}', styles["BodyText2"]))
+
+    # ─── FEES — at the very bottom ─────────────────────────────────────
+    currency = fiche.get("currency", "GNF")
+    official = fiche.get("official_fees", 0)
+    service = fiche.get("service_cost", 0)
+    if total_step_fees or official or service:
+        story.append(Spacer(1, 4 * mm))
+        story.append(build_section_header("Frais et Couts", styles))
+        fees_data = []
+
+        # Per-step fees breakdown
+        if total_step_fees:
+            sorted_for_fees = sorted(steps, key=lambda s: s.get("order", 0))
+            for i, step in enumerate(sorted_for_fees):
+                sf = step.get("fees", 0)
+                if sf:
+                    fees_data.append([
+                        Paragraph(f"Etape {i + 1} : {step.get('title', '')}", styles["Small"]),
+                        Paragraph(f"<b>{sf:,.0f} {currency}</b>", ParagraphStyle(f"SF{i}", fontName="Helvetica-Bold", fontSize=9, textColor=DARK, alignment=TA_RIGHT))
+                    ])
+            fees_data.append([
+                Paragraph("<b>Sous-total frais des etapes</b>", styles["SmallBold"]),
+                Paragraph(f"<b>{total_step_fees:,.0f} {currency}</b>", ParagraphStyle("SubTot", fontName="Helvetica-Bold", fontSize=9, textColor=ORANGE, alignment=TA_RIGHT))
+            ])
+
+        if official:
+            fees_data.append([
+                Paragraph("Frais officiels de traitement", styles["SmallBold"]),
+                Paragraph(f"<b>{official:,.0f} {currency}</b>", ParagraphStyle("FeeVal", fontName="Helvetica-Bold", fontSize=9, textColor=DARK, alignment=TA_RIGHT))
+            ])
+        if service:
+            fees_data.append([
+                Paragraph("Cout de la prestation", styles["SmallBold"]),
+                Paragraph(f"<b>{service:,.0f} {currency}</b>", ParagraphStyle("FeeVal2", fontName="Helvetica-Bold", fontSize=9, textColor=DARK, alignment=TA_RIGHT))
+            ])
+
+        grand_total = total_step_fees + official + service
+        fees_data.append([
+            Paragraph("<b>TOTAL GENERAL</b>", ParagraphStyle("TotLabel", fontName="Helvetica-Bold", fontSize=11, textColor=DARK)),
+            Paragraph(f"<b>{grand_total:,.0f} {currency}</b>", ParagraphStyle("TotVal", fontName="Helvetica-Bold", fontSize=11, textColor=ORANGE, alignment=TA_RIGHT))
+        ])
+        fees_table = Table(fees_data, colWidths=[page_w * 0.65, page_w * 0.35])
+        fees_table.setStyle(TableStyle([
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("LINEBELOW", (0, 0), (-1, -2), 0.5, BORDER_COLOR),
+            ("BACKGROUND", (0, -1), (-1, -1), LIGHT_ORANGE),
+            ("LINEABOVE", (0, -1), (-1, -1), 1.5, ORANGE),
+        ]))
+        story.append(fees_table)
 
     # ─── Signature ───────────────────────────────────────────────────────
     story.append(Spacer(1, 10 * mm))

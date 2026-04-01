@@ -17,7 +17,7 @@ const STATUSES = [
 ];
 
 const emptyDoc = () => ({ name: "", note: "", required: true });
-const emptyStep = () => ({ title: "", description: "", duration: "", remarks: "", order: 0 });
+const emptyStep = () => ({ title: "", description: "", duration: "", remarks: "", order: 0, documents: [], fees: 0 });
 const emptyDetail = () => ({ title: "", content: "" });
 const emptyService = () => ({
   title: "", description: "", cost: 0, currency: "GNF", delay: "",
@@ -69,7 +69,7 @@ export default function CreateFichePage() {
     title: "", country: "Guinee", category: "", procedure_type: "",
     summary: "", currency: "GNF", official_fees: 0, service_cost: 0,
     estimated_delay: "", status: "draft",
-    documents: [emptyDoc()],
+    documents: [],
     steps: [emptyStep()],
     additional_details: [],
     service_offering: emptyService(),
