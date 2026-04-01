@@ -224,6 +224,10 @@ export default function AdminProceduresDashboard() {
                     placeholder="Rechercher..." data-testid="proc-search"
                     className="bg-zinc-900 border border-zinc-700 text-white text-sm pl-9 pr-3 py-2 w-44 lg:w-56 focus:outline-none focus:border-[#FF6600]" />
                 </div>
+                <button onClick={() => navigate("/admin/fiches")} data-testid="fiches-pdf-btn"
+                  className="flex items-center gap-1.5 sm:gap-2 bg-zinc-800 text-white text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2.5 hover:bg-zinc-700 border border-zinc-700 transition-colors">
+                  <Download className="w-4 h-4" /> <span className="hidden sm:inline">Fiches PDF</span>
+                </button>
                 <button onClick={() => navigate("/admin/procedures/nouvelle")} data-testid="create-proc-btn"
                   className="flex items-center gap-1.5 sm:gap-2 bg-[#FF6600] text-white text-xs font-bold uppercase tracking-wider px-3 sm:px-4 py-2.5 hover:bg-[#CC5200] transition-colors">
                   <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Creer</span>

@@ -70,7 +70,7 @@ export default function FichesListPage() {
       <Header />
       <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <Link to="/admin" className="text-zinc-400 hover:text-[#FF6600] transition-colors" data-testid="back-to-admin">
+          <Link to="/admin/procedures" className="text-zinc-400 hover:text-[#FF6600] transition-colors" data-testid="back-to-procedures">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
