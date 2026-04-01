@@ -11,38 +11,31 @@ Plateforme full-stack (React/FastAPI/MongoDB) pour un portail d'actualites et im
 
 ## Fonctionnalites Implementees
 1. Systeme d'articles avec categories, recherche, vues, likes
-2. Module immobilier complet:
-   - Page creation premium 3 colonnes (photos, details, carte)
-   - Page detail premium 2 colonnes (galerie/description/equipements/contact | info/localisation/carte)
-   - Carte Leaflet interactive avec pin draggable
-   - Conversion GNF/USD/EUR
-   - Equipements par categories (40+)
-   - Communes de Conakry
-   - Champs etendus (salons, cuisines, toilettes, etages, annee, commune, reperes)
-3. Module procedures V2 (drag-and-drop, fichiers cloud, videos, image principale)
-4. Module Fiches PDF (CRUD, apercu live, generation ReportLab, parametres entreprise)
-   - Documents requis et frais integres dans chaque etape (pas en section globale)
-   - Total des frais calcule et affiche en bas du PDF (sous-total etapes + frais officiels + cout prestation)
+2. Module immobilier complet (premium UI, Leaflet map, conversion GNF/USD/EUR)
+3. Module procedures V2 (drag-and-drop, fichiers cloud, videos)
+4. Module Fiches PDF Premium:
+   - Interface de creation premium (SaaS-style, sections avec icones, barre sticky)
+   - Documents requis et frais integres dans chaque etape
+   - Selecteur de devise par etape (GNF, EUR, USD, etc.)
+   - Total general calcule en bas
    - Logo Matrix.png integre dans le PDF
+   - PDF premium avec sections elegantes (barre orange laterale, boites accent, separateurs)
+   - Company settings synchronises (logo, nom, slogan, signature, footer)
 5. Authentification OTP avec Resend
 6. Tableau de bord admin avec badges statut colores
 7. Stockage cloud S3
 
-## Session 1 Avril 2026 — Complete
-- [x] Code review fixes (XSS/DOMPurify, secrets, React keys, useMemo)
-- [x] Module Fiches PDF complet (100% tests)
-- [x] Page creation annonce immobiliere premium 3 colonnes (100% tests)
-- [x] Page detail annonce immobiliere premium
-
 ## Session 2 Avril 2026 — Complete
-- [x] Restructuration Fiches PDF: documents et frais par etape (100% tests - iteration 33)
-- [x] Logo Matrix.png integre dans le PDF et l'apercu live
-- [x] Fix bug variable `currency` referencee avant definition dans pdf_generator.py
-- [x] Section "Documents requis" globale supprimee, remplacee par documents dans chaque etape
-- [x] Section "Frais et Couts" deplacee en bas de l'apercu et du PDF avec recapitulatif
+- [x] Correction logo PDF: Matrix.png au lieu de nimba-logo.png
+- [x] Nouvelle fonction load_logo() locale (plus de requetes HTTP)
+- [x] Refonte visuelle complete de CreateFichePage.js (design premium SaaS)
+- [x] Refonte visuelle complete de pdf_generator.py (PDF elegant, professionnel)
+- [x] Selecteur de devise par etape (fees_currency par step)
+- [x] Company settings default mis a jour vers Matrix.png
+- [x] Tests: Backend 8/8, Frontend 9/9 (iteration 34)
 
 ## Backlog
-- P1: Nettoyage/refactoring des routes backend complexes (messages.py, auth.py, procedures.py)
+- P1: Nettoyage/refactoring des routes backend complexes
 - P1: Correction des hooks React avec dependances manquantes
 - P2: Supprimer anciens fichiers procedures V1
 - P2: Refactoring composants >300 lignes
