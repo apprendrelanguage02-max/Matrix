@@ -12,8 +12,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.clients = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
-        # Only rate-limit auth endpoints
-        if not request.url.path.startswith("/api/auth/"):
+        # Only rate-limit sensitive auth endpoints (login, register, verify)
+        # Do NOT rate-limit send-otp (it has its own per-email rate limiter)
+        path = request.url.path
+        rate_limited_paths = ["/api/auth/login", "/api/auth/register", "/api/auth/verify-otp"]
+        if path not in rate_limited_paths:
             return await call_next(request)
 
         # Get real client IP from X-Forwarded-For or X-Real-IP

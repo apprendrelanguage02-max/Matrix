@@ -53,13 +53,19 @@ export default function VerifyOTPPage() {
       setAttemptsLeft(5);
       toast.success(res.data.message || `Code envoye a ${email}`);
     } catch (err) {
+      const status = err.response?.status;
       const detail = err.response?.data?.detail;
       if (detail?.includes("deja verifie")) {
         navigate("/connexion");
         toast.info("Votre email est deja verifie. Connectez-vous.");
         return;
       }
-      setError(detail || "Erreur lors de l'envoi du code.");
+      if (status === 429) {
+        setError("Trop de tentatives. Veuillez patienter 1 minute avant de renvoyer un code.");
+        setCooldown(60);
+      } else {
+        setError(detail || "Impossible d'envoyer le code. Verifiez votre connexion et reessayez.");
+      }
     } finally {
       setSendingOtp(false);
     }

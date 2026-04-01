@@ -55,14 +55,10 @@ async def _send_otp_email(email: str, code: str) -> bool:
     sender = os.environ.get("SENDER_EMAIL", "Matrix News <noreply@matrixnews.org>")
 
     if not api_key:
-        logger.error("RESEND_API_KEY not configured")
+        logger.error("RESEND_API_KEY not configured — cannot send OTP email")
         return False
 
-    try:
-        import resend
-        resend.api_key = api_key
-
-        html = f"""
+    html = f"""
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -103,17 +99,27 @@ async def _send_otp_email(email: str, code: str) -> bool:
 </body>
 </html>"""
 
-        result = await asyncio.to_thread(resend.Emails.send, {
-            "from": sender,
-            "to": [email],
-            "subject": "Votre code de verification Matrix News",
-            "html": html,
-        })
-        logger.info(f"OTP email sent to {email} | {result}")
-        return True
-    except Exception as e:
-        logger.error(f"Resend FAILED for {email} | {e}")
-        return False
+    # Try up to 2 times
+    max_retries = 2
+    for attempt in range(max_retries):
+        try:
+            import resend
+            resend.api_key = api_key
+
+            result = await asyncio.to_thread(resend.Emails.send, {
+                "from": sender,
+                "to": [email],
+                "subject": "Votre code de verification Matrix News",
+                "html": html,
+            })
+            logger.info(f"OTP email sent to {email} (attempt {attempt + 1}) | id={result.get('id', 'unknown')}")
+            return True
+        except Exception as e:
+            logger.error(f"Resend attempt {attempt + 1} FAILED for {email} | {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1)  # Wait 1s before retry
+
+    return False
 
 
 class OTPRequest(BaseModel):
@@ -225,7 +231,11 @@ async def send_otp(data: OTPRequest):
     logger.info(f"OTP generated for {data.email} (sent={sent})")
 
     if not sent:
-        raise HTTPException(status_code=500, detail="Erreur lors de l'envoi du code. Veuillez reessayer.")
+        logger.error(f"All OTP send attempts failed for {data.email}")
+        raise HTTPException(
+            status_code=500,
+            detail="Le service d'envoi d'email rencontre un probleme temporaire. Veuillez patienter quelques secondes et cliquer sur 'Renvoyer un nouveau code'."
+        )
 
     return {"sent": True, "message": f"Code envoye a {data.email}"}
 
