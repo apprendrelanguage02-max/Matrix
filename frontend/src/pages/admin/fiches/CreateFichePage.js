@@ -599,7 +599,7 @@ export default function CreateFichePage() {
                         <p className="text-[9px] font-bold text-zinc-900 uppercase tracking-wider">Resume</p>
                       </div>
                       <div className="bg-orange-50/50 border border-orange-100 rounded-sm p-2.5">
-                        <p className="text-[9px] text-zinc-600 leading-relaxed">{form.summary}</p>
+                        <p className="text-[9px] text-zinc-600 leading-relaxed whitespace-pre-wrap">{form.summary}</p>
                       </div>
                     </div>
                   )}
@@ -618,7 +618,7 @@ export default function CreateFichePage() {
                             <div className="text-[9px] flex-1 min-w-0">
                               <p className="font-bold text-zinc-900">{step.title}</p>
                               {step.duration && <p className="text-[#FF6600] text-[8px]">Duree : {step.duration}</p>}
-                              {step.description && <p className="text-zinc-500 mt-0.5 leading-relaxed">{step.description}</p>}
+                              {step.description && <p className="text-zinc-500 mt-0.5 leading-relaxed whitespace-pre-wrap">{step.description}</p>}
                               {step.remarks && (
                                 <div className="bg-red-50 border border-red-100 rounded-sm px-1.5 py-1 mt-1">
                                   <p className="text-red-600 text-[8px]">Important : {step.remarks}</p>
@@ -657,7 +657,7 @@ export default function CreateFichePage() {
                         <div className="w-0.5 h-3 bg-[#FF6600] rounded-full" />
                         <p className="text-[9px] font-bold text-zinc-900 uppercase tracking-wider">{d.title}</p>
                       </div>
-                      <p className="text-[9px] text-zinc-600 leading-relaxed">{d.content}</p>
+                      <p className="text-[9px] text-zinc-600 leading-relaxed whitespace-pre-wrap">{d.content}</p>
                     </div>
                   ))}
 
@@ -671,7 +671,7 @@ export default function CreateFichePage() {
                       <div className="bg-zinc-50 border border-zinc-200 rounded-sm p-2.5">
                         <p className="text-[9px] font-bold text-zinc-900">{form.service_offering.title}</p>
                         {form.service_offering.description && (
-                          <p className="text-[9px] text-zinc-500 mt-0.5">{form.service_offering.description}</p>
+                          <p className="text-[9px] text-zinc-500 mt-0.5 whitespace-pre-wrap">{form.service_offering.description}</p>
                         )}
                         {(form.service_offering.cost > 0 || form.service_offering.delay) && (
                           <p className="text-[9px] text-zinc-500 mt-1">

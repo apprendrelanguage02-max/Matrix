@@ -11,6 +11,13 @@ from reportlab.platypus import (
 )
 from datetime import datetime, timezone
 
+
+def nl2br(text: str) -> str:
+    """Convert newlines to <br/> for ReportLab Paragraphs."""
+    if not text:
+        return text
+    return text.replace("\n", "<br/>")
+
 # ─── Premium Color Palette ────────────────────────────────────────────────────
 ORANGE = HexColor("#FF6600")
 DARK_ORANGE = HexColor("#E55B00")
@@ -208,7 +215,7 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
         story.append(build_section_title("Resume", styles))
         story.append(Spacer(1, 2 * mm))
         # Summary in a subtle box
-        sum_data = [[Paragraph(fiche["summary"], styles["Body"])]]
+        sum_data = [[Paragraph(nl2br(fiche["summary"]), styles["Body"])]]
         sum_table = Table(sum_data, colWidths=[page_w])
         sum_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), ACCENT_BG),
@@ -264,12 +271,12 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
 
             if step.get("description"):
                 content.append(Spacer(1, 1.5 * mm))
-                content.append(Paragraph(step["description"], styles["Body"]))
+                content.append(Paragraph(nl2br(step["description"]), styles["Body"]))
 
             if step.get("remarks"):
                 content.append(Spacer(1, 1 * mm))
                 remark_data = [[Paragraph(
-                    f'<b>Important :</b> {step["remarks"]}',
+                    f'<b>Important :</b> {nl2br(step["remarks"])}',
                     ParagraphStyle(f"Rem{i}", fontName="Helvetica", fontSize=8, textColor=HexColor("#B91C1C"), leading=11)
                 )]]
                 remark_table = Table(remark_data, colWidths=[page_w - 16 * mm])
@@ -351,7 +358,7 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
                 story.append(Spacer(1, 3 * mm))
                 story.append(build_section_title(detail["title"], styles))
                 story.append(Spacer(1, 1 * mm))
-                story.append(Paragraph(detail["content"], styles["Body"]))
+                story.append(Paragraph(nl2br(detail["content"]), styles["Body"]))
 
     # ═══════════════════════════════════════════════════════════════════════
     # SERVICE OFFERING
@@ -366,7 +373,7 @@ def generate_fiche_pdf(fiche: dict, settings: dict) -> bytes:
         if svc.get("title"):
             svc_content.append(Paragraph(f'<b>{svc["title"]}</b>', styles["BodyBold"]))
         if svc.get("description"):
-            svc_content.append(Paragraph(svc["description"], styles["Body"]))
+            svc_content.append(Paragraph(nl2br(svc["description"]), styles["Body"]))
 
         svc_currency = svc.get("currency", currency)
         info_parts = []
