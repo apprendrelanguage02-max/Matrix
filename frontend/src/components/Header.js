@@ -86,6 +86,10 @@ function ProfileDropdown({ user, onClose }) {
               <DropdownItem icon={FileText} label="Tableau de bord" onClick={() => go("/admin/procedures")} testid="dropdown-procedures-dashboard" />
               <DropdownItem icon={Plus} label="Nouvelle procedure" onClick={() => go("/admin/procedures/nouvelle")} testid="dropdown-new-procedure" />
               <div className="h-px bg-zinc-800 mx-3 my-2" />
+              <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Fiches PDF</p>
+              <DropdownItem icon={FileText} label="Mes fiches" onClick={() => go("/admin/fiches")} testid="dropdown-fiches" />
+              <DropdownItem icon={Plus} label="Nouvelle fiche" onClick={() => go("/admin/fiches/create")} testid="dropdown-new-fiche" />
+              <div className="h-px bg-zinc-800 mx-3 my-2" />
               <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Dashboard Admin</p>
               <DropdownItem icon={Database} label="Base de donnees" onClick={() => go("/admin/database")} testid="dropdown-database" />
               <DropdownItem icon={CreditCard} label="Paiements" onClick={() => go("/admin/paiements")} testid="dropdown-payments" />

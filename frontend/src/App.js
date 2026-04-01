@@ -28,6 +28,9 @@ import ProcedureDetailPage from "./pages/procedures/ProcedureDetailPage";
 import ProcedureFormPage from "./pages/procedures/ProcedureFormPage";
 import AdminProceduresDashboard from "./pages/admin/procedures/AdminProceduresDashboard";
 import ProcedureBuilder from "./pages/admin/procedures/ProcedureBuilder";
+import FichesListPage from "./pages/admin/fiches/FichesListPage";
+import CreateFichePage from "./pages/admin/fiches/CreateFichePage";
+import CompanySettingsPage from "./pages/admin/fiches/CompanySettingsPage";
 import ChatHelp from "./components/ChatHelp";
 import "./App.css";
 
@@ -98,6 +101,10 @@ function App() {
           <Route path="/admin/procedures" element={<AdminRoute><AdminProceduresDashboard /></AdminRoute>} />
           <Route path="/admin/procedures/nouvelle" element={<AdminRoute><ProcedureBuilder /></AdminRoute>} />
           <Route path="/admin/procedures/modifier/:id" element={<AdminRoute><ProcedureBuilder /></AdminRoute>} />
+          <Route path="/admin/fiches" element={<AdminRoute><FichesListPage /></AdminRoute>} />
+          <Route path="/admin/fiches/create" element={<AdminRoute><CreateFichePage /></AdminRoute>} />
+          <Route path="/admin/fiches/:id/edit" element={<AdminRoute><CreateFichePage /></AdminRoute>} />
+          <Route path="/admin/parametres-entreprise" element={<AdminRoute><CompanySettingsPage /></AdminRoute>} />
         </Routes>
           <ChatHelp />
           <Toaster position="top-right" />

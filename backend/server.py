@@ -13,6 +13,7 @@ from routes.upload import router as upload_router
 from routes.admin import router as admin_router
 from routes.notifications import router as notifications_router
 from routes.messages import router as messages_router
+from routes.fiches import router as fiches_router
 from database import db
 import logging
 
@@ -45,6 +46,7 @@ app.include_router(upload_router, prefix=PREFIX)
 app.include_router(admin_router, prefix=f"{PREFIX}/admin")
 app.include_router(notifications_router, prefix=PREFIX)
 app.include_router(messages_router, prefix=PREFIX)
+app.include_router(fiches_router, prefix=PREFIX)
 
 # ─── Root ──────────────────────────────────────────────────────────────────────
 @app.get("/api/")
