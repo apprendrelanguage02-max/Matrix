@@ -22,7 +22,7 @@ class ArticleAdminOut(BaseModel):
     category: str
     author_id: str
     author_username: str
-    published_at: str
+    published_at: str = ""
     views: int
     status: str = "publie"
 
@@ -222,7 +222,7 @@ async def get_admin_articles(
             id=a["id"], title=a["title"], category=a.get("category", "Actualité"),
             author_id=a.get("author_id", ""),
             author_username=authors_map.get(a.get("author_id", ""), ""),
-            published_at=a.get("published_at", a.get("created_at", "")),
+            published_at=a.get("published_at") or a.get("created_at") or "",
             views=a.get("views", 0), status=a.get("status", "publie")
         ))
     return PaginatedArticlesAdmin(articles=result, total=total, page=page, pages=pages)
