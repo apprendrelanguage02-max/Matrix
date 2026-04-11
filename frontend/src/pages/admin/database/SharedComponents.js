@@ -56,12 +56,3 @@ export function ConfirmModal({ open, title, message, onConfirm, onCancel, confir
     </div>
   );
 }
-
-export const TABS = [
-  { id: "requests", label: "Demandes", icon: null },
-  { id: "users", label: "Utilisateurs", icon: null },
-  { id: "articles", label: "Articles", icon: null },
-  { id: "properties", label: "Annonces", icon: null },
-  { id: "payments", label: "Paiements", icon: null },
-  { id: "prices", label: "Prix m²", icon: null },
-];

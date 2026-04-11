@@ -11,7 +11,7 @@ import api from "../../lib/api";
 import {
   MapPin, Phone, Mail, MessageCircle, MessageSquare, Eye,
   ChevronLeft, ChevronRight, ArrowLeft, Edit, Loader2, Video,
-  Bed, Bath, Maximize, Home, ShieldCheck, Heart, Bookmark, Lock,
+  Bed, Bath, Maximize, Home, ShieldCheck, Heart, Bookmark,
   User, Check, X, ChevronDown, ChevronRight as ChevronR,
   Sofa, CookingPot, DoorOpen, Building2, Calendar, Zap, Wifi, Shield
 } from "lucide-react";
@@ -45,22 +45,7 @@ const EQUIP_CATEGORIES = {
   "Securite & Confort": ["Gardiennage","Camera de surveillance","Securite 24H/24","Interphone","Alarme","Portail electrique","Groupe electrogene","Panneaux solaires","Ascenseur","Vue mer","Vue montagne","Acces goudronne","Proche route principale","Animaux acceptes"],
 };
 
-function AuthGateOverlay() {
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" data-testid="auth-gate-overlay">
-      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-        <div className="w-16 h-16 bg-[#F97316]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-8 h-8 text-[#F97316]" /></div>
-        <h2 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">Contenu reserve aux membres</h2>
-        <p className="text-sm text-zinc-600 mb-6 leading-relaxed">Connectez-vous ou creez un compte gratuit pour acceder aux details complets.</p>
-        <div className="space-y-3">
-          <a href="/connexion" data-testid="auth-gate-login-btn" className="block w-full bg-[#F97316] text-white font-bold uppercase text-sm py-3 px-4 rounded-md hover:bg-[#EA580C] transition-colors">Se connecter</a>
-          <a href="/inscription" data-testid="auth-gate-register-btn" className="block w-full border-2 border-zinc-200 text-zinc-700 font-bold uppercase text-sm py-3 px-4 rounded-md hover:border-[#F97316] hover:text-[#F97316] transition-colors">Creer un compte</a>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { AuthGateOverlay } from "../../components/DetailPageHelpers";
 
 function fmt(n) { return n ? Number(n).toLocaleString("fr-FR") : "0"; }
 

@@ -5,78 +5,16 @@ import Header from "../../components/Header";
 import Footer from "../../components/layout/Footer";
 import api from "../../lib/api";
 import {
-  Loader2, Calendar, Eye, ArrowLeft, Edit, Trash2, User, CheckCircle,
-  FileText, Download, ChevronRight, Tag, Bookmark, Zap, Video, ExternalLink, Lock
+  Loader2, ArrowLeft, Edit, Trash2, CheckCircle,
+  FileText, Download, ChevronRight, Bookmark, Video, ExternalLink
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
+import { AuthGateOverlay, VideoPlayer } from "../../components/DetailPageHelpers";
+import { ProcedureDetailSidebar, COMPLEXITY_CONFIG } from "./ProcedureDetailSidebar";
 
 const LOGO = "/nimba-logo.png";
 const FLAG_URL = (code) => `https://flagcdn.com/24x18/${code}.png`;
-
-function formatDate(iso) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-}
-
-const COMPLEXITY_CONFIG = {
-  facile: { label: "Facile", color: "text-green-500", bg: "bg-green-500/10 border-green-500/30" },
-  modere: { label: "Modere", color: "text-yellow-500", bg: "bg-yellow-500/10 border-yellow-500/30" },
-  difficile: { label: "Difficile", color: "text-red-500", bg: "bg-red-500/10 border-red-500/30" },
-};
-
-function getEmbedUrl(url) {
-  if (!url) return null;
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-  return null;
-}
-
-function VideoPlayer({ url, testId }) {
-  if (!url) return null;
-  const embedUrl = getEmbedUrl(url);
-  if (embedUrl) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-black" data-testid={testId}>
-        <iframe src={embedUrl} title="Video" className="w-full h-full" allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
-      </div>
-    );
-  }
-  return (
-    <div className="aspect-video rounded-lg overflow-hidden bg-black" data-testid={testId}>
-      <video src={url} controls className="w-full h-full" />
-    </div>
-  );
-}
-
-function AuthGateOverlay() {
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" data-testid="auth-gate-overlay">
-      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-        <div className="w-16 h-16 bg-[#FF6600]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-8 h-8 text-[#FF6600]" />
-        </div>
-        <h2 className="font-['Oswald'] text-xl font-bold uppercase tracking-tight text-black mb-2">
-          Contenu reserve aux membres
-        </h2>
-        <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
-          Connectez-vous ou creez un compte gratuit pour acceder au detail complet de cette procedure, aux documents et aux etapes.
-        </p>
-        <div className="space-y-3">
-          <Link to="/connexion" data-testid="auth-gate-login-btn"
-            className="block w-full bg-[#FF6600] text-white font-bold uppercase text-sm py-3 px-4 hover:bg-[#CC5200] transition-colors">
-            Se connecter
-          </Link>
-          <Link to="/inscription" data-testid="auth-gate-register-btn"
-            className="block w-full border-2 border-zinc-200 text-zinc-700 font-bold uppercase text-sm py-3 px-4 hover:border-[#FF6600] hover:text-[#FF6600] transition-colors">
-            Creer un compte
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ProcedureDetailPage() {
   const { id } = useParams();
@@ -420,91 +358,8 @@ export default function ProcedureDetailPage() {
           </div>
 
           {/* Sidebar (1/3) */}
-          <div className="space-y-4">
-            {/* Info card */}
-            <div className="bg-white border border-zinc-200 rounded-lg p-5">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500 text-xs font-bold uppercase">Pays</span>
-                  <span className="flex items-center gap-2 text-sm font-bold">
-                    {procedure.country_flag && <img src={FLAG_URL(procedure.country_flag)} alt="" className="w-5 h-4" />}
-                    {procedure.country_name}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500 text-xs font-bold uppercase">Categorie</span>
-                  <span className="flex items-center gap-1.5 text-xs text-zinc-700"><Tag className="w-3 h-3" /> {procedure.category_name}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500 text-xs font-bold uppercase">Complexite</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 border rounded ${cx.bg} ${cx.color}`}>{cx.label}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500 text-xs font-bold uppercase">Etapes</span>
-                  <span className="text-sm font-bold text-black">{steps.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-500 text-xs font-bold uppercase">Documents</span>
-                  <span className="text-sm font-bold text-black">{files.length}</span>
-                </div>
-              </div>
-              <div className="border-t border-zinc-200 mt-3 pt-3 flex items-center justify-between text-xs text-zinc-400">
-                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(procedure.created_at)}</span>
-                <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {procedure.views} vues</span>
-              </div>
-              <div className="border-t border-zinc-200 mt-3 pt-3 text-xs text-zinc-400">
-                <span className="flex items-center gap-1"><User className="w-3 h-3" /> {procedure.author_username || "Admin"}</span>
-              </div>
-            </div>
-
-            {/* Keywords */}
-            {procedure.keywords?.length > 0 && (
-              <div className="bg-white border border-zinc-200 rounded-lg p-5">
-                <h3 className="text-xs font-bold uppercase text-zinc-400 mb-2">Tags</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {procedure.keywords.map((kw, i) => (
-                    <span key={`kw-${kw}`} className="bg-[#FF6600]/10 text-[#FF6600] text-[10px] font-bold px-2 py-0.5 rounded">{kw}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Quick Actions */}
-            {quickActions.length > 0 && (
-              <div className="bg-white border border-zinc-200 rounded-lg p-5" data-testid="quick-actions-section">
-                <h3 className="text-xs font-bold uppercase text-zinc-400 mb-3 flex items-center gap-1.5">
-                  <Zap className="w-3 h-3 text-[#FF6600]" /> Actions rapides
-                </h3>
-                <div className="space-y-2">
-                  {quickActions.map((qa, i) => (
-                    <button key={qa.id || i} data-testid={`quick-action-${i}`}
-                      onClick={() => {
-                        if (qa.action_type === "view_documents") {
-                          document.querySelector('[data-testid="files-section"]')?.scrollIntoView({ behavior: "smooth" });
-                        } else if (qa.action_type === "start_procedure") {
-                          document.querySelector('[data-testid="steps-section"]')?.scrollIntoView({ behavior: "smooth" });
-                          setActiveStep(0);
-                        }
-                      }}
-                      className="w-full flex items-center gap-2 bg-zinc-50 hover:bg-[#FF6600] hover:text-white text-sm px-3 py-2.5 rounded transition-colors text-left group">
-                      {qa.action_type === "view_documents" && <FileText className="w-4 h-4 text-[#FF6600] group-hover:text-white" />}
-                      {qa.action_type === "start_procedure" && <CheckCircle className="w-4 h-4 text-[#FF6600] group-hover:text-white" />}
-                      {qa.action_type === "download" && <Download className="w-4 h-4 text-[#FF6600] group-hover:text-white" />}
-                      {qa.action_type === "navigate" && <ChevronRight className="w-4 h-4 text-[#FF6600] group-hover:text-white" />}
-                      <span className="font-bold text-xs">{qa.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Source / Branding */}
-            <div className="bg-black text-white rounded-lg p-5 text-center">
-              <img src={LOGO} alt="Matrix News" className="w-10 h-10 mx-auto mb-2" />
-              <p className="font-['Oswald'] text-sm font-bold uppercase tracking-wider">Matrix News</p>
-              <a href="https://matrixnews.org" target="_blank" rel="noreferrer" className="text-[#FF6600] text-xs font-bold">matrixnews.org</a>
-            </div>
-          </div>
+          <ProcedureDetailSidebar procedure={procedure} steps={steps} files={files}
+            quickActions={quickActions} cx={cx} setActiveStep={setActiveStep} />
         </div>
       </main>
 
