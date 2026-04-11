@@ -5,4 +5,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Fallback: attach token from localStorage if cookie not sent
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem("newsapp_token");
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default api;

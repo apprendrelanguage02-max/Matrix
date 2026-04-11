@@ -28,10 +28,12 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback((userData) => {
+  const login = useCallback((userData, token) => {
     setUser(userData);
     setIsAuthenticated(true);
+    setLoading(false);
     localStorage.setItem("newsapp_user", JSON.stringify(userData));
+    if (token) localStorage.setItem("newsapp_token", token);
   }, []);
 
   const logout = useCallback(async () => {
