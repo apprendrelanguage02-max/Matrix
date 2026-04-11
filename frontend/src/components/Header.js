@@ -318,7 +318,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" data-testid="header-logo">
             <img
-              src="/Matrix.png"
+              src="/nimba-logo.png"
               alt="Matrix News Logo"
               className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-sm"
             />

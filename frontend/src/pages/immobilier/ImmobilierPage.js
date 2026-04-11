@@ -10,7 +10,7 @@ import api from "../../lib/api";
 import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Calculator, Bell, Navigation } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const LOGO = "/Matrix.png";
+const LOGO = "/nimba-logo.png";
 
 export default function ImmobilierPage() {
   const { user } = useAuth();

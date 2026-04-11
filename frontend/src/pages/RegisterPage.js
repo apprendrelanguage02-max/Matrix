@@ -62,7 +62,7 @@ export default function RegisterPage() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:py-16">
         <Link to="/" className="flex items-center gap-2 mb-8 group">
-          <img src="/Matrix.png" alt="Matrix News" className="w-9 h-9 object-contain" />
+          <img src="/nimba-logo.png" alt="Matrix News" className="w-9 h-9 object-contain" />
           <span className="font-['Oswald'] text-2xl font-bold tracking-widest uppercase text-black group-hover:text-[#FF6600] transition-colors">
             Matrix News
           </span>

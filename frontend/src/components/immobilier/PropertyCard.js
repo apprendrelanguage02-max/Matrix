@@ -24,7 +24,7 @@ const CATEGORY_LABELS = {
   duplex: "Duplex", autre: "Autre",
 };
 
-const LOGO = "/Matrix.png";
+const LOGO = "/nimba-logo.png";
 
 export function formatPrice(price, currency = "GNF") {
   if (currency === "GNF") return new Intl.NumberFormat("fr-FR").format(price) + " GNF";
