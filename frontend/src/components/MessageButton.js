@@ -6,7 +6,7 @@ import ChatPanel from "./ChatPanel";
 import { useWebSocket } from "../context/WebSocketContext";
 
 export default function MessageButton() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const { unreadImmo, unreadProc } = useWebSocket() || {};
@@ -15,7 +15,7 @@ export default function MessageButton() {
   const isProcedures = location.pathname.startsWith("/procedures");
   const isVisible = isImmobilier || isProcedures;
 
-  if (!token || !isVisible) return null;
+  if (!isAuthenticated || !isVisible) return null;
 
   const type = isImmobilier ? "immobilier" : "procedures";
   const unread = isImmobilier ? (unreadImmo || 0) : (unreadProc || 0);

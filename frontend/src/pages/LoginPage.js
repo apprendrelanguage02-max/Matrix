@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
-      login(res.data.token, res.data.user);
+      login(res.data.user);
       toast.success(`Bienvenue, ${res.data.user.full_name || res.data.user.username} !`);
 
       if (res.data.user.role === "admin") {

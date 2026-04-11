@@ -9,17 +9,17 @@ import { Loader2, ArrowLeft, Heart, MapPin, Bed, Maximize, Trash2 } from "lucide
 import { toast } from "sonner";
 
 export default function FavoritesPage() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [saved, setSaved] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     api.get("/saved-properties")
       .then(r => setSaved(r.data))
       .catch(() => toast.error("Erreur de chargement"))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [isAuthenticated]);
 
   const handleRemove = async (propertyId) => {
     try {

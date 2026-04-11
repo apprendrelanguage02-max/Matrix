@@ -5,7 +5,7 @@ import { toast } from "sonner";
 const WebSocketContext = createContext(null);
 
 export function WebSocketProvider({ children }) {
-  const { token, user, logout, refreshUser } = useAuth();
+  const { isAuthenticated, user, logout, refreshUser } = useAuth();
   const wsRef = useRef(null);
   const subscribersRef = useRef(new Set());
   const reconnectTimerRef = useRef(null);
@@ -16,44 +16,35 @@ export function WebSocketProvider({ children }) {
   const [unreadProc, setUnreadProc] = useState(0);
 
   const connect = useCallback(() => {
-    if (!token || isUnmountedRef.current) return;
+    if (!isAuthenticated || isUnmountedRef.current) return;
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
     const wsUrl = process.env.REACT_APP_BACKEND_URL
       ?.replace("https://", "wss://")
       .replace("http://", "ws://");
 
-    const ws = new WebSocket(`${wsUrl}/api/ws/chat?token=${token}`);
+    const ws = new WebSocket(`${wsUrl}/api/ws/chat`);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
 
-        // ── Role update (approve / reject) ──────────────────────────────
         if (data.type === "role_update") {
           if (data.action === "approved") {
             toast.success(data.message || "Votre role a ete mis a jour !");
             refreshUser().then(() => {
-              // Redirect based on new role
               const role = data.role;
-              if (role === "agent") {
-                window.location.href = "/immobilier";
-              } else if (role === "auteur") {
-                window.location.href = "/admin";
-              }
+              if (role === "agent") window.location.href = "/immobilier";
+              else if (role === "auteur") window.location.href = "/admin";
             });
           } else if (data.action === "rejected") {
             toast.error(data.message || "Votre demande a ete refusee. Acces revoque.");
-            setTimeout(() => {
-              logout();
-              window.location.href = "/connexion";
-            }, 2000);
+            setTimeout(() => { logout(); window.location.href = "/connexion"; }, 2000);
           }
           return;
         }
 
-        // ── Content update (new article/property published) ─────────────
         if (data.type === "content_update" && data.action === "created") {
           const label = data.content_type === "article" ? "Nouvel article" : "Nouvelle annonce";
           toast.info(`${label} : ${data.title || ""}`, { duration: 5000 });
@@ -67,7 +58,6 @@ export function WebSocketProvider({ children }) {
           setOnlineUsers((prev) => ({ ...prev, [data.user_id]: data.online }));
         }
 
-        // Dispatch to all subscribers (ChatPanel, Header, pages, etc.)
         subscribersRef.current.forEach((handler) => {
           try { handler(data); } catch {}
         });
@@ -75,13 +65,13 @@ export function WebSocketProvider({ children }) {
     };
 
     ws.onclose = () => {
-      if (!isUnmountedRef.current && token) {
+      if (!isUnmountedRef.current && isAuthenticated) {
         reconnectTimerRef.current = setTimeout(connect, 3000);
       }
     };
 
     ws.onerror = () => { ws.close(); };
-  }, [token, logout, refreshUser]);
+  }, [isAuthenticated, logout, refreshUser]);
 
   useEffect(() => {
     isUnmountedRef.current = false;

@@ -113,7 +113,7 @@ export default function VerifyOTPPage() {
       const res = await api.post("/auth/verify-otp", { email, otp: code });
       setSuccess(true);
       setVerifiedUser(res.data.user);
-      login(res.data.token, res.data.user);
+      login(res.data.user);
       toast.success("Email verifie avec succes !");
 
       setTimeout(() => {

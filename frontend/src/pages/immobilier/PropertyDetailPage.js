@@ -51,7 +51,7 @@ function fmt(n) { return n ? Number(n).toLocaleString("fr-FR") : "0"; }
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
-  const { user, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const ws = useWebSocket();
   const navigate = useNavigate();
   const [property, setProperty] = useState(null);
@@ -66,7 +66,7 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     api.get(`/properties/${id}`)
       .then(r => { setProperty(r.data); setViewCount(r.data.views || 0); api.post(`/properties/${id}/view`).catch(() => {});
-        if (token) { api.get(`/saved-properties/${id}/status`).then(res => setIsSaved(res.data.is_saved)).catch(() => {}); }
+        if (isAuthenticated) { api.get(`/saved-properties/${id}/status`).then(res => setIsSaved(res.data.is_saved)).catch(() => {}); }
       })
       .catch(() => { toast.error("Annonce introuvable"); navigate("/immobilier"); })
       .finally(() => setLoading(false));
@@ -112,7 +112,7 @@ export default function PropertyDetailPage() {
   return (
     <div className="min-h-screen bg-[#F9FAFB]" data-testid="property-detail-page">
       <Header />
-      {!token && <AuthGateOverlay />}
+      {!isAuthenticated && <AuthGateOverlay />}
       <div className="h-1 bg-gradient-to-r from-[#F97316] via-[#F97316] to-orange-300" />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -164,7 +164,7 @@ export default function PropertyDetailPage() {
               <div className="flex items-center justify-end gap-2 mt-2">
                 <span className="flex items-center gap-1 text-zinc-400 text-xs"><Eye className="w-3 h-3" /> {viewCount}</span>
                 <LikeButton type="property" id={property.id} initialCount={property.likes_count || 0} initialLikedBy={property.liked_by || []} className="text-xs" />
-                {token && (
+                {isAuthenticated && (
                   <button onClick={async () => {
                     try { await api.post(`/saved-properties/${property.id}`); setIsSaved(!isSaved); toast.success(isSaved ? "Retire" : "Sauvegarde"); } catch { toast.error("Erreur"); }
                   }} data-testid="detail-save-btn"
@@ -370,7 +370,7 @@ export default function PropertyDetailPage() {
                     <Mail className="w-4 h-4" /> {property.seller_email}
                   </a>
                 )}
-                {token && property.author_id !== user?.id && (
+                {isAuthenticated && property.author_id !== user?.id && (
                   <button onClick={() => setShowChat(true)} data-testid="contact-agent-btn"
                     className="flex items-center justify-center gap-2 bg-[#111111] text-white px-4 py-3 rounded-md text-sm font-bold hover:bg-black transition-colors">
                     <MessageSquare className="w-4 h-4" /> Envoyer un message
@@ -414,7 +414,7 @@ export default function PropertyDetailPage() {
               <div className="mt-4 pt-4 border-t border-zinc-200 text-center">
                 <p className="font-['Oswald'] text-2xl font-bold text-[#F97316]">{fmt(property.price)} GNF</p>
                 {property.status === "disponible" && (
-                  <button onClick={() => { if (!token) { toast.error("Connectez-vous"); return; } setShowPayment(true); }}
+                  <button onClick={() => { if (!isAuthenticated) { toast.error("Connectez-vous"); return; } setShowPayment(true); }}
                     className="w-full mt-3 bg-[#111111] text-white font-bold uppercase tracking-wider py-3 rounded-md hover:bg-[#F97316] transition-colors text-sm" data-testid="reserve-btn">
                     Reserver ce bien
                   </button>

@@ -37,7 +37,7 @@ export function formatPriceConverted(converted) {
 }
 
 export default function PropertyCard({ property }) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const typeConf = TYPE_CONFIG[property.type] || TYPE_CONFIG.vente;
   const statusConf = STATUS_CONFIG[property.status];
   const img = property.images?.[0];
@@ -45,14 +45,14 @@ export default function PropertyCard({ property }) {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     api.get(`/saved-properties/${property.id}/status`).then(r => setIsSaved(r.data.is_saved)).catch(() => {});
-  }, [property.id, token]);
+  }, [property.id, isAuthenticated]);
 
   const toggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    if (!isAuthenticated) { toast.error("Connectez-vous pour sauvegarder."); return; }
     try {
       const res = await api.post(`/saved-properties/${property.id}`);
       setIsSaved(res.data.action === "saved");
@@ -63,7 +63,7 @@ export default function PropertyCard({ property }) {
   return (
     <div className="bg-white border border-zinc-200 hover:border-[#FF6600] hover:shadow-lg transition-all duration-200 flex flex-col group relative" data-testid="property-card">
       {/* Save/Favorite button */}
-      {token && (
+      {isAuthenticated && (
         <button onClick={toggleSave} data-testid={`save-property-${property.id}`}
           className={`absolute top-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200 ${
             isSaved ? "bg-[#FF6600] text-white shadow-md" : "bg-black/60 text-white hover:bg-[#FF6600]"

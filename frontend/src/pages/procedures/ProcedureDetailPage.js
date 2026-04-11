@@ -19,7 +19,7 @@ const FLAG_URL = (code) => `https://flagcdn.com/24x18/${code}.png`;
 export default function ProcedureDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [procedure, setProcedure] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,12 +37,12 @@ export default function ProcedureDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!token || !id) return;
+    if (!isAuthenticated || !id) return;
     api.get(`/saved-procedures/${id}/status`).then(r => setIsSaved(r.data.is_saved)).catch(() => {});
-  }, [id, token]);
+  }, [id, isAuthenticated]);
 
   const toggleSave = async () => {
-    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    if (!isAuthenticated) { toast.error("Connectez-vous pour sauvegarder."); return; }
     try {
       const res = await api.post(`/saved-procedures/${id}`);
       setIsSaved(res.data.action === "saved");
@@ -121,7 +121,7 @@ export default function ProcedureDetailPage() {
       <Header />
 
       {/* Auth Gate for non-logged in users */}
-      {!token && <AuthGateOverlay />}
+      {!isAuthenticated && <AuthGateOverlay />}
 
       {/* Hero */}
       <section className="bg-black py-8 sm:py-12">
@@ -158,7 +158,7 @@ export default function ProcedureDetailPage() {
             <ArrowLeft className="w-4 h-4" /> Toutes les procedures
           </Link>
           <div className="flex items-center gap-2">
-            {token && (
+            {isAuthenticated && (
               <button onClick={toggleSave} data-testid="save-procedure-btn"
                 className={`p-2 transition-colors ${isSaved ? "text-[#FF6600]" : "text-zinc-400 hover:text-[#FF6600]"}`}>
                 <Bookmark className={`w-5 h-5 ${isSaved ? "fill-[#FF6600]" : ""}`} />

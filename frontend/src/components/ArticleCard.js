@@ -14,23 +14,23 @@ function formatDate(isoString) {
 }
 
 export default function ArticleCard({ article, featured = false }) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const catColor = getCategoryColor(article.category);
   const excerpt = stripToPlainText(article.content);
   const [isSaved, setIsSaved] = useState(false);
   const [savingLoading, setSavingLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     api.get(`/saved-articles/${article.id}/status`)
       .then((r) => setIsSaved(r.data.is_saved))
       .catch(() => {});
-  }, [article.id, token]);
+  }, [article.id, isAuthenticated]);
 
   const toggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    if (!isAuthenticated) { toast.error("Connectez-vous pour sauvegarder."); return; }
     setSavingLoading(true);
     try {
       const res = await api.post(`/saved-articles/${article.id}`);
@@ -50,7 +50,7 @@ export default function ArticleCard({ article, featured = false }) {
       className={`group bg-white border border-zinc-200 hover:border-zinc-400 hover:shadow-md transition-all duration-300 flex flex-col relative ${featured ? "md:flex-row" : ""}`}
     >
       {/* Bookmark button */}
-      {token && (
+      {isAuthenticated && (
         <button
           onClick={toggleSave}
           disabled={savingLoading}

@@ -167,7 +167,7 @@ function SearchResultItem({ type, item, onClick }) {
 }
 
 export default function Header() {
-  const { token, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const ws = useWebSocket();
   const navigate = useNavigate();
   const location = useLocation();
@@ -360,7 +360,7 @@ export default function Header() {
 
           {/* Nav */}
           <nav className="flex items-center gap-2 sm:gap-3 ml-auto flex-shrink-0">
-            {token && user ? (
+            {isAuthenticated && user ? (
               <>
                 {(user.role === "auteur" || user.role === "admin") && (
                   <Link to="/admin" data-testid="admin-dashboard-link" className="hidden lg:flex items-center gap-1.5 text-sm font-bold font-['Manrope'] uppercase tracking-wider text-white hover:text-[#FF6600] transition-colors duration-200">

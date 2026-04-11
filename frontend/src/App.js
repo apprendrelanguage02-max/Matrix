@@ -35,27 +35,27 @@ import ChatHelp from "./components/ChatHelp";
 import "./App.css";
 
 function PrivateRoute({ children }) {
-  const { token } = useAuth();
-  return token ? children : <Navigate to="/connexion" replace />;
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/connexion" replace />;
 }
 
 function AuthorRoute({ children }) {
-  const { token, user } = useAuth();
-  if (!token) return <Navigate to="/connexion" replace />;
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/connexion" replace />;
   if (user?.role !== "auteur" && user?.role !== "admin") return <Navigate to="/profil" replace />;
   return children;
 }
 
 function AdminRoute({ children }) {
-  const { token, user } = useAuth();
-  if (!token) return <Navigate to="/connexion" replace />;
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/connexion" replace />;
   if (user?.role !== "admin") return <Navigate to="/" replace />;
   return children;
 }
 
 function AgentRoute({ children }) {
-  const { token, user } = useAuth();
-  if (!token) return <Navigate to="/connexion" replace />;
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/connexion" replace />;
   if (user?.role !== "agent" && user?.role !== "admin") return <Navigate to="/immobilier" replace />;
   return children;
 }

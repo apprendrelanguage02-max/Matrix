@@ -145,7 +145,7 @@ function formatDate(isoString) {
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const ws = useWebSocket();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -170,16 +170,16 @@ export default function ArticleDetailPage() {
       .then((r) => {
         setArticle(r.data);
         setViewCount(r.data.views || 0);
-        if (token) {
+        if (isAuthenticated) {
           api.get(`/saved-articles/${id}/status`).then((res) => setIsSaved(res.data.is_saved)).catch(() => {});
         }
       })
       .catch(() => setError("Article introuvable."))
       .finally(() => setLoading(false));
-  }, [id, token]);
+  }, [id, isAuthenticated]);
 
   const toggleSave = async () => {
-    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    if (!isAuthenticated) { toast.error("Connectez-vous pour sauvegarder."); return; }
     setSaveLoading(true);
     try {
       if (isSaved) {
@@ -256,7 +256,7 @@ export default function ArticleDetailPage() {
                 initialLikedBy={article.liked_by || []}
                 className="text-sm"
               />
-              {token && (
+              {isAuthenticated && (
                 <button
                   onClick={toggleSave}
                   disabled={saveLoading}

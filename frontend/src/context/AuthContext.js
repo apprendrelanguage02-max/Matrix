@@ -1,46 +1,61 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("newsapp_token"));
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("newsapp_user");
-    return stored ? JSON.parse(stored) : null;
+    const saved = localStorage.getItem("newsapp_user");
+    return saved ? JSON.parse(saved) : null;
   });
+  const [isAuthenticated, setIsAuthenticated] = useState(!!user);
+  const [loading, setLoading] = useState(true);
 
-  const login = (token, user) => {
-    localStorage.setItem("newsapp_token", token);
-    localStorage.setItem("newsapp_user", JSON.stringify(user));
-    setToken(token);
-    setUser(user);
-  };
+  // Validate session on mount via cookie
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    api.get("/auth/me")
+      .then(res => {
+        setUser(res.data);
+        localStorage.setItem("newsapp_user", JSON.stringify(res.data));
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        setUser(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem("newsapp_user");
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  const updateUser = (updatedUser) => {
-    localStorage.setItem("newsapp_user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
-  };
+  const login = useCallback((userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem("newsapp_user", JSON.stringify(userData));
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem("newsapp_token");
-    localStorage.removeItem("newsapp_user");
-    setToken(null);
+  const logout = useCallback(async () => {
+    try { await api.post("/auth/logout"); } catch {}
     setUser(null);
-  };
+    setIsAuthenticated(false);
+    localStorage.removeItem("newsapp_user");
+    localStorage.removeItem("newsapp_token");
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const res = await api.get("/auth/me");
-      updateUser(res.data);
+      setUser(res.data);
+      localStorage.setItem("newsapp_user", JSON.stringify(res.data));
+      setIsAuthenticated(true);
       return res.data;
     } catch {
       return null;
     }
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

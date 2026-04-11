@@ -175,6 +175,9 @@ async def _ws_handle_mark_read(user_id: str, data: dict):
 async def websocket_chat(ws: WebSocket):
     token = ws.query_params.get("token")
     if not token:
+        # Fallback: try httpOnly cookie
+        token = ws.cookies.get("access_token")
+    if not token:
         await ws.close(code=4001, reason="Token manquant")
         return
 

@@ -15,19 +15,19 @@ function formatDate(iso) {
 }
 
 function ProcedureCard({ procedure }) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const excerpt = procedure.content?.replace(/<[^>]+>/g, "").slice(0, 150) + "...";
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     api.get(`/saved-procedures/${procedure.id}/status`).then(r => setIsSaved(r.data.is_saved)).catch(() => {});
-  }, [procedure.id, token]);
+  }, [procedure.id, isAuthenticated]);
 
   const toggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!token) { toast.error("Connectez-vous pour sauvegarder."); return; }
+    if (!isAuthenticated) { toast.error("Connectez-vous pour sauvegarder."); return; }
     try {
       const res = await api.post(`/saved-procedures/${procedure.id}`);
       setIsSaved(res.data.action === "saved");
@@ -38,7 +38,7 @@ function ProcedureCard({ procedure }) {
   return (
     <div className="bg-white border border-zinc-200 hover:border-[#FF6600] hover:shadow-lg transition-all duration-200 flex flex-col group relative">
       {/* Save/Favorite button */}
-      {token && (
+      {isAuthenticated && (
         <button onClick={toggleSave} data-testid={`save-procedure-${procedure.id}`}
           className={`absolute top-2 right-2 z-10 p-1.5 rounded-full transition-all duration-200 ${
             isSaved ? "bg-[#FF6600] text-white shadow-md" : "bg-black/60 text-white hover:bg-[#FF6600]"

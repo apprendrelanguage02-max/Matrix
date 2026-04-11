@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from database import db
 from config import JWT_SECRET, JWT_ALGORITHM
 from models.user import (
@@ -37,6 +37,28 @@ def _check_rate_limit(key: str, max_requests: int):
     if len(_rate_limits[key]) >= max_requests:
         raise HTTPException(status_code=429, detail="Trop de tentatives. Veuillez patienter 1 minute.")
     _rate_limits[key].append(now)
+
+
+COOKIE_NAME = "access_token"
+COOKIE_MAX_AGE = 30 * 24 * 3600  # 30 days
+
+
+def _set_auth_cookie(response: Response, token: str):
+    """Set httpOnly secure cookie with the JWT token."""
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=COOKIE_MAX_AGE,
+        path="/",
+    )
+
+
+def _clear_auth_cookie(response: Response):
+    """Clear the auth cookie."""
+    response.delete_cookie(key=COOKIE_NAME, path="/")
 
 
 def create_token(user_id: str) -> str:
@@ -236,7 +258,7 @@ async def send_otp(data: OTPRequest):
 
 # ── STEP 3: Verify OTP (activates account) ──────────────────────────────────
 @router.post("/verify-otp")
-async def verify_otp(data: OTPVerify):
+async def verify_otp(data: OTPVerify, response: Response):
     _check_rate_limit(f"verify_otp:{data.email}", RATE_LIMIT_MAX_VERIFY)
 
     otp_doc = await db.otp_codes.find_one({"email": data.email}, {"_id": 0})
@@ -325,12 +347,20 @@ async def verify_otp(data: OTPVerify):
 
     logger.info(f"OTP verified for {data.email}, status -> {new_status}")
 
-    return TokenResponse(token=token, user=user_to_out(updated_user))
+    _set_auth_cookie(response, token)
+    return {"token": token, "user": user_to_out(updated_user).dict()}
+
+
+# ── Logout ───────────────────────────────────────────────────────────────────
+@router.post("/logout")
+async def logout(response: Response):
+    _clear_auth_cookie(response)
+    return {"message": "Deconnexion reussie"}
 
 
 # ── Login ────────────────────────────────────────────────────────────────────
-@router.post("/login", response_model=TokenResponse)
-async def login(data: UserLogin):
+@router.post("/login")
+async def login(data: UserLogin, response: Response):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     dummy_hash = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/ufn/P0SqS"
     stored_hash = user["hashed_password"] if user else dummy_hash
@@ -353,7 +383,8 @@ async def login(data: UserLogin):
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now}})
 
     token = create_token(user["id"])
-    return TokenResponse(token=token, user=user_to_out(user))
+    _set_auth_cookie(response, token)
+    return {"token": token, "user": user_to_out(user).dict()}
 
 
 # ── Get me ───────────────────────────────────────────────────────────────────
