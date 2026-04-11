@@ -45,11 +45,12 @@ COOKIE_MAX_AGE = 30 * 24 * 3600  # 30 days
 
 def _set_auth_cookie(response: Response, token: str):
     """Set httpOnly secure cookie with the JWT token."""
+    is_secure = os.environ.get("COOKIE_SECURE", "true").lower() != "false"
     response.set_cookie(
         key=COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=True,
+        secure=is_secure,
         samesite="lax",
         max_age=COOKIE_MAX_AGE,
         path="/",

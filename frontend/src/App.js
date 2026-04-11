@@ -34,27 +34,41 @@ import CompanySettingsPage from "./pages/admin/fiches/CompanySettingsPage";
 import ChatHelp from "./components/ChatHelp";
 import "./App.css";
 
+import { Loader2 } from "lucide-react";
+
+function RouteLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <Loader2 className="w-8 h-8 animate-spin text-[#FF6600]" />
+    </div>
+  );
+}
+
 function PrivateRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <RouteLoader />;
   return isAuthenticated ? children : <Navigate to="/connexion" replace />;
 }
 
 function AuthorRoute({ children }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return <RouteLoader />;
   if (!isAuthenticated) return <Navigate to="/connexion" replace />;
   if (user?.role !== "auteur" && user?.role !== "admin") return <Navigate to="/profil" replace />;
   return children;
 }
 
 function AdminRoute({ children }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return <RouteLoader />;
   if (!isAuthenticated) return <Navigate to="/connexion" replace />;
   if (user?.role !== "admin") return <Navigate to="/" replace />;
   return children;
 }
 
 function AgentRoute({ children }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return <RouteLoader />;
   if (!isAuthenticated) return <Navigate to="/connexion" replace />;
   if (user?.role !== "agent" && user?.role !== "admin") return <Navigate to="/immobilier" replace />;
   return children;
