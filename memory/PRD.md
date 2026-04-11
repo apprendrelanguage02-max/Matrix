@@ -1,42 +1,100 @@
-# Matrix News — PRD
+# Matrix News - Product Requirements Document
 
-## Probleme Original
-Plateforme full-stack (React/FastAPI/MongoDB) pour un portail d'actualites et immobilier en Guinee.
+## Original Problem Statement
+Plateforme full-stack Matrix News : gestion d'articles, d'annonces immobilières avec cartes interactives Leaflet, de procédures administratives avec drag-and-drop, de fiches PDF professionnelles (ReportLab), et un système d'authentification OTP (via Resend).
+
+## Core Requirements
+- Interface premium avec couleurs Orange (#FF6600) / Blanc / Noir
+- Logo PDF : `Matrix.png`, Logo site : `nimba-logo.png`
+- Composants React modulaires (< 300 lignes idéalement)
+- Authentification OTP sécurisée via Resend
+- Stockage cloud S3 pour images/fichiers
+- Cartes interactives Leaflet
+
+## Tech Stack
+- **Frontend**: React, TailwindCSS, lucide-react, @dnd-kit (drag-drop)
+- **Backend**: FastAPI, MongoDB (Motor), Pydantic
+- **Services**: ReportLab (PDF), Resend (Emails), AWS S3 (Stockage), Leaflet (Maps)
+
+## User Personas
+- **Admin** : Gestion complète de la plateforme
+- **Auteur** : Rédaction d'articles et de fiches
+- **Agent immobilier** : Publication d'annonces
+- **Visiteur** : Consultation du contenu public
+
+## What's Been Implemented
+
+### Completed Features
+- [x] Système d'authentification OTP avec Resend
+- [x] Module immobilier complet (CRUD, cartes, devises, géolocalisation)
+- [x] Module procédures V2 (drag-drop, fichiers, vidéos, liens)
+- [x] Module fiches PDF premium (ReportLab, sauts de ligne, frais/documents par étape)
+- [x] Tableau de bord admin avec base de données complète
+- [x] Stockage cloud S3 pour images/fichiers
+- [x] Badges de statut utilisateur colorés (vert/actif, rouge/suspendu, jaune/en attente)
+- [x] **Refactoring frontend majeur** (Feb 2026) — 7 fichiers >300 lignes découpés en 15+ sous-composants
+
+### Refactoring Frontend (Feb 2026)
+| Fichier | Avant | Après | Réduction |
+|---|---|---|---|
+| DatabasePage.js | 1148 | 112 | -90% |
+| CreateFichePage.js | 760 | 378 | -50% |
+| PropertyFormPage.js | 666 | 415 | -38% |
+| ProcedureBuilder.js | 634 | 295 | -54% |
+| AdminProceduresDashboard.js | 571 | 167 | -71% |
+| ProcedureDetailPage.js | 514 | 369 | -28% |
+| PropertyDetailPage.js | 483 | 467 | -3% |
 
 ## Architecture
-- **Frontend**: React, TailwindCSS, Shadcn/UI, React-Leaflet, DOMPurify
-- **Backend**: FastAPI, MongoDB, Pydantic, ReportLab (PDF)
-- **Stockage**: AWS S3 via boto3, cloud proxy `/api/media/cloud/`
-- **Auth**: JWT + OTP, Resend API
+```
+/app/frontend/src/
+├── components/
+│   └── DetailPageHelpers.js         # Shared AuthGateOverlay, VideoPlayer, formatDate
+├── pages/
+│   ├── admin/
+│   │   ├── DatabasePage.js          # Orchestrateur (112 lignes)
+│   │   ├── database/                # 7 sous-composants
+│   │   │   ├── SharedComponents.js
+│   │   │   ├── RequestsTab.js
+│   │   │   ├── UsersTab.js
+│   │   │   ├── ArticlesTab.js
+│   │   │   ├── PropertiesTab.js
+│   │   │   ├── PaymentsTab.js
+│   │   │   └── PriceReferencesTab.js
+│   │   ├── fiches/
+│   │   │   ├── CreateFichePage.js
+│   │   │   ├── FicheFormFields.js
+│   │   │   └── FichePreview.js
+│   │   └── procedures/
+│   │       ├── AdminProceduresDashboard.js
+│   │       ├── DashboardHelpers.js
+│   │       ├── DashboardTabs.js
+│   │       ├── ProcedureBuilder.js
+│   │       ├── ProcedureStep.js
+│   │       └── ProcedureSidebar.js
+│   ├── immobilier/
+│   │   ├── PropertyFormPage.js
+│   │   └── PropertyFormComponents.js
+│   └── procedures/
+│       ├── ProcedureDetailPage.js
+│       └── ProcedureDetailSidebar.js
+```
 
-## Fonctionnalites Implementees
-1. Systeme d'articles avec categories, recherche, vues, likes
-2. Module immobilier complet (premium UI, Leaflet map, conversion GNF/USD/EUR)
-3. Module procedures (drag-and-drop, fichiers cloud, videos)
-4. Module Fiches PDF Premium (documents/frais par etape, devise par etape, logo Matrix.png)
-5. Authentification OTP avec Resend (re-inscription auto-renvoie OTP)
-6. Tableau de bord admin avec badges statut colores
-7. Stockage cloud S3
-8. Messagerie WebSocket temps reel
+## Prioritized Backlog
 
-## Session Avril 2026 — Complete
-- [x] Restructuration PDF: documents et frais par etape
-- [x] Logo Matrix.png integre partout (PDF, apercu, header, footer, auth pages)
-- [x] Refonte visuelle premium CreateFichePage + PDF generator
-- [x] Preservation sauts de ligne (whitespace-pre-wrap + nl2br)
-- [x] Selecteur devise par etape (fees_currency)
-- [x] Bug OTP: re-inscription avec email en attente envoie un nouveau code
-- [x] Bug OTP: rate limiter excluant send-otp + retry automatique
-- [x] Refactoring auth.py: extraction _generate_and_send_otp() (deduplication 3x)
-- [x] Refactoring messages.py: websocket_chat decoupe en sous-handlers
-- [x] Refactoring procedures.py: update_procedure simplifie
-- [x] Correction hooks React: eslint-disable-line specifiques
-- [x] Suppression references nimba-logo.png dans tout le code frontend
+### P1 - Upcoming
+- [ ] Migration tokens localStorage → cookies httpOnly (sécurité XSS)
+- [ ] Refactoring des fichiers restants 350-480 lignes (MapPage, ArticleFormPage, DashboardPage, ArticleDetailPage)
 
-## Backlog
-- P2: Refactoring composants frontend >300 lignes
-- P2: Migration tokens localStorage vers cookies httpOnly
-- P3: Export Word fiches, notifications, heatmap prix
+### P2 - Future
+- [ ] Système de notifications pour annonces
+- [ ] Heatmap des prix immobiliers
+- [ ] Export fiches au format Word (.docx)
+- [ ] Visites vidéo natives dans les annonces
 
 ## Credentials
-- Admin: `matrixguinea@gmail.com` / `admin123`
+- Admin: matrixguinea@gmail.com / admin123
+
+## Known Issues
+- Perte potentielle de données lors de l'édition d'annonces (non reproduit récemment)
+- ESLint warnings mineurs dans quelques hooks useEffect (n'impactent pas la fonctionnalité)
