@@ -7,7 +7,7 @@ import { Loader2, ChevronLeft, ChevronRight, FileText, Calendar, Eye, ArrowRight
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
-const LOGO = "/nimba-logo.png";
+const LOGO = "/Matrix.png";
 
 function formatDate(iso) {
   if (!iso) return "";

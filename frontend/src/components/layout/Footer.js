@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const LOGO = "/nimba-logo.png";
+const LOGO = "/Matrix.png";
 
 export default function Footer() {
   const year = new Date().getFullYear();

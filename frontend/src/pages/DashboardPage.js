@@ -200,7 +200,7 @@ export default function DashboardPage() {
       {/* Topbar */}
       <header className="bg-black text-white h-14 flex items-center px-4 sm:px-6 gap-4 sticky top-0 z-50 shadow-lg" data-testid="dashboard-topbar">
         <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
-          <img src="/nimba-logo.png" alt="Logo" className="w-7 h-7 object-contain rounded-sm" />
+          <img src="/Matrix.png" alt="Logo" className="w-7 h-7 object-contain rounded-sm" />
           <span className="hidden sm:inline font-['Oswald'] text-lg font-bold tracking-widest uppercase group-hover:text-[#FF6600] transition-colors">Newsroom</span>
         </Link>
 

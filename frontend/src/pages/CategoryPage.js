@@ -8,7 +8,7 @@ import { Loader2, Tag, ChevronLeft, ChevronRight } from "lucide-react";
 import { CATEGORIES, getCategoryColor } from "../lib/categories";
 
 const PAGE_SIZE = 10;
-const LOGO = "/nimba-logo.png";
+const LOGO = "/Matrix.png";
 
 export default function CategoryPage() {
   const { slug } = useParams();

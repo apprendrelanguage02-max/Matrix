@@ -107,6 +107,68 @@ async def _send_unread_update(user_id: str):
     })
 
 
+# ─── WebSocket Sub-Handlers ─────────────────────────────────────────────────────
+
+async def _ws_handle_message(user_id: str, user: dict, data: dict):
+    """Handle incoming chat message."""
+    conv_id = data.get("conversation_id")
+    content = data.get("content", "").strip()
+    if not conv_id or not content:
+        return
+    conv = await db.conversations.find_one({"id": conv_id}, {"_id": 0})
+    if not conv or user_id not in conv.get("participant_ids", []):
+        return
+    msg_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    await db.messages.insert_one({
+        "id": msg_id, "conversation_id": conv_id,
+        "sender_id": user_id, "sender_name": user["username"],
+        "content": content, "read_by": [user_id], "created_at": now,
+    })
+    await db.conversations.update_one(
+        {"id": conv_id},
+        {"$set": {"last_message": content, "last_message_at": now}}
+    )
+    msg_out = {
+        "type": "new_message",
+        "message": {
+            "id": msg_id, "conversation_id": conv_id,
+            "sender_id": user_id, "sender_name": user["username"],
+            "content": content, "created_at": now,
+        }
+    }
+    for pid in conv["participant_ids"]:
+        await manager.send_to_user(pid, msg_out)
+        if pid != user_id:
+            await _send_unread_update(pid)
+
+
+async def _ws_handle_typing(user_id: str, user: dict, data: dict, start: bool):
+    """Handle typing start/stop indicator."""
+    conv_id = data.get("conversation_id")
+    conv = await db.conversations.find_one({"id": conv_id}, {"_id": 0})
+    if not conv:
+        return
+    event = {"type": "typing_start" if start else "typing_stop", "conversation_id": conv_id, "user_id": user_id}
+    if start:
+        event["username"] = user["username"]
+    for pid in conv["participant_ids"]:
+        if pid != user_id:
+            await manager.send_to_user(pid, event)
+
+
+async def _ws_handle_mark_read(user_id: str, data: dict):
+    """Handle marking messages as read."""
+    conv_id = data.get("conversation_id")
+    if not conv_id:
+        return
+    await db.messages.update_many(
+        {"conversation_id": conv_id, "sender_id": {"$ne": user_id}, "read_by": {"$nin": [user_id]}},
+        {"$addToSet": {"read_by": user_id}}
+    )
+    await _send_unread_update(user_id)
+
+
 # ─── WebSocket Endpoint ────────────────────────────────────────────────────────
 
 @router.websocket("/ws/chat")
@@ -128,95 +190,27 @@ async def websocket_chat(ws: WebSocket):
         return
 
     await manager.connect(user_id, ws)
-    # Broadcast online status
     await _broadcast_status(user_id, True)
-    # Send initial unread counts
     await _send_unread_update(user_id)
 
     try:
         while True:
             data = await ws.receive_json()
+            msg_type = data.get("type")
 
-            if data.get("type") == "message":
-                conv_id = data.get("conversation_id")
-                content = data.get("content", "").strip()
-                if not conv_id or not content:
-                    continue
-
-                conv = await db.conversations.find_one({"id": conv_id}, {"_id": 0})
-                if not conv or user_id not in conv.get("participant_ids", []):
-                    continue
-
-                msg_id = str(uuid.uuid4())
-                now = datetime.now(timezone.utc).isoformat()
-                msg = {
-                    "id": msg_id,
-                    "conversation_id": conv_id,
-                    "sender_id": user_id,
-                    "sender_name": user["username"],
-                    "content": content,
-                    "read_by": [user_id],
-                    "created_at": now,
-                }
-                await db.messages.insert_one(msg)
-                await db.conversations.update_one(
-                    {"id": conv_id},
-                    {"$set": {"last_message": content, "last_message_at": now}}
-                )
-
-                msg_out = {
-                    "type": "new_message",
-                    "message": {
-                        "id": msg_id, "conversation_id": conv_id,
-                        "sender_id": user_id, "sender_name": user["username"],
-                        "content": content, "created_at": now,
-                    }
-                }
-                for pid in conv["participant_ids"]:
-                    await manager.send_to_user(pid, msg_out)
-                    # Send unread update to recipients
-                    if pid != user_id:
-                        await _send_unread_update(pid)
-
-            elif data.get("type") == "typing_start":
-                conv_id = data.get("conversation_id")
-                conv = await db.conversations.find_one({"id": conv_id}, {"_id": 0})
-                if conv:
-                    for pid in conv["participant_ids"]:
-                        if pid != user_id:
-                            await manager.send_to_user(pid, {
-                                "type": "typing_start",
-                                "conversation_id": conv_id,
-                                "user_id": user_id,
-                                "username": user["username"],
-                            })
-
-            elif data.get("type") == "typing_stop":
-                conv_id = data.get("conversation_id")
-                conv = await db.conversations.find_one({"id": conv_id}, {"_id": 0})
-                if conv:
-                    for pid in conv["participant_ids"]:
-                        if pid != user_id:
-                            await manager.send_to_user(pid, {
-                                "type": "typing_stop",
-                                "conversation_id": conv_id,
-                                "user_id": user_id,
-                            })
-
-            elif data.get("type") == "mark_read":
-                conv_id = data.get("conversation_id")
-                if conv_id:
-                    await db.messages.update_many(
-                        {"conversation_id": conv_id, "sender_id": {"$ne": user_id}, "read_by": {"$nin": [user_id]}},
-                        {"$addToSet": {"read_by": user_id}}
-                    )
-                    await _send_unread_update(user_id)
+            if msg_type == "message":
+                await _ws_handle_message(user_id, user, data)
+            elif msg_type == "typing_start":
+                await _ws_handle_typing(user_id, user, data, start=True)
+            elif msg_type == "typing_stop":
+                await _ws_handle_typing(user_id, user, data, start=False)
+            elif msg_type == "mark_read":
+                await _ws_handle_mark_read(user_id, data)
 
     except WebSocketDisconnect:
         pass
     finally:
         manager.disconnect(user_id, ws)
-        # Broadcast offline if no more connections
         if not manager.is_online(user_id):
             await _broadcast_status(user_id, False)
 

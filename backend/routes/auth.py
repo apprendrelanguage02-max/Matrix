@@ -132,6 +132,29 @@ class OTPVerify(BaseModel):
 
 
 # ── STEP 1: Register (creates pending_verification account) ─────────────────
+async def _generate_and_send_otp(email: str) -> bool:
+    """Generate a 6-digit OTP, store its hash in DB, and send via email."""
+    code = str(secrets.randbelow(900000) + 100000)
+    hashed_code = _hash_otp(code)
+    now_dt = datetime.now(timezone.utc)
+    expires_at = (now_dt + timedelta(minutes=5)).isoformat()
+
+    await db.otp_codes.delete_many({"email": email})
+    await db.otp_codes.insert_one({
+        "email": email,
+        "code_hash": hashed_code,
+        "created_at": now_dt.isoformat(),
+        "expires_at": expires_at,
+        "attempts": 0,
+        "max_attempts": 5,
+        "verified": False,
+    })
+
+    sent = await _send_otp_email(email, code)
+    logger.info(f"OTP generated for {email}: sent={sent}")
+    return sent
+
+
 @router.post("/register")
 async def register(data: UserRegister):
     if data.role == "admin":
@@ -140,26 +163,7 @@ async def register(data: UserRegister):
     existing = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "status": 1})
     if existing:
         if existing.get("status") == "pending_verification":
-            # Re-send a fresh OTP for the pending account
-            code = str(secrets.randbelow(900000) + 100000)
-            hashed_code = _hash_otp(code)
-            now_dt = datetime.now(timezone.utc)
-            expires_at = (now_dt + timedelta(minutes=5)).isoformat()
-
-            await db.otp_codes.delete_many({"email": data.email})
-            await db.otp_codes.insert_one({
-                "email": data.email,
-                "code_hash": hashed_code,
-                "created_at": now_dt.isoformat(),
-                "expires_at": expires_at,
-                "attempts": 0,
-                "max_attempts": 5,
-                "verified": False,
-            })
-
-            otp_sent = await _send_otp_email(data.email, code)
-            logger.info(f"Re-sent OTP for pending account {data.email}: sent={otp_sent}")
-
+            otp_sent = await _generate_and_send_otp(data.email)
             return {
                 "message": "Un compte existe deja pour cet email. Un nouveau code de verification a ete envoye.",
                 "user_id": existing["id"],
@@ -196,25 +200,7 @@ async def register(data: UserRegister):
 
     logger.info(f"User registered (pending_verification): {data.email} as {data.role}")
 
-    # Generate and send OTP immediately during registration
-    code = str(secrets.randbelow(900000) + 100000)
-    hashed_code = _hash_otp(code)
-    now_dt = datetime.now(timezone.utc)
-    expires_at = (now_dt + timedelta(minutes=5)).isoformat()
-
-    await db.otp_codes.delete_many({"email": data.email})
-    await db.otp_codes.insert_one({
-        "email": data.email,
-        "code_hash": hashed_code,
-        "created_at": now_dt.isoformat(),
-        "expires_at": expires_at,
-        "attempts": 0,
-        "max_attempts": 5,
-        "verified": False,
-    })
-
-    otp_sent = await _send_otp_email(data.email, code)
-    logger.info(f"OTP sent during registration for {data.email}: sent={otp_sent}")
+    otp_sent = await _generate_and_send_otp(data.email)
 
     return {
         "message": "Compte cree. Verifiez votre email pour activer votre compte.",
@@ -236,25 +222,7 @@ async def send_otp(data: OTPRequest):
     if user.get("email_verified") and user.get("status") != "pending_verification":
         raise HTTPException(status_code=400, detail="Cet email est deja verifie.")
 
-    code = str(secrets.randbelow(900000) + 100000)
-    hashed_code = _hash_otp(code)
-    now = datetime.now(timezone.utc)
-    expires_at = (now + timedelta(minutes=5)).isoformat()
-
-    await db.otp_codes.delete_many({"email": data.email})
-    await db.otp_codes.insert_one({
-        "email": data.email,
-        "code_hash": hashed_code,
-        "created_at": now.isoformat(),
-        "expires_at": expires_at,
-        "attempts": 0,
-        "max_attempts": 5,
-        "verified": False,
-    })
-
-    sent = await _send_otp_email(data.email, code)
-
-    logger.info(f"OTP generated for {data.email} (sent={sent})")
+    sent = await _generate_and_send_otp(data.email)
 
     if not sent:
         logger.error(f"All OTP send attempts failed for {data.email}")

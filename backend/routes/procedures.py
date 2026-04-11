@@ -271,46 +271,39 @@ async def update_procedure(procedure_id: str, data: ProcedureUpdate, current_use
 
     updates = {"updated_at": datetime.now(timezone.utc).isoformat()}
 
-    # Save current version to history
     version_snapshot = {
         "version": proc.get("version", 1),
         "title": proc.get("title"),
         "saved_at": updates["updated_at"],
     }
 
+    # Simple fields: copy if provided
+    simple_fields = ["category", "keywords", "language", "complexity", "active", "status", "content"]
+    for field in simple_fields:
+        val = getattr(data, field, None)
+        if val is not None:
+            updates[field] = val
+
+    # Sanitized text fields
     if data.title is not None:
         updates["title"] = sanitize(data.title)
     if data.description is not None:
         updates["description"] = data.description
         updates["content"] = data.content or data.description
-    if data.category is not None:
-        updates["category"] = data.category
-    if data.keywords is not None:
-        updates["keywords"] = data.keywords
     if data.country is not None:
         updates["country"] = data.country
         updates["subcategory"] = data.country
-    if data.language is not None:
-        updates["language"] = data.language
-    if data.complexity is not None:
-        updates["complexity"] = data.complexity
-    if data.active is not None:
-        updates["active"] = data.active
-    if data.status is not None:
-        updates["status"] = data.status
-    if data.image_url is not None:
-        updates["image_url"] = sanitize_url(data.image_url) if data.image_url else ""
-    if data.video_url is not None:
-        updates["video_url"] = sanitize_url(data.video_url) if data.video_url else ""
-    if data.main_image_url is not None:
-        updates["main_image_url"] = sanitize_url(data.main_image_url) if data.main_image_url else ""
-    if data.content is not None:
-        updates["content"] = data.content
 
+    # URL fields
+    for url_field in ["image_url", "video_url", "main_image_url"]:
+        val = getattr(data, url_field, None)
+        if val is not None:
+            updates[url_field] = sanitize_url(val) if val else ""
+
+    # Steps
     if data.steps is not None:
-        steps = []
-        for i, s in enumerate(data.steps):
-            steps.append({
+        updates["steps"] = [
+            {
                 "id": s.id or str(uuid.uuid4()),
                 "order": s.order if s.order > 0 else i + 1,
                 "title": sanitize(s.title),
@@ -319,18 +312,16 @@ async def update_procedure(procedure_id: str, data: ProcedureUpdate, current_use
                 "links": s.links,
                 "video_url": sanitize_url(s.video_url) if s.video_url else "",
                 "mandatory": s.mandatory,
-            })
-        updates["steps"] = steps
+            }
+            for i, s in enumerate(data.steps)
+        ]
 
+    # Quick actions
     if data.quick_actions is not None:
-        quick_actions = []
-        for q in data.quick_actions:
-            quick_actions.append({
-                "id": q.id or str(uuid.uuid4()),
-                "label": sanitize(q.label),
-                "action_type": q.action_type,
-            })
-        updates["quick_actions"] = quick_actions
+        updates["quick_actions"] = [
+            {"id": q.id or str(uuid.uuid4()), "label": sanitize(q.label), "action_type": q.action_type}
+            for q in data.quick_actions
+        ]
 
     updates["version"] = proc.get("version", 1) + 1
 

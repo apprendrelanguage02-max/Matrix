@@ -316,7 +316,7 @@ export default function PropertyFormPage() {
       <div className="bg-white border-b border-zinc-200 shadow-sm sticky top-0 z-30">
         <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center gap-4">
           <Link to="/immobilier" className="flex items-center gap-2" data-testid="header-logo-link">
-            <img src="/nimba-logo.png" alt="Matrix News" className="h-8" />
+            <img src="/Matrix.png" alt="Matrix News" className="h-8" />
           </Link>
           <div className="h-6 w-px bg-zinc-200" />
           <h1 className="font-['Oswald'] text-base sm:text-lg font-bold uppercase tracking-tight text-zinc-900 flex-1">

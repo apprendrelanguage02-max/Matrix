@@ -85,7 +85,9 @@ export default function PropertyDetailPage() {
       })
       .catch(() => { toast.error("Annonce introuvable"); navigate("/immobilier"); })
       .finally(() => setLoading(false));
-  }, [id]); // eslint-disable-line
+    // Only refetch when id changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
     if (!ws || !id) return;

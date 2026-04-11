@@ -42,12 +42,12 @@ export default function HomePage() {
       fetchArticles(1, search);
     }, 400);
     return () => clearTimeout(timer);
-  }, [search]); // eslint-disable-line
+  }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch on page change (without search change)
   useEffect(() => {
     fetchArticles(page, search);
-  }, [page]); // eslint-disable-line
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goToPage = (p) => {
     const params = {};
@@ -85,7 +85,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 sm:gap-6">
             <img
-              src="/nimba-logo.png"
+              src="/Matrix.png"
               alt="Matrix News"
               className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain flex-shrink-0"
             />

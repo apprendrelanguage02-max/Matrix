@@ -11,7 +11,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
-const LOGO = "/nimba-logo.png";
+const LOGO = "/Matrix.png";
 const FLAG_URL = (code) => `https://flagcdn.com/24x18/${code}.png`;
 
 function formatDate(iso) {

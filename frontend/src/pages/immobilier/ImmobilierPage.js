@@ -10,7 +10,7 @@ import api from "../../lib/api";
 import { Loader2, ChevronLeft, ChevronRight, PlusCircle, Map, Calculator, Bell, Navigation } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const LOGO = "/nimba-logo.png";
+const LOGO = "/Matrix.png";
 
 export default function ImmobilierPage() {
   const { user } = useAuth();
@@ -55,7 +55,7 @@ export default function ImmobilierPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchProperties(filters); }, [filters]); // eslint-disable-line
+  useEffect(() => { fetchProperties(filters); }, [filters, fetchProperties]);
 
   const handleFilters = (newF) => {
     setFilters(newF);

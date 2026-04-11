@@ -98,7 +98,9 @@ export default function MapPage() {
       autoTriggered.current = true;
       handleGeolocate();
     }
-  }, []); // eslint-disable-line
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchMarkers = useCallback(() => {
     setLoading(true);
