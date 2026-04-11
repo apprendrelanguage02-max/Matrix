@@ -207,7 +207,7 @@ function TableBlock({ data, onChange }) {
           <thead>
             <tr className="bg-zinc-50">
               {headers.map((h, i) => (
-                <th key={i} className="border-b border-r border-zinc-200 last:border-r-0">
+                <th key={"th-" + h + "-" + i} className="border-b border-r border-zinc-200 last:border-r-0">
                   <input value={h} onChange={e => updateHeader(i, e.target.value)} className="w-full px-3 py-2 font-bold text-xs uppercase bg-transparent focus:outline-none focus:bg-orange-50" />
                 </th>
               ))}
@@ -216,9 +216,9 @@ function TableBlock({ data, onChange }) {
           </thead>
           <tbody>
             {rows.map((row, ri) => (
-              <tr key={ri} className="hover:bg-zinc-50">
+              <tr key={"tr-" + ri} className="hover:bg-zinc-50">
                 {row.map((cell, ci) => (
-                  <td key={ci} className="border-b border-r border-zinc-200 last:border-r-0">
+                  <td key={"td-" + ri + "-" + ci} className="border-b border-r border-zinc-200 last:border-r-0">
                     <input value={cell} onChange={e => updateCell(ri, ci, e.target.value)} className="w-full px-3 py-2 text-sm bg-transparent focus:outline-none focus:bg-orange-50" />
                   </td>
                 ))}

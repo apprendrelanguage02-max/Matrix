@@ -28,7 +28,7 @@ export function renderContent(content) {
     const match = part.match(/^\[img:(.+)\]$/);
     if (match) {
       return (
-        <span key={i} className="block my-6">
+        <span key={`img-${match[1].slice(-12)}-${i}`} className="block my-6">
           <img
             src={match[1]}
             alt="Image insérée"
@@ -39,7 +39,7 @@ export function renderContent(content) {
         </span>
       );
     }
-    return part ? <span key={i} style={{ whiteSpace: "pre-wrap" }}>{part}</span> : null;
+    return part ? <span key={`txt-${part.slice(0, 16)}-${i}`} style={{ whiteSpace: "pre-wrap" }}>{part}</span> : null;
   });
 }
 

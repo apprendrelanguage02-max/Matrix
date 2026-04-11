@@ -1,4 +1,5 @@
 import { Eye } from "lucide-react";
+import { useMemo } from "react";
 
 export function FichePreview({ form, settings, totalStepFees, totalCost }) {
   const logoUrl = settings?.logo_url || "/Matrix.png";
@@ -88,7 +89,7 @@ function PreviewSummary({ summary }) {
 }
 
 function PreviewSteps({ steps, currency }) {
-  const filtered = steps.filter(s => s.title);
+  const filtered = useMemo(() => steps.filter(s => s.title), [steps]);
   if (!filtered.length) return null;
   return (
     <div className="mb-4">
@@ -134,7 +135,7 @@ function PreviewSteps({ steps, currency }) {
 }
 
 function PreviewDetails({ details }) {
-  const filtered = details.filter(d => d.title && d.content);
+  const filtered = useMemo(() => details.filter(d => d.title && d.content), [details]);
   if (!filtered.length) return null;
   return filtered.map((d, i) => (
     <div key={`prev-detail-${i}`} className="mb-3">
@@ -179,13 +180,14 @@ function PreviewService({ service }) {
 }
 
 function PreviewFees({ form, totalStepFees, totalCost }) {
+  const stepsWithFees = useMemo(() => form.steps.filter(s => s.fees > 0), [form.steps]);
   if (totalCost <= 0) return null;
   return (
     <div className="mb-3">
       <SectionLabel>Recapitulatif des Frais</SectionLabel>
       <div className="border border-zinc-200 rounded-sm overflow-hidden">
         <div className="text-[8px] divide-y divide-zinc-100">
-          {form.steps.filter(s => s.fees > 0).map((step, idx) => (
+          {stepsWithFees.map((step, idx) => (
             <div key={`pf-${idx}`} className="flex justify-between px-2.5 py-1.5">
               <span className="text-zinc-500">Etape {form.steps.indexOf(step) + 1} : {step.title || "—"}</span>
               <span className="font-semibold text-zinc-700">{step.fees.toLocaleString()} {step.fees_currency || form.currency}</span>

@@ -68,10 +68,13 @@ export default function PropertyFormPage() {
     }).catch(() => { toast.error("Annonce introuvable"); navigate("/immobilier"); });
   }, [id, isEdit, navigate]);
 
-  const set = (field, val) => {
+  const set = useCallback((field, val) => {
     setForm(f => ({ ...f, [field]: val }));
-    if (errors[field]) setErrors(e => { const n = { ...e }; delete n[field]; return n; });
-  };
+    setErrors(e => {
+      if (e[field]) { const n = { ...e }; delete n[field]; return n; }
+      return e;
+    });
+  }, []);
 
   const toggleEquip = (item) => {
     setForm(f => ({ ...f, equipment: f.equipment.includes(item) ? f.equipment.filter(e => e !== item) : [...f.equipment, item] }));
@@ -111,7 +114,7 @@ export default function PropertyFormPage() {
   const handleMapClick = useCallback((lat, lng) => {
     set("latitude", String(lat.toFixed(6)));
     set("longitude", String(lng.toFixed(6)));
-  }, []);
+  }, [set]);
 
   const priceNum = parseFloat(form.price) || 0;
   const priceUSD = Math.round(priceNum * GNF_TO_USD);

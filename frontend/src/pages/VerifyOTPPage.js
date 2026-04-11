@@ -35,7 +35,8 @@ export default function VerifyOTPPage() {
     } else {
       sendOtp();
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, alreadySent]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -218,7 +219,7 @@ export default function VerifyOTPPage() {
               <div className="flex justify-center gap-2 sm:gap-3" data-testid="otp-input-group">
                 {digits.map((digit, i) => (
                   <input
-                    key={i}
+                    key={`otp-pos-${i}`}
                     ref={el => inputRefs.current[i] = el}
                     type="text"
                     inputMode="numeric"

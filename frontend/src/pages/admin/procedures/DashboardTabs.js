@@ -2,11 +2,36 @@ import {
   FileText, CheckCircle, Clock, Eye, FolderOpen, Loader2,
   Download, Trash2, MessageSquare, Tag, Globe, Plus, Save, Edit, X
 } from "lucide-react";
+import { useMemo } from "react";
 import { StatCard } from "./DashboardHelpers";
 
 const FLAG_URL = (code) => `https://flagcdn.com/24x18/${code}.png`;
 
 export function StatsTab({ stats, categories, countries, procedures }) {
+  const topViewed = useMemo(
+    () => [...procedures].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5),
+    [procedures]
+  );
+
+  const categoryBars = useMemo(() => {
+    if (!stats?.by_category) return [];
+    return Object.entries(stats.by_category).map(([cat, count]) => ({
+      id: cat,
+      name: categories.find(c => c.id === cat)?.name || cat,
+      count,
+      pct: stats.total > 0 ? Math.round((count / stats.total) * 100) : 0,
+    }));
+  }, [stats, categories]);
+
+  const countryCards = useMemo(() => {
+    if (!stats?.by_country) return [];
+    return Object.entries(stats.by_country).map(([cid, count]) => ({
+      id: cid,
+      country: countries.find(x => x.id === cid),
+      count,
+    }));
+  }, [stats, countries]);
+
   return (
     <>
       {stats && (
@@ -17,47 +42,40 @@ export function StatsTab({ stats, categories, countries, procedures }) {
           <StatCard label="Vues totales" value={stats.total_views} icon={Eye} color="#3b82f6" />
         </div>
       )}
-      {stats?.by_category && Object.keys(stats.by_category).length > 0 && (
+      {stats?.by_category && categoryBars.length > 0 && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-6" data-testid="stats-by-category">
           <h3 className="text-white font-['Oswald'] text-sm font-bold uppercase tracking-wider mb-4">Par categorie</h3>
           <div className="space-y-2">
-            {Object.entries(stats.by_category).map(([cat, count]) => {
-              const catName = categories.find(c => c.id === cat)?.name || cat;
-              const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-              return (
-                <div key={cat} className="flex items-center gap-3">
-                  <span className="text-zinc-400 text-xs w-44 truncate">{catName}</span>
-                  <div className="flex-1 bg-zinc-800 h-3 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#FF6600] rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="text-white text-xs font-bold w-10 text-right">{count}</span>
+            {categoryBars.map(({ id, name, count, pct }) => (
+              <div key={id} className="flex items-center gap-3">
+                <span className="text-zinc-400 text-xs w-44 truncate">{name}</span>
+                <div className="flex-1 bg-zinc-800 h-3 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#FF6600] rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
-              );
-            })}
+                <span className="text-white text-xs font-bold w-10 text-right">{count}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
-      {stats?.by_country && Object.keys(stats.by_country).length > 0 && (
+      {stats?.by_country && countryCards.length > 0 && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5" data-testid="stats-by-country">
           <h3 className="text-white font-['Oswald'] text-sm font-bold uppercase tracking-wider mb-4">Par pays</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Object.entries(stats.by_country).map(([cid, count]) => {
-              const c = countries.find(x => x.id === cid);
-              return (
-                <div key={cid} className="flex items-center gap-3 bg-zinc-800 px-3 py-2.5 rounded">
-                  {c?.flag && <img src={FLAG_URL(c.flag)} alt="" className="w-5 h-4" />}
-                  <span className="text-zinc-300 text-xs flex-1">{c?.name || cid}</span>
-                  <span className="text-[#FF6600] text-sm font-bold">{count}</span>
-                </div>
-              );
-            })}
+            {countryCards.map(({ id, country: c, count }) => (
+              <div key={id} className="flex items-center gap-3 bg-zinc-800 px-3 py-2.5 rounded">
+                {c?.flag && <img src={FLAG_URL(c.flag)} alt="" className="w-5 h-4" />}
+                <span className="text-zinc-300 text-xs flex-1">{c?.name || id}</span>
+                <span className="text-[#FF6600] text-sm font-bold">{count}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mt-6" data-testid="stats-top-viewed">
         <h3 className="text-white font-['Oswald'] text-sm font-bold uppercase tracking-wider mb-4">Les plus consultees</h3>
         <div className="space-y-2">
-          {[...procedures].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5).map((p, i) => (
+          {topViewed.map((p, i) => (
             <div key={p.id} className="flex items-center gap-3 bg-zinc-800 px-3 py-2.5 rounded">
               <span className="text-[#FF6600] text-sm font-bold w-6">{i + 1}.</span>
               {p.country_flag && <img src={FLAG_URL(p.country_flag)} alt="" className="w-5 h-4" />}

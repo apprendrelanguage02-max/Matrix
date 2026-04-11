@@ -93,7 +93,7 @@ export default function ChatHelp() {
                   <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Questions fréquentes</p>
                   {FAQ_ITEMS.map((item, index) => (
                     <button
-                      key={index}
+                      key={item.question}
                       onClick={() => setActiveQuestion(index)}
                       className="w-full text-left p-3 bg-zinc-50 hover:bg-zinc-100 rounded-lg text-sm text-zinc-700 transition-colors"
                     >

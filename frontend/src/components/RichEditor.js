@@ -6,6 +6,14 @@ import {
 } from "lucide-react";
 import api from "../lib/api";
 
+// Sanitize URL to prevent XSS via attribute injection
+function safeUrl(url) {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (/^(javascript|data|vbscript):/i.test(trimmed)) return '';
+  return trimmed.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function ToolbarBtn({ onClick, title, active, icon: Icon }) {
   return (
     <button
@@ -81,8 +89,8 @@ export default function RichEditor({ value, onChange, error }) {
     editorRef.current?.focus();
     restoreRange();
 
-    // Insert image as responsive block
-    const img = `<p><img src="${url}" alt="Image insérée" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;margin:12px auto;display:block;" /></p>`;
+    // Insert image as responsive block (URL escaped for safety)
+    const img = `<p><img src="${safeUrl(url)}" alt="Image insérée" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;margin:12px auto;display:block;" /></p>`;
     document.execCommand("insertHTML", false, img);
     notifyChange();
     setImgUrl("");
@@ -92,11 +100,12 @@ export default function RichEditor({ value, onChange, error }) {
   const insertMedia = (url, type) => {
     editorRef.current?.focus();
     restoreRange();
+    const escaped = safeUrl(url);
     let html;
     if (type === "video") {
-      html = `<p><video src="${url}" controls style="max-width:100%;border-radius:8px;margin:12px auto;display:block;"></video></p>`;
+      html = `<p><video src="${escaped}" controls style="max-width:100%;border-radius:8px;margin:12px auto;display:block;"></video></p>`;
     } else {
-      html = `<p><img src="${url}" alt="Image uploadée" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;margin:12px auto;display:block;" /></p>`;
+      html = `<p><img src="${escaped}" alt="Image uploadée" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;margin:12px auto;display:block;" /></p>`;
     }
     document.execCommand("insertHTML", false, html);
     notifyChange();

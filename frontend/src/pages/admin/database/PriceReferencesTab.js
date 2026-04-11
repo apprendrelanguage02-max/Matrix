@@ -101,8 +101,8 @@ export function PriceReferencesTab() {
               {refs.length === 0 && (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-zinc-400">Aucun prix de reference configure.</td></tr>
               )}
-              {refs.map((r, i) => (
-                <tr key={i} className="border-b border-zinc-100 hover:bg-zinc-50">
+              {refs.map((r) => (
+                <tr key={`${r.city}-${r.commune || ''}-${r.quartier || ''}`} className="border-b border-zinc-100 hover:bg-zinc-50">
                   <td className="px-4 py-2 font-bold">{r.city}</td>
                   <td className="px-4 py-2">{r.commune || <span className="text-zinc-300">-</span>}</td>
                   <td className="px-4 py-2">{r.quartier || <span className="text-zinc-300">-</span>}</td>

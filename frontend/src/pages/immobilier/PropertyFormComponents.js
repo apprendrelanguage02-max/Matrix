@@ -109,7 +109,7 @@ export function ImageGallery({ images, uploading, fileInputRef, handleImageUploa
       {errors.images && <p className="text-red-500 text-xs font-medium mb-2">{errors.images}</p>}
       <div className="grid grid-cols-2 gap-2 mb-3">
         {images.map((url, i) => (
-          <div key={`img-${i}`} className={`relative aspect-square rounded-md overflow-hidden border-2 group cursor-grab
+          <div key={"img-" + i} className={`relative aspect-square rounded-md overflow-hidden border-2 group cursor-grab
             ${i === 0 ? "border-[#F97316]" : "border-zinc-200"} ${dragIdx === i ? "opacity-50" : ""}`}
             draggable onDragStart={() => handleDragStart(i)}
             onDragOver={(e) => handleDragOver(e, i)} onDragEnd={handleDragEnd}>

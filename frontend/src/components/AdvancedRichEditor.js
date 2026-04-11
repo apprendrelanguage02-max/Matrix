@@ -10,6 +10,14 @@ import {
 import api from "../lib/api";
 import { toast } from "sonner";
 
+// Sanitize URL to prevent XSS via attribute injection
+function safeUrl(url) {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (/^(javascript|data|vbscript):/i.test(trimmed)) return '';
+  return trimmed.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 const FONT_SIZES = [
   { label: "Petit", value: "1" },
   { label: "Normal", value: "3" },
@@ -124,9 +132,9 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
       });
       
       if (isVideo) {
-        exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${res.data.url}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
+        exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${safeUrl(res.data.url)}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
       } else {
-        exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${res.data.url}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
+        exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${safeUrl(res.data.url)}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
       }
       toast.success(isVideo ? "Vidéo ajoutée !" : "Image ajoutée !");
       setShowMediaPanel(false);
@@ -142,19 +150,21 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
   const insertMediaFromUrl = () => {
     const url = mediaUrl.trim();
     if (!url) return;
+    if (/^(javascript|data|vbscript):/i.test(url)) { toast.error("URL non autorisée"); return; }
     
+    const escaped = safeUrl(url);
     const isImage = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
     const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
     
     if (isVideo) {
-      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${url}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${escaped}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
       toast.success("Vidéo insérée !");
     } else if (isImage) {
-      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${url}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${escaped}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
       toast.success("Image insérée !");
     } else {
       // Generic link — insert as embedded link with preview style
-      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; cursor: move;"><a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #FF6600; font-weight: 600; word-break: break-all;">${url}</a></div><p><br></p>`);
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; cursor: move;"><a href="${escaped}" target="_blank" rel="noopener noreferrer" style="color: #FF6600; font-weight: 600; word-break: break-all;">${escaped}</a></div><p><br></p>`);
       toast.success("Lien inséré !");
     }
     setMediaUrl("");
@@ -170,15 +180,17 @@ export default function AdvancedRichEditor({ value, onChange, placeholder = "Éc
   const insertLink = () => {
     if (!linkUrl.trim()) return;
     const url = linkUrl.startsWith("http") ? linkUrl : `https://${linkUrl}`;
+    if (/^(javascript|data|vbscript):/i.test(url)) { toast.error("URL non autorisée"); setLinkUrl(""); return; }
     
+    const escaped = safeUrl(url);
     // Check if URL is an image or video
     const isImage = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
     const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
     
     if (isImage) {
-      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${url}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><img src="${escaped}" alt="Image" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></div><p><br></p>`);
     } else if (isVideo) {
-      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${url}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
+      exec("insertHTML", `<div contenteditable="false" draggable="true" style="margin: 1rem 0; cursor: move;"><video src="${escaped}" controls style="max-width: 100%; border-radius: 8px; display: block; margin: 0 auto;"></video></div><p><br></p>`);
     } else {
       exec("createLink", url);
     }
