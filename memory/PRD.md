@@ -30,6 +30,12 @@ Plateforme full-stack Matrix News : gestion d'articles, d'annonces immobilières
 - [x] Badges de statut utilisateur colorés (vert/actif, rouge/suspendu, jaune/en attente)
 - [x] **Refactoring frontend majeur** (Feb 2026) — 7 fichiers >300 lignes découpés en 15+ sous-composants
 - [x] **Migration tokens → cookies httpOnly** (Feb 2026) — Protection XSS complète
+- [x] **Audit qualité code (Apr 2026)** — Correction des anti-patterns React et failles de sécurité :
+  - Remplacement de tous les `key={index}` par des clés stables (PriceReferencesTab, VerifyOTPPage, BlockEditor, ChatHelp, contentRenderer, PropertyFormComponents)
+  - Protection XSS dans les éditeurs riches : ajout de `safeUrl()` (escape HTML + validation de protocole) pour AdvancedRichEditor et RichEditor
+  - Correction des dépendances de hooks React (VerifyOTPPage useEffect, PropertyFormPage useCallback/deps)
+  - Optimisation des performances avec `useMemo` (DashboardTabs : topViewed/categoryBars/countryCards, FichePreview : filteredSteps/filteredDetails/stepsWithFees)
+  - Fix du crash babel-metadata-plugin.js (null safety guard sur parentPath)
 
 ### Migration cookies httpOnly (Feb 2026)
 **Backend:**
@@ -74,6 +80,8 @@ Plateforme full-stack Matrix News : gestion d'articles, d'annonces immobilières
 
 ### P1 - Upcoming
 - [ ] Refactoring des fichiers restants 350-480 lignes (MapPage, ArticleFormPage, DashboardPage, ArticleDetailPage)
+- [ ] Refactoring complexité des fonctions backend (auth.py, procedures.py, articles.py, admin.py)
+- [ ] Refactoring des composants React lourds restants (ChatPanel.js, Header.js) en custom hooks
 
 ### P2 - Future
 - [ ] Système de notifications pour annonces
